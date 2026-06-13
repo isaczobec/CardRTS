@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 public class ComponentStore<T> : IComponentStore where T : struct, IComponent
 {
@@ -67,4 +68,23 @@ public class ComponentStore<T> : IComponentStore where T : struct, IComponent
 
     public uint IdToIndex(ulong entityId) => _idsToComponents[entityId];
     public ulong IndexToId(uint index) => _componentsToIds[index];
+
+    public byte[] GetComponentData(ulong entityId)
+    {
+        T component = _components[(int)_idsToComponents[entityId]];
+        int size = Marshal.SizeOf<T>();
+        byte[] data = new byte[size];
+        IntPtr ptr = Marshal.AllocHGlobal(size);
+        try
+        {
+            Marshal.StructureToPtr(component, ptr, false);
+            Marshal.Copy(ptr, data, 0, size);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
+        }
+        return data;
+    }
+
 }

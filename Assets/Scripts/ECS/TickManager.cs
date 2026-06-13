@@ -4,6 +4,8 @@ public class TickManager : Singleton<TickManager>
 {
     public ECS ECS { get; private set; }
     public FlagEventManager FlagEvents => ECS.FlagEvents;
+    private TypeRegistry<IComponent> _componentTypeRegistry;
+    public TypeRegistry<IComponent> ComponentTypeRegistry => _componentTypeRegistry;
 
     public const float TickInterval = 0.1f;
     public float TimeSinceLastTick => _timer;
@@ -12,6 +14,11 @@ public class TickManager : Singleton<TickManager>
     protected override void Awake()
     {
         base.Awake();
+
+        _componentTypeRegistry = new TypeRegistry<IComponent>();
+        _componentTypeRegistry.Register<PositionComponent>(0);
+        _componentTypeRegistry.Register<RandomWalkComponent>(1);
+
         ECS = new ECS();
         ECS.AddComponentStore(new ComponentStore<PositionComponent>());
         ECS.AddComponentStore(new ComponentStore<RandomWalkComponent>());

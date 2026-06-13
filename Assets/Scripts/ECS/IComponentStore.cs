@@ -9,4 +9,6 @@ public interface IComponentStore
     void ForEach(Action<ulong> perIdFunction);
     uint IdToIndex(ulong entityId);
     ulong IndexToId(uint index);
+
+    byte[] GetComponentData(ulong entityId);
 }

@@ -11,10 +11,13 @@ public class ECS
     private Dictionary<Type, IComponentStore> _componentStores = new();
     private CopyBackArray<EntityData> _entities;
     private List<ISystem> _systems = new();
+    private ComponentDeltaManager _deltaManager;
+    private ComponentDeltaManager Delta => _deltaManager; 
 
     public ECS()
     {
         _entities = new CopyBackArray<EntityData>(ENTITIES_CAPACITY);
+        _deltaManager = new ComponentDeltaManager(this, TickManager.instance.ComponentTypeRegistry);
     }
 
     public void AddComponentStore<T>(ComponentStore<T> componentStore) where T : struct, IComponent
