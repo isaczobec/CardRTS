@@ -5,12 +5,13 @@ using UnityEngine;
 public class NetworkManager : Singleton<NetworkManager>
 {
     public Queue<InboundMessage> InboundQueue { get; } = new Queue<InboundMessage>();
+    public NetworkContext Context { get; } = new NetworkContext();
 
     NetworkServer _server;
     NetworkClient _client;
 
-    public bool IsServer => _server != null;
-    public bool IsClient => _client != null;
+    public bool IsServer => Context.IsServer;
+    public bool IsClient => Context.IsClient;
 
     protected override void Awake()
     {
@@ -43,7 +44,10 @@ public class NetworkManager : Singleton<NetworkManager>
         }
         _server = new NetworkServer(InboundQueue);
         if (_server.Start(port))
+        {
+            Context.AddRole(NetworkRole.Server);
             DevConsole.LogInfo($"[Net] Server started on port {port}.");
+        }
         else
         {
             DevConsole.LogError($"[Net] Failed to start server on port {port}.");
@@ -60,7 +64,10 @@ public class NetworkManager : Singleton<NetworkManager>
         }
         _client = new NetworkClient(InboundQueue);
         if (_client.Connect(host, port))
+        {
+            Context.AddRole(NetworkRole.Client);
             DevConsole.LogInfo($"[Net] Connecting to {host}:{port}...");
+        }
         else
             _client = null;
     }

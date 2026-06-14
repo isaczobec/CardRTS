@@ -8,12 +8,15 @@ public class TickManager : Singleton<TickManager>
     public TypeRegistry<IComponent> ComponentTypeRegistry => _componentTypeRegistry;
 
     public const float TickInterval = 0.1f;
+    private ulong _tick;
+    public ulong Tick => _tick;
     public float TimeSinceLastTick => _timer;
     private float _timer;
 
     protected override void Awake()
     {
         base.Awake();
+        _tick = 0;
 
         _componentTypeRegistry = new TypeRegistry<IComponent>();
         _componentTypeRegistry.Register<PositionComponent>(0);
@@ -40,12 +43,13 @@ public class TickManager : Singleton<TickManager>
         _timer += Time.deltaTime;
         if (_timer < TickInterval) return;
         _timer -= TickInterval;
-        Tick();
+        DoTick();
     }
 
-    void Tick()
+    void DoTick()
     {
         ECS.ExecuteSystems();
         FlagEvents.Flush();
+        _tick++;
     }
 }

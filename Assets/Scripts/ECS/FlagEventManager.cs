@@ -3,36 +3,27 @@ using System.Collections.Generic;
 
 public class FlagEventManager
 {
-    private Dictionary<Type, List<Action>> _subscribers = new();
-    private List<Type> _pending = new();
+    private readonly EventDispatcher<FlagEvent> _dispatcher = new();
 
-    public void Subscribe<T>(Action callback)
+    // Maps the caller's Action to the Action<T> wrapper passed to the dispatcher,
+    // so Unsubscribe can look it up without the caller needing to know about it.
+    private readonly Dictionary<Action, Delegate> _wrapperMap = new();
+
+    public void Subscribe<T>(Action callback) where T : FlagEvent
     {
-        var type = typeof(T);
-        if (!_subscribers.ContainsKey(type))
-            _subscribers[type] = new List<Action>();
-        _subscribers[type].Add(callback);
+        Action<T> wrapper = _ => callback();
+        _wrapperMap[callback] = wrapper;
+        _dispatcher.Subscribe<T>(wrapper);
     }
 
-    public void Unsubscribe<T>(Action callback)
+    public void Unsubscribe<T>(Action callback) where T : FlagEvent
     {
-        if (_subscribers.TryGetValue(typeof(T), out var callbacks))
-            callbacks.Remove(callback);
+        if (!_wrapperMap.TryGetValue(callback, out var wrapper)) return;
+        _dispatcher.Unsubscribe<T>((Action<T>)wrapper);
+        _wrapperMap.Remove(callback);
     }
 
-    public void Add<T>()
-    {
-        _pending.Add(typeof(T));
-    }
+    public void Add<T>() where T : FlagEvent, new() => _dispatcher.Raise(new T());
 
-    public void Flush()
-    {
-        foreach (var type in _pending)
-        {
-            if (_subscribers.TryGetValue(type, out var callbacks))
-                foreach (var callback in callbacks)
-                    callback();
-        }
-        _pending.Clear();
-    }
+    public void Flush() => _dispatcher.Flush();
 }
