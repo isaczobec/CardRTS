@@ -32,7 +32,7 @@ public class ComponentDeltaManager
         _componentTypeRegistry = componentTypeRegistry;
     }
 
-    public void MarkDirty(ulong entityId, Type componentType)
+    public void MarkComponentDirty(ulong entityId, Type componentType)
     {
         _dirtyComponents.Add(new ComponentMarker { EntityId = entityId, ComponentType = componentType });
     }

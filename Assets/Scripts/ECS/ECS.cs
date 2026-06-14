@@ -10,6 +10,7 @@ public class ECS
 
     private Dictionary<Type, IComponentStore> _componentStores = new();
     private CopyBackArray<EntityData> _entities;
+    private Dictionary<ulong, int> _entityIdsToIndicies;
     private List<ISystem> _systems = new();
     private ComponentDeltaManager _deltaManager;
     private ComponentDeltaManager Delta => _deltaManager; 
@@ -17,6 +18,7 @@ public class ECS
     public ECS()
     {
         _entities = new CopyBackArray<EntityData>(ENTITIES_CAPACITY);
+        _entityIdsToIndicies = new();
         _deltaManager = new ComponentDeltaManager(this, TickManager.instance.ComponentTypeRegistry);
     }
 
@@ -62,15 +64,45 @@ public class ECS
             return;
         }
         store.AddComponent(entityId, component);
+        Delta.MarkComponentDirty(entityId, typeof(T));
         FlagEvents.Add<ComponentAddedEvent<T>>();
+    }
+
+    public void RemoveComponent<T>(ulong entityId) where T : struct, IComponent
+    {
+        ComponentStore<T> store = GetComponentStore<T>();
+        if (store == null) return;
+        if (!store.HasComponent(entityId))
+        {
+            DebugLogger.LogError($"The entity {entityId} does not have a component of type {typeof(T).Name}"); 
+            return;
+        }
+        store.RemoveComponent(entityId);
+        Delta.MarkComponentDeleted(entityId, typeof(T));
     }
 
     public EntityHandle CreateEntity()
     {
         ulong id = (ulong)UnityEngine.Random.Range(0, 9999999999);
-        _entities.Add(new EntityData(id));
+
+        var addRes = _entities.Add(new EntityData(id));
+        _entityIdsToIndicies[id] = (int) addRes.addedIndex;
+
         FlagEvents.Add<EntityCreatedEvent>();
+        Delta.MarkEntityCreated(id);
         return new EntityHandle(id);
+    }
+
+    public void DeleteEntity(ulong entityId)
+    {
+        if (!_entityIdsToIndicies.ContainsKey(entityId))
+        {
+            DebugLogger.LogError($"entity {entityId} did not exist but it was attempted to be deleted!");
+            return;
+        }
+        int index = _entityIdsToIndicies[entityId];
+        _entities.Remove((uint)index);
+        Delta.MarkEntityDeleted(entityId);
     }
 
     public void RegisterSystem(ISystem system)
