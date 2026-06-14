@@ -20,12 +20,13 @@ public class RingBuffer<T> : IEnumerable<T>
         _buffer = new T[capacity];
     }
 
-    public void Enqueue(T item)
+    public T Enqueue(T item)
     {
         if (IsFull) throw new InvalidOperationException("RingBuffer is full.");
         _buffer[_tail] = item;
         _tail = (_tail + 1) % _buffer.Length;
         _count++;
+        return item;
     }
 
     public T Dequeue()

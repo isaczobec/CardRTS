@@ -138,4 +138,66 @@ public class ComponentDeltaManager
         _deletedComponents.Clear();
         return ms.ToArray();
     }
+
+    /// <summary>
+    /// Applies an incoming delta to the ECS. Order: created entities → deleted components → deleted entities → component data.
+    /// Creates a component if the entity does not already have one of that type.
+    /// </summary>
+    public void ApplyDelta(ECS ecs, byte[] createdEntities, byte[] deletedEntities, byte[] deletedComponents, byte[] componentsDelta)
+    {
+        using (var ms = new MemoryStream(createdEntities))
+        using (var reader = new BinaryReader(ms))
+        {
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                ulong entityId = reader.ReadUInt64();
+                if (!ecs.HasEntity(entityId))
+                    ecs.CreateEntityWithId(entityId);
+            }
+        }
+
+        using (var ms = new MemoryStream(deletedComponents))
+        using (var reader = new BinaryReader(ms))
+        {
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                ulong entityId = reader.ReadUInt64();
+                ushort typeId = reader.ReadUInt16();
+                Type componentType = _componentTypeRegistry.GetTypeForID(typeId);
+                IComponentStore store = ecs.GetIComponentStore(componentType);
+                if (store != null && store.HasComponent(entityId))
+                    store.RemoveComponent(entityId);
+            }
+        }
+
+        using (var ms = new MemoryStream(deletedEntities))
+        using (var reader = new BinaryReader(ms))
+        {
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                ulong entityId = reader.ReadUInt64();
+                if (ecs.HasEntity(entityId))
+                    ecs.DeleteEntity(entityId);
+            }
+        }
+
+        using (var ms = new MemoryStream(componentsDelta))
+        using (var reader = new BinaryReader(ms))
+        {
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                ulong entityId = reader.ReadUInt64();
+                ushort typeId = reader.ReadUInt16();
+                ushort dataLen = reader.ReadUInt16();
+                byte[] data = reader.ReadBytes(dataLen);
+                Type componentType = _componentTypeRegistry.GetTypeForID(typeId);
+                IComponentStore store = ecs.GetIComponentStore(componentType);
+                store?.ApplyComponentData(entityId, data);
+            }
+        }
+    }
 }

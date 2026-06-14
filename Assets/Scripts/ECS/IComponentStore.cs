@@ -11,4 +11,6 @@ public interface IComponentStore
     ulong IndexToId(uint index);
 
     byte[] GetComponentData(ulong entityId);
+    void ApplyComponentData(ulong entityId, byte[] data);
+    void RemoveComponent(ulong entityId);
 }

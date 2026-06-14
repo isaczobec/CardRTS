@@ -16,6 +16,24 @@ public static class InputBuffer
             head.inputs.Add(typeof(T), new());
         head.inputs[typeof(T)].Enqueue(input);
     }
+
+    public static Queue<T> GetInputs<T>(ulong tick) where T : InputBase
+    {
+        foreach (var store in _buffer)
+        {
+            if (store.tick == tick && store.inputs.ContainsKey(typeof(T)))
+                return store.inputs[typeof(T)] as Queue<T>;
+        }
+        return null;
+    }
+
+    public static Queue<T> GetHeadInputs<T>() where T : InputBase
+    {
+        TickInputStore head = _buffer.Peek();
+        if (head.inputs.ContainsKey(typeof(T)))
+            return head.inputs[typeof(T)] as Queue<T>;
+        return null;
+    }
 }
 
 public class TickInputStore

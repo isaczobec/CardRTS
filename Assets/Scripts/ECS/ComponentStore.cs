@@ -87,4 +87,27 @@ public class ComponentStore<T> : IComponentStore where T : struct, IComponent
         return data;
     }
 
+    public void ApplyComponentData(ulong entityId, byte[] data)
+    {
+        int size = Marshal.SizeOf<T>();
+        IntPtr ptr = Marshal.AllocHGlobal(size);
+        T component;
+        try
+        {
+            Marshal.Copy(data, 0, ptr, size);
+            component = Marshal.PtrToStructure<T>(ptr);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
+        }
+
+        if (HasComponent(entityId))
+            _components.GetRef(_idsToComponents[entityId]) = component;
+        else
+            AddComponent(entityId, component);
+    }
+
+    void IComponentStore.RemoveComponent(ulong entityId) => RemoveComponent(entityId);
+
 }

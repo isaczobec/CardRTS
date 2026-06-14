@@ -93,6 +93,15 @@ public class ECS
         return new EntityHandle(id);
     }
 
+    public bool HasEntity(ulong entityId) => _entityIdsToIndicies.ContainsKey(entityId);
+
+    public void CreateEntityWithId(ulong id)
+    {
+        var addRes = _entities.Add(new EntityData(id));
+        _entityIdsToIndicies[id] = (int)addRes.addedIndex;
+        FlagEvents.Add<EntityCreatedEvent>();
+    }
+
     public void DeleteEntity(ulong entityId)
     {
         if (!_entityIdsToIndicies.ContainsKey(entityId))
