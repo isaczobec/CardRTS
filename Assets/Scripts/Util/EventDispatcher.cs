@@ -26,6 +26,8 @@ public class EventDispatcher<TBase>
         _wrapperMap.Remove(callback);
     }
 
+    public IReadOnlyList<TBase> Pending => _pending;
+
     public void Raise(TBase evt) => _pending.Add(evt);
 
     public void Flush()

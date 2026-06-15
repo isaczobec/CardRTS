@@ -11,8 +11,16 @@ public class TickManager : Singleton<TickManager>
     public ECS ClientServerMirrorECS { get; private set; }
 
     public FlagEventManager FlagEvents => ECS.FlagEvents;
+    // Receives deserialized server flag events on clients. Subscribe here to react to server-side events.
+    public FlagEventManager ServerFlagEvents { get; } = new FlagEventManager();
+    // Serialized flag events from the last server tick, bundled into the outgoing SimulationDelta.
+    public byte[] LastTickFlagEvents { get; private set; } = Array.Empty<byte>();
+
     private TypeRegistry<IComponent> _componentTypeRegistry;
     public TypeRegistry<IComponent> ComponentTypeRegistry => _componentTypeRegistry;
+
+    private readonly TypeRegistry<FlagEvent> _flagEventTypeRegistry = new();
+    public TypeRegistry<FlagEvent> FlagEventTypeRegistry => _flagEventTypeRegistry;
 
     public const float TickInterval = 0.1f;
     private ulong _tick;
@@ -35,6 +43,10 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry = new TypeRegistry<IComponent>();
         _componentTypeRegistry.Register<PositionComponent>(0);
         _componentTypeRegistry.Register<RandomWalkComponent>(1);
+
+        _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RandomWalkComponent>>(2);
 
         ECS = CreateSimulationECS();
     }
@@ -67,6 +79,9 @@ public class TickManager : Singleton<TickManager>
         if (!isPureClient)
         {
             ECS.ExecuteSystems();
+            LastTickFlagEvents = isServer
+                ? ECS.FlagEvents.SerializePending(_flagEventTypeRegistry)
+                : Array.Empty<byte>();
             ECS.FlagEvents.Flush();
         }
 

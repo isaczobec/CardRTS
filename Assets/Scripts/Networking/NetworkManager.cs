@@ -86,7 +86,7 @@ public class NetworkManager : Singleton<NetworkManager>
     void OnAfterTick()
     {
         if (!IsServer || !GameStarted) return;
-        SendToAll(BuildSimulationDeltaMessage(TickManager.instance.Tick, TickManager.instance.ECS));
+        SendToAll(BuildSimulationDeltaMessage(TickManager.instance.Tick, TickManager.instance.ECS, TickManager.instance.LastTickFlagEvents));
     }
 
     // Called by MessageConsumer when a GameStart message is received on a client.
@@ -137,14 +137,19 @@ public class NetworkManager : Singleton<NetworkManager>
 
         using var ms = new MemoryStream(data, 1, data.Length - 1);
         using var reader = new BinaryReader(ms);
-        ulong serverTick = reader.ReadUInt64();
-        double serverTime = reader.ReadDouble();
+        ulong serverTick   = reader.ReadUInt64();
+        double serverTime  = reader.ReadDouble();
+        byte[] flagEvents  = reader.ReadBytes(reader.ReadInt32());
         byte[] created     = reader.ReadBytes(reader.ReadInt32());
         byte[] deleted     = reader.ReadBytes(reader.ReadInt32());
         byte[] deletedComp = reader.ReadBytes(reader.ReadInt32());
         byte[] compDelta   = reader.ReadBytes(reader.ReadInt32());
 
         _clientDeltaManager.ApplyDelta(TickManager.instance.ClientServerMirrorECS, created, deleted, deletedComp, compDelta);
+
+        TickManager.instance.ServerFlagEvents.AddFromBytes(flagEvents, TickManager.instance.FlagEventTypeRegistry);
+        TickManager.instance.ServerFlagEvents.Flush();
+
         AdjustClientTickRate(serverTick, serverTime);
     }
 
@@ -182,13 +187,14 @@ public class NetworkManager : Singleton<NetworkManager>
         return ms.ToArray();
     }
 
-    static byte[] BuildSimulationDeltaMessage(ulong tick, ECS ecs)
+    static byte[] BuildSimulationDeltaMessage(ulong tick, ECS ecs, byte[] flagEvents)
     {
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
         writer.Write((byte)MessageType.SimulationDelta);
         writer.Write(tick);
         writer.Write(Time.timeAsDouble);
+        WriteLengthPrefixed(writer, flagEvents);
         WriteDeltaStreams(writer, ecs);
         return ms.ToArray();
     }
