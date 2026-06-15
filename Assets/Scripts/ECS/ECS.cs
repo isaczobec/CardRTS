@@ -13,7 +13,7 @@ public class ECS
     private Dictionary<ulong, int> _entityIdsToIndicies;
     private List<ISystem> _systems = new();
     private ComponentDeltaManager _deltaManager;
-    private ComponentDeltaManager Delta => _deltaManager; 
+    public ComponentDeltaManager Delta => _deltaManager;
 
     public ECS()
     {

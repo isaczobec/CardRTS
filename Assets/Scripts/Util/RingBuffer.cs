@@ -7,6 +7,7 @@ public class RingBuffer<T> : IEnumerable<T>
     private readonly T[] _buffer;
     private int _head;  // oldest item
     private int _tail;  // next write position
+    public int TailIndex => _tail;
     private int _count;
 
     public int Count    => _count;
@@ -43,6 +44,13 @@ public class RingBuffer<T> : IEnumerable<T>
     {
         if (IsEmpty) throw new InvalidOperationException("RingBuffer is empty.");
         return _buffer[_head];
+    }
+
+    public T PeekTail()
+    {
+        if (IsEmpty) throw new InvalidOperationException("RingBuffer is empty.");
+        int tailIndex = (_tail - 1 + _buffer.Length) % _buffer.Length;
+        return _buffer[tailIndex];
     }
 
     // index 0 = oldest item
