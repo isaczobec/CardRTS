@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TickManager : Singleton<TickManager>
@@ -11,6 +12,10 @@ public class TickManager : Singleton<TickManager>
     public ECS ClientServerMirrorECS { get; private set; }
 
     public FlagEventManager FlagEvents => ECS.FlagEvents;
+    // Pure clients use ClientLocalECS; server/standalone use ECS.
+    public ECS ActiveECS => (NetworkManager.instance != null && NetworkManager.instance.IsClient && !NetworkManager.instance.IsServer)
+        ? ClientLocalECS
+        : ECS;
     // Receives deserialized server flag events on clients. Subscribe here to react to server-side events.
     public FlagEventManager ServerFlagEvents { get; } = new FlagEventManager();
     // Serialized flag events from the last server tick, bundled into the outgoing SimulationDelta.
@@ -35,6 +40,35 @@ public class TickManager : Singleton<TickManager>
     public void SetTickRateScale(float scale) =>
         _tickRateScale = Mathf.Clamp(scale, 0.5f, 2f);
 
+    // Client-side delta manager — applies incoming server deltas to ClientServerMirrorECS.
+    private ComponentDeltaManager _clientDeltaManager;
+
+    private struct PendingDelta
+    {
+        public ulong ServerTick;
+        public byte[] FlagEvents;
+        public byte[] Created;
+        public byte[] Deleted;
+        public byte[] DeletedComp;
+        public byte[] CompDelta;
+    }
+
+    private readonly Queue<PendingDelta> _pendingDeltas = new();
+
+    public void SetPendingServerDelta(ulong serverTick, byte[] flagEvents,
+        byte[] created, byte[] deleted, byte[] deletedComp, byte[] compDelta)
+    {
+        _pendingDeltas.Enqueue(new PendingDelta
+        {
+            ServerTick   = serverTick,
+            FlagEvents   = flagEvents,
+            Created      = created,
+            Deleted      = deleted,
+            DeletedComp  = deletedComp,
+            CompDelta    = compDelta,
+        });
+    }
+
     protected override void Awake()
     {
         base.Awake();
@@ -48,6 +82,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RandomWalkComponent>>(2);
 
+        _flagEventTypeRegistry.Register<PositionUpdatedEvent>(3);
+
         ECS = CreateSimulationECS();
     }
 
@@ -56,6 +92,7 @@ public class TickManager : Singleton<TickManager>
     {
         ClientLocalECS = CreateSimulationECS();
         ClientServerMirrorECS = CreateMirrorECS();
+        _clientDeltaManager = new ComponentDeltaManager(ClientServerMirrorECS, _componentTypeRegistry);
     }
 
     public void StartGame() => _gameStarted = true;
@@ -78,6 +115,7 @@ public class TickManager : Singleton<TickManager>
 
         if (!isPureClient)
         {
+            ECS.CurrentSimulationTick = _tick;
             ECS.ExecuteSystems();
             LastTickFlagEvents = isServer
                 ? ECS.FlagEvents.SerializePending(_flagEventTypeRegistry)
@@ -87,6 +125,35 @@ public class TickManager : Singleton<TickManager>
 
         if (isPureClient && ClientLocalECS != null)
         {
+            // Reconciliation: apply all queued server deltas, then resimulate from the oldest.
+            if (_pendingDeltas.Count > 0)
+            {
+                ulong oldestServerTick = ulong.MaxValue;
+
+                while (_pendingDeltas.TryDequeue(out PendingDelta delta))
+                {
+                    _clientDeltaManager.ApplyDelta(ClientServerMirrorECS,
+                        delta.Created, delta.Deleted, delta.DeletedComp, delta.CompDelta);
+                    ServerFlagEvents.AddFromBytes(delta.FlagEvents, _flagEventTypeRegistry);
+                    if (delta.ServerTick < oldestServerTick)
+                        oldestServerTick = delta.ServerTick;
+                }
+
+                ClientLocalECS.CopyStateFrom(ClientServerMirrorECS);
+                ServerFlagEvents.Flush();
+
+                // Replay all client ticks that occurred after the oldest applied server tick.
+                ulong ticksToReplay = _tick > oldestServerTick ? _tick - oldestServerTick : 0;
+                for (ulong i = 0; i < ticksToReplay; i++)
+                {
+                    ClientLocalECS.CurrentSimulationTick = oldestServerTick + i;
+                    ClientLocalECS.ExecuteSystems();
+                    ClientLocalECS.FlagEvents.Flush();
+                }
+            }
+
+            // Normal tick.
+            ClientLocalECS.CurrentSimulationTick = _tick;
             ClientLocalECS.ExecuteSystems();
             ClientLocalECS.FlagEvents.Flush();
         }
@@ -101,6 +168,7 @@ public class TickManager : Singleton<TickManager>
         var ecs = new ECS();
         ecs.AddComponentStore(new ComponentStore<PositionComponent>());
         ecs.AddComponentStore(new ComponentStore<RandomWalkComponent>());
+        ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(RandomWalkSystem.Instance);
         return ecs;
     }

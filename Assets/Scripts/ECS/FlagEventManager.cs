@@ -57,6 +57,7 @@ public class FlagEventManager
     // Deserializes events from bytes and adds them to the pending queue. Call Flush() afterwards to dispatch.
     public void AddFromBytes(byte[] data, TypeRegistry<FlagEvent> registry)
     {
+        if (data == null || data.Length == 0) return;
         using var ms = new MemoryStream(data);
         using var reader = new BinaryReader(ms);
 

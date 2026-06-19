@@ -110,4 +110,10 @@ public class ComponentStore<T> : IComponentStore where T : struct, IComponent
 
     void IComponentStore.RemoveComponent(ulong entityId) => RemoveComponent(entityId);
 
+    public void Clear()
+    {
+        _components.Clear();
+        _idsToComponents.Clear();
+        _componentsToIds.Clear();
+    }
 }

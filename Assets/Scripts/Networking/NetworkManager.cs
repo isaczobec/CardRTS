@@ -17,8 +17,6 @@ public class NetworkManager : Singleton<NetworkManager>
     private int _readyClientCount = 0;
     public bool GameStarted { get; private set; } = false;
 
-    private ComponentDeltaManager _clientDeltaManager;
-
     protected override void Awake()
     {
         base.Awake();
@@ -95,10 +93,9 @@ public class NetworkManager : Singleton<NetworkManager>
         if (!IsServer)
         {
             TickManager.instance.SetupClientECS();
-            _clientDeltaManager = new ComponentDeltaManager(TickManager.instance.ClientServerMirrorECS, TickManager.instance.ComponentTypeRegistry);
 
             var (created, deleted, deletedComp, compDelta) = ReadDeltaStreams(data, 1);
-            _clientDeltaManager.ApplyDelta(TickManager.instance.ClientServerMirrorECS, created, deleted, deletedComp, compDelta);
+            TickManager.instance.SetPendingServerDelta(0, System.Array.Empty<byte>(), created, deleted, deletedComp, compDelta);
 
             DevConsole.LogInfo("[Net] GameStart received. Local and server mirror ECS ready.");
         }
@@ -130,10 +127,10 @@ public class NetworkManager : Singleton<NetworkManager>
     }
 
     // Called by MessageConsumer when a SimulationDelta arrives on a client.
-    // Wire layout: [type:byte][tick:ulong][serverTime:double][...delta streams...]
+    // Wire layout: [type:byte][tick:ulong][serverTime:double][flagEventsLen:int][flagEvents][4x delta streams]
     public void OnSimulationDelta(byte[] data)
     {
-        if (TickManager.instance.ClientServerMirrorECS == null || _clientDeltaManager == null) return;
+        if (TickManager.instance.ClientServerMirrorECS == null) return;
 
         using var ms = new MemoryStream(data, 1, data.Length - 1);
         using var reader = new BinaryReader(ms);
@@ -145,11 +142,7 @@ public class NetworkManager : Singleton<NetworkManager>
         byte[] deletedComp = reader.ReadBytes(reader.ReadInt32());
         byte[] compDelta   = reader.ReadBytes(reader.ReadInt32());
 
-        _clientDeltaManager.ApplyDelta(TickManager.instance.ClientServerMirrorECS, created, deleted, deletedComp, compDelta);
-
-        TickManager.instance.ServerFlagEvents.AddFromBytes(flagEvents, TickManager.instance.FlagEventTypeRegistry);
-        TickManager.instance.ServerFlagEvents.Flush();
-
+        TickManager.instance.SetPendingServerDelta(serverTick, flagEvents, created, deleted, deletedComp, compDelta);
         AdjustClientTickRate(serverTick, serverTime);
     }
 

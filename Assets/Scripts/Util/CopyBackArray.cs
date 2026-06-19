@@ -79,6 +79,8 @@ public class CopyBackArray<T> : IEnumerable<T> where T : struct
     }
     public ref T GetRef(uint index) => ref _buffer[index];
 
+    public void Clear() => _size = 0;
+
     public IEnumerator<T> GetEnumerator()
     {
         for (uint i = 0; i < _size; i++)

@@ -35,7 +35,7 @@ public class MultipleComponentSystem : ISystem
                 if (!stores[i].HasComponent(id)) return;
                 indices[i] = stores[i].IdToIndex(id);
             }
-            _function(indices, ecs, ecs.FlagEvents);
+            _function(id, indices, ecs, ecs.FlagEvents);
         });
     }
 }

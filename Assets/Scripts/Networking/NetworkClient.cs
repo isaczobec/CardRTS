@@ -70,6 +70,10 @@ public class NetworkClient
 
     public void Dispose()
     {
-        if (_driver.IsCreated) _driver.Dispose();
+        if (_driver.IsCreated)
+        {
+            _driver.ScheduleUpdate().Complete();
+            _driver.Dispose();
+        }
     }
 }

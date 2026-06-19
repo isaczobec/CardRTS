@@ -13,4 +13,5 @@ public interface IComponentStore
     byte[] GetComponentData(ulong entityId);
     void ApplyComponentData(ulong entityId, byte[] data);
     void RemoveComponent(ulong entityId);
+    void Clear();
 }

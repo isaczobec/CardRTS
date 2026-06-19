@@ -9,7 +9,7 @@ public static class RandomWalkSystem
 
     private const float WalkBounds = 50f;
 
-    private static void Execute(uint[] indices, ECS ecs, FlagEventManager flagEvents)
+    private static void Execute(ulong entityId, uint[] indices, ECS ecs, FlagEventManager flagEvents)
     {
         ref var pos  = ref ecs.GetComponentStore<PositionComponent>().GetComponentByIndex(indices[0]);
         ref var walk = ref ecs.GetComponentStore<RandomWalkComponent>().GetComponentByIndex(indices[1]);
@@ -20,8 +20,9 @@ public static class RandomWalkSystem
 
         if (dist <= walk.ArrivalRadius)
         {
-            walk.TargetX = Random.Range(-WalkBounds, WalkBounds);
-            walk.TargetY = Random.Range(-WalkBounds, WalkBounds);
+            walk.TargetX = NextFloat(ref walk.Seed, -WalkBounds, WalkBounds);
+            walk.TargetY = NextFloat(ref walk.Seed, -WalkBounds, WalkBounds);
+            ecs.Delta.MarkComponentDirty(entityId, typeof(RandomWalkComponent));
         }
         else
         {
@@ -31,6 +32,16 @@ public static class RandomWalkSystem
             pos.X += dx / dist * step;
             pos.Y += dy / dist * step;
             flagEvents.Add<PositionUpdatedEvent>();
+            ecs.Delta.MarkComponentDirty(entityId, typeof(PositionComponent));
         }
+    }
+
+    // Xorshift32 — period 2^32-1, never produces 0 from a non-zero seed.
+    private static float NextFloat(ref uint seed, float min, float max)
+    {
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
+        return min + (seed / (float)uint.MaxValue) * (max - min);
     }
 }

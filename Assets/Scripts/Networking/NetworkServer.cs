@@ -88,7 +88,11 @@ public class NetworkServer
 
     public void Dispose()
     {
-        if (_driver.IsCreated) _driver.Dispose();
+        if (_driver.IsCreated)
+        {
+            _driver.ScheduleUpdate().Complete();
+            _driver.Dispose();
+        }
         if (_connections.IsCreated) _connections.Dispose();
     }
 }

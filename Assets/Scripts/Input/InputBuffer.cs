@@ -1,20 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public static class InputBuffer
 {
-    public const int INPUTBUFFER_CAPCITY = 1 << 10; 
-    private static RingBuffer<TickInputStore> _buffer;
+    public const int INPUTBUFFER_CAPCITY = 1 << 10;
+    private static readonly RingBuffer<TickInputStore> _buffer = new(INPUTBUFFER_CAPCITY);
 
     public static void EnqueueInput<T>(T input) where T : InputBase
     {
-        TickInputStore head = _buffer.PeekTail();
         ulong currentTick = TickManager.instance.Tick;
-        if (head.tick != currentTick)
-            _buffer.Enqueue(new TickInputStore() { tick = currentTick, inputs = new() });
-        if (!head.inputs.ContainsKey(typeof(T)))
-            head.inputs.Add(typeof(T), new());
-        head.inputs[typeof(T)].Add(input);
+        if (_buffer.IsEmpty || _buffer.PeekTail().tick != currentTick)
+            _buffer.Enqueue(new TickInputStore { tick = currentTick, inputs = new() });
+        TickInputStore store = _buffer.PeekTail();
+        if (!store.inputs.ContainsKey(typeof(T)))
+            store.inputs[typeof(T)] = new List<InputBase>();
+        store.inputs[typeof(T)].Add(input);
     }
 
     public static List<T> GetInputsForTick<T>(ulong tick) where T : InputBase
@@ -27,7 +28,7 @@ public static class InputBuffer
             if (store.tick == tick)
             {
                 if (store.inputs.ContainsKey(typeof(T)))
-                    return store.inputs[typeof(T)] as List<T>;
+                    return store.inputs[typeof(T)].Cast<T>().ToList();
                 return null;
             }
         }
@@ -38,7 +39,7 @@ public static class InputBuffer
     {
         TickInputStore head = _buffer.Peek();
         if (head.inputs.ContainsKey(typeof(T)))
-            return head.inputs[typeof(T)] as List<T>;
+            return head.inputs[typeof(T)].Cast<T>().ToList();
         return null;
     }
 

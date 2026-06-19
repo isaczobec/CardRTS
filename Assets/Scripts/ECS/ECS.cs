@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 public class ECS
 {
     public static readonly uint ENTITIES_CAPACITY = 1048576;
 
     public FlagEventManager FlagEvents { get; } = new FlagEventManager();
+
+    // Set by TickManager before each ExecuteSystems() call so systems can query inputs for the right tick.
+    public ulong CurrentSimulationTick { get; set; }
 
     private Dictionary<Type, IComponentStore> _componentStores = new();
     private CopyBackArray<EntityData> _entities;
@@ -131,5 +133,38 @@ public class ECS
     {
         foreach (var system in _systems)
             system.Execute(this);
+    }
+
+    // Returns inputs of type T for the given tick, or CurrentSimulationTick if omitted.
+    public List<T> GetInputsForTick<T>(ulong? tick = null) where T : InputBase
+        => InputBuffer.GetInputsForTick<T>(tick ?? CurrentSimulationTick);
+
+    // Resets all entity and component state. Delta buffers are unaffected (harmless on local ECS).
+    public void Clear()
+    {
+        foreach (var store in _componentStores.Values)
+            store.Clear();
+        _entities.Clear();
+        _entityIdsToIndicies.Clear();
+    }
+
+    // Replaces this ECS's state with a full copy of source. Used for reconciliation (mirror → local).
+    public void CopyStateFrom(ECS source)
+    {
+        Clear();
+
+        foreach (ulong id in source._entityIdsToIndicies.Keys)
+            CreateEntityWithId(id);
+
+        foreach (var pair in source._componentStores)
+        {
+            IComponentStore targetStore = GetIComponentStore(pair.Key);
+            if (targetStore == null) continue;
+            pair.Value.ForEach(entityId =>
+            {
+                byte[] data = pair.Value.GetComponentData(entityId);
+                targetStore.ApplyComponentData(entityId, data);
+            });
+        }
     }
 }
