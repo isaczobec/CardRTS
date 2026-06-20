@@ -44,6 +44,10 @@ public class MessageConsumer : MonoBehaviour
                     if (NetworkManager.instance.IsServer)
                         NetworkManager.instance.OnClientInput(msg);
                     break;
+                case MessageType.ClientTickInput:
+                    if (NetworkManager.instance.IsServer)
+                        NetworkManager.instance.OnClientTickInput(msg);
+                    break;
                 default:
                     DevConsole.LogWarning($"[Net] Unhandled message type: {(byte)type}");
                     break;

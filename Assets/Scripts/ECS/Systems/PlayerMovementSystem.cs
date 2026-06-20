@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public static class PlayerMovementSystem
 {
@@ -25,8 +26,6 @@ public static class PlayerMovementSystem
                 if (input.ClientId != player.PlayerId) continue;
 
                 ref PositionComponent pos = ref posStore.GetComponent(entityId);
-                pos.PrevX = pos.X;
-                pos.PrevY = pos.Y;
                 pos.X += input.DirX * Speed * TickManager.TickInterval;
                 pos.Y += input.DirY * Speed * TickManager.TickInterval;
                 ecs.Delta.MarkComponentDirty(entityId, typeof(PositionComponent));

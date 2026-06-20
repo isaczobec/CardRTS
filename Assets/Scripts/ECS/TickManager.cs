@@ -6,17 +6,15 @@ public class TickManager : Singleton<TickManager>
 {
     // Authoritative simulation — ticked on server and standalone.
     public ECS ECS { get; private set; }
-    // Local prediction ECS — ticked on pure clients.
+    // Local prediction ECS — ticked on clients and host.
     public ECS ClientLocalECS { get; private set; }
     // Mirror of server state — updated only via incoming deltas, never ticked.
     public ECS ClientServerMirrorECS { get; private set; }
 
     public FlagEventManager FlagEvents => ECS.FlagEvents;
-    // Pure clients use ClientLocalECS; server/standalone use ECS.
-    public ECS ActiveECS => (NetworkManager.instance != null && NetworkManager.instance.IsClient && !NetworkManager.instance.IsServer)
-        ? ClientLocalECS
-        : ECS;
-    // Receives deserialized server flag events on clients. Subscribe here to react to server-side events.
+    // Clients and host use ClientLocalECS for visuals; server/standalone fall back to ECS.
+    public ECS ActiveECS => ClientLocalECS ?? ECS;
+    // Receives deserialized server flag events on clients/host.
     public FlagEventManager ServerFlagEvents { get; } = new FlagEventManager();
     // Serialized flag events from the last server tick, bundled into the outgoing SimulationDelta.
     public byte[] LastTickFlagEvents { get; private set; } = Array.Empty<byte>();
@@ -31,19 +29,24 @@ public class TickManager : Singleton<TickManager>
     public TypeRegistry<InputBase> InputTypeRegistry => _inputTypeRegistry;
 
     public const float TickInterval = 0.1f;
-    private ulong _tick;
-    public ulong Tick => _tick;
+
+    private ulong _tick;       // prediction tick — timer-driven, used by ClientLocalECS and clients
+    private ulong _serverTick; // authoritative tick — lockstep-driven, used by server ECS
+
+    public ulong Tick       => _tick;
+    public ulong ServerTick => _serverTick;
     public float TimeSinceLastTick => _timer;
+
     private float _timer;
     private bool _gameStarted = false;
-    public Action AfterTick;
-    private float _tickRateScale = 1f;
 
-    // scale > 1 ticks faster, scale < 1 ticks slower. Clamped to [0.5, 2].
+    // Fires after each authoritative server tick (and after standalone ticks).
+    public Action AfterServerTick;
+
+    private float _tickRateScale = 1f;
     public void SetTickRateScale(float scale) =>
         _tickRateScale = Mathf.Clamp(scale, 0.5f, 2f);
 
-    // Client-side delta manager — applies incoming server deltas to ClientServerMirrorECS.
     private ComponentDeltaManager _clientDeltaManager;
 
     private struct PendingDelta
@@ -54,21 +57,43 @@ public class TickManager : Singleton<TickManager>
         public byte[] Deleted;
         public byte[] DeletedComp;
         public byte[] CompDelta;
+        // When true the mirror was already copied directly; skip ApplyDelta.
+        public bool IsDirect;
     }
 
     private readonly Queue<PendingDelta> _pendingDeltas = new();
 
+    // Used by pure clients receiving SimulationDelta messages over the network.
     public void SetPendingServerDelta(ulong serverTick, byte[] flagEvents,
         byte[] created, byte[] deleted, byte[] deletedComp, byte[] compDelta)
     {
         _pendingDeltas.Enqueue(new PendingDelta
         {
-            ServerTick   = serverTick,
-            FlagEvents   = flagEvents,
-            Created      = created,
-            Deleted      = deleted,
-            DeletedComp  = deletedComp,
-            CompDelta    = compDelta,
+            ServerTick  = serverTick,
+            FlagEvents  = flagEvents,
+            Created     = created,
+            Deleted     = deleted,
+            DeletedComp = deletedComp,
+            CompDelta   = compDelta,
+            IsDirect    = false,
+        });
+    }
+
+    // Used by the host after each authoritative tick.
+    // Copies ECS state directly into the mirror and queues a reconcile trigger.
+    public void SetPendingServerStateDirectly(ulong serverTick)
+    {
+        if (ClientServerMirrorECS == null || ClientLocalECS == null) return;
+        ClientServerMirrorECS.CopyStateFrom(ECS);
+        _pendingDeltas.Enqueue(new PendingDelta
+        {
+            ServerTick  = serverTick,
+            FlagEvents  = LastTickFlagEvents,
+            IsDirect    = true,
+            Created     = Array.Empty<byte>(),
+            Deleted     = Array.Empty<byte>(),
+            DeletedComp = Array.Empty<byte>(),
+            CompDelta   = Array.Empty<byte>(),
         });
     }
 
@@ -76,6 +101,7 @@ public class TickManager : Singleton<TickManager>
     {
         base.Awake();
         _tick = 0;
+        _serverTick = 0;
 
         _componentTypeRegistry = new TypeRegistry<IComponent>();
         _componentTypeRegistry.Register<PositionComponent>(0);
@@ -89,13 +115,13 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RandomWalkComponent>>(2);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerComponent>>(4);
-
         _flagEventTypeRegistry.Register<PositionUpdatedEvent>(3);
 
         ECS = CreateSimulationECS();
     }
 
     // Called on a client when GameStart is received — before the game begins ticking.
+    // Also called on the host from NetworkManager before StartGame().
     public void SetupClientECS()
     {
         ClientLocalECS = CreateSimulationECS();
@@ -108,69 +134,120 @@ public class TickManager : Singleton<TickManager>
     void Update()
     {
         if (!_gameStarted) return;
-        _timer += Time.deltaTime;
-        float effectiveInterval = TickInterval / _tickRateScale;
-        if (_timer < effectiveInterval) return;
-        _timer -= effectiveInterval;
-        DoTick();
-    }
 
-    void DoTick()
-    {
         bool isServer = NetworkManager.instance != null && NetworkManager.instance.IsServer;
         bool isClient = NetworkManager.instance != null && NetworkManager.instance.IsClient;
-        bool isPureClient = isClient && !isServer;
 
-        if (!isPureClient)
+        // Prediction tick — fires on timer for all clients and the host.
+        // Also handles standalone (no networking) directly through the ECS.
+        _timer += Time.deltaTime;
+        float effectiveInterval = TickInterval / _tickRateScale;
+        if (_timer >= effectiveInterval)
+        {
+            _timer -= effectiveInterval;
+            DoPredictionTick(isServer, isClient);
+        }
+
+        // Server (authoritative) tick — driven by lockstep: fires as soon as all
+        // connected clients (and the host) have sent their inputs for _serverTick.
+        // NOTE: for best results set this script to execute AFTER NetworkManager
+        // and MessageConsumer in Unity's Script Execution Order settings so that
+        // incoming ClientTickInput messages are processed before TryRunServerTick.
+        if (isServer)
+            TryRunServerTick();
+    }
+
+    void DoPredictionTick(bool isServer, bool isClient)
+    {
+        bool isPureClient = isClient && !isServer;
+        bool isStandalone = !isServer && !isClient;
+
+        // Standalone path: run ECS directly with no prediction.
+        if (isStandalone)
         {
             ECS.CurrentSimulationTick = _tick;
             ECS.ExecuteSystems();
-            LastTickFlagEvents = isServer
-                ? ECS.FlagEvents.SerializePending(_flagEventTypeRegistry)
-                : Array.Empty<byte>();
+            LastTickFlagEvents = Array.Empty<byte>();
             ECS.FlagEvents.Flush();
+            _serverTick = _tick;
+            _tick++;
+            AfterServerTick?.Invoke();
+            return;
         }
 
-        if (isPureClient && ClientLocalECS != null)
+        // Prediction for clients and host.
+        if (ClientLocalECS != null)
         {
-            // Reconciliation: apply all queued server deltas, then resimulate from the oldest.
             if (_pendingDeltas.Count > 0)
-            {
-                ulong oldestServerTick = ulong.MaxValue;
+                RunReconciliation();
 
-                while (_pendingDeltas.TryDequeue(out PendingDelta delta))
-                {
-                    _clientDeltaManager.ApplyDelta(ClientServerMirrorECS,
-                        delta.Created, delta.Deleted, delta.DeletedComp, delta.CompDelta);
-                    ServerFlagEvents.AddFromBytes(delta.FlagEvents, _flagEventTypeRegistry);
-                    if (delta.ServerTick < oldestServerTick)
-                        oldestServerTick = delta.ServerTick;
-                }
-
-                ClientLocalECS.CopyStateFrom(ClientServerMirrorECS);
-                ServerFlagEvents.Flush();
-
-                // Replay all client ticks that occurred after the oldest applied server tick.
-                ulong ticksToReplay = _tick > oldestServerTick ? _tick - oldestServerTick : 0;
-                for (ulong i = 0; i < ticksToReplay; i++)
-                {
-                    ClientLocalECS.CurrentSimulationTick = oldestServerTick + i;
-                    ClientLocalECS.ExecuteSystems();
-                    ClientLocalECS.FlagEvents.Flush();
-                }
-            }
-
-            // Normal tick.
             ClientLocalECS.CurrentSimulationTick = _tick;
             ClientLocalECS.ExecuteSystems();
             ClientLocalECS.FlagEvents.Flush();
+
+            // Guarantee an InputBuffer entry so the server can attach remote inputs later.
+            InputBuffer.EnsureTickEntry(_tick);
         }
 
+        if (isPureClient)
+            NetworkManager.instance?.SendClientTickInput(_tick);
+        else if (isServer && ClientLocalECS != null)
+            NetworkManager.instance?.NotifyHostTickReady(_tick);
+
         _tick++;
-        AfterTick?.Invoke();
     }
 
-    // Simulation ECS: component stores + systems. Used for server ECS and client local prediction.
+    // Called every frame for the server. Runs as many authoritative ticks as
+    // possible given what all clients have sent (lockstep).
+    void TryRunServerTick()
+    {
+        const int maxCatchup = 20;
+        int ran = 0;
+        while (ran++ < maxCatchup && NetworkManager.instance.IsAllClientsReadyForTick(_serverTick))
+        {
+            NetworkManager.instance.ApplyClientInputsForTick(_serverTick);
+
+            ECS.CurrentSimulationTick = _serverTick;
+            ECS.ExecuteSystems();
+            LastTickFlagEvents = ECS.FlagEvents.SerializePending(_flagEventTypeRegistry);
+            ECS.FlagEvents.Flush();
+
+            _serverTick++;
+            AfterServerTick?.Invoke();
+
+            // Queue reconciliation for the host's prediction ECS.
+            if (ClientLocalECS != null)
+                SetPendingServerStateDirectly(_serverTick); // post-increment
+        }
+    }
+
+    void RunReconciliation()
+    {
+        ulong newestServerTick = 0;
+
+        while (_pendingDeltas.TryDequeue(out PendingDelta delta))
+        {
+            if (!delta.IsDirect)
+                _clientDeltaManager.ApplyDelta(ClientServerMirrorECS,
+                    delta.Created, delta.Deleted, delta.DeletedComp, delta.CompDelta);
+            // IsDirect: mirror was already set by SetPendingServerStateDirectly; nothing to do.
+            ServerFlagEvents.AddFromBytes(delta.FlagEvents, _flagEventTypeRegistry);
+            if (delta.ServerTick > newestServerTick)
+                newestServerTick = delta.ServerTick;
+        }
+
+        ClientLocalECS.CopyStateFrom(ClientServerMirrorECS);
+        ServerFlagEvents.Flush();
+
+        ulong ticksToReplay = _tick > newestServerTick ? _tick - newestServerTick : 0;
+        for (ulong i = 0; i < ticksToReplay; i++)
+        {
+            ClientLocalECS.CurrentSimulationTick = newestServerTick + i;
+            ClientLocalECS.ExecuteSystems();
+            ClientLocalECS.FlagEvents.Flush();
+        }
+    }
+
     private ECS CreateSimulationECS()
     {
         var ecs = new ECS();
@@ -183,7 +260,6 @@ public class TickManager : Singleton<TickManager>
         return ecs;
     }
 
-    // Mirror ECS: component stores only. Receives deltas; never runs systems.
     private ECS CreateMirrorECS()
     {
         var ecs = new ECS();

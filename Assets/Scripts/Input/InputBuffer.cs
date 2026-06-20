@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 public static class InputBuffer
@@ -10,17 +11,12 @@ public static class InputBuffer
     public static void EnqueueInput<T>(T input) where T : InputBase
     {
         input.ClientId = NetworkManager.instance?.LocalPlayerId ?? 0;
-
-        bool isPureClient = NetworkManager.instance != null
-            && NetworkManager.instance.IsClient
-            && !NetworkManager.instance.IsServer;
-        if (isPureClient)
-            NetworkManager.instance.SendInputToServer(input);
-
+        // Inputs are batched and sent to the server once per prediction tick
+        // by TickManager, not immediately here.
         EnqueueRaw(input);
     }
 
-    // Enqueues a pre-constructed input (e.g. received from a remote client) at the current tick.
+    // Enqueues a pre-constructed input at the current tick.
     public static void EnqueueRaw(InputBase input)
     {
         ulong currentTick = TickManager.instance.Tick;
@@ -33,9 +29,83 @@ public static class InputBuffer
         store.inputs[type].Add(input);
     }
 
+    // Enqueues an input for a specific tick (used by the server to apply remote client inputs).
+    // Searches backward from the tail; if the tick entry doesn't exist yet, adds a new one.
+    public static void EnqueueForTick(InputBase input, ulong tick)
+    {
+        for (int i = 0; i < _buffer.Count; i++)
+        {
+            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            TickInputStore store = _buffer[index];
+            if (store.tick == tick)
+            {
+                Type type = input.GetType();
+                if (!store.inputs.ContainsKey(type))
+                    store.inputs[type] = new List<InputBase>();
+                store.inputs[type].Add(input);
+                return;
+            }
+            if (store.tick < tick) break;
+        }
+        // Tick not found; add a new entry at the tail (tick must be the next value).
+        if (_buffer.IsEmpty || _buffer.PeekTail().tick < tick)
+        {
+            _buffer.Enqueue(new TickInputStore { tick = tick, inputs = new() });
+            var newStore = _buffer.PeekTail();
+            Type type = input.GetType();
+            newStore.inputs[type] = new List<InputBase> { input };
+        }
+    }
+
+    // Guarantees a buffer entry exists for the given tick.
+    // Called after each prediction tick so server can later attach remote inputs.
+    public static void EnsureTickEntry(ulong tick)
+    {
+        for (int i = 0; i < _buffer.Count; i++)
+        {
+            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            if (_buffer[index].tick == tick) return;
+            if (_buffer[index].tick < tick) break;
+        }
+        if (_buffer.IsEmpty || _buffer.PeekTail().tick < tick)
+            _buffer.Enqueue(new TickInputStore { tick = tick, inputs = new() });
+    }
+
+    // Serializes all inputs stored for the given tick.
+    // Wire format: [count:int][typeId:ushort][dataLen:ushort][data]...
+    public static byte[] SerializeInputsForTick(ulong tick, TypeRegistry<InputBase> registry)
+    {
+        for (int i = 0; i < _buffer.Count; i++)
+        {
+            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            TickInputStore store = _buffer[index];
+            if (store.tick == tick)
+            {
+                using var ms = new MemoryStream();
+                using var writer = new BinaryWriter(ms);
+                int total = store.inputs.Values.Sum(list => list.Count);
+                writer.Write(total);
+                foreach (var (type, list) in store.inputs)
+                {
+                    ushort typeId = registry.GetIDForType(type);
+                    foreach (var inp in list)
+                    {
+                        byte[] data = inp.Serialize();
+                        writer.Write(typeId);
+                        writer.Write((ushort)data.Length);
+                        writer.Write(data);
+                    }
+                }
+                return ms.ToArray();
+            }
+            if (store.tick < tick) break;
+        }
+        // No inputs for this tick — return empty count.
+        return BitConverter.GetBytes(0);
+    }
+
     public static List<T> GetInputsForTick<T>(ulong tick) where T : InputBase
     {
-        // begin looking from the TailIndex
         for (int i = 0; i < _buffer.Count; i++)
         {
             int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
@@ -57,7 +127,6 @@ public static class InputBuffer
             return head.inputs[typeof(T)].Cast<T>().ToList();
         return null;
     }
-
 }
 
 public class TickInputStore

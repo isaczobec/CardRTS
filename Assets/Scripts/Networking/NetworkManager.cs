@@ -21,6 +21,12 @@ public class NetworkManager : Singleton<NetworkManager>
     private int _readyClientCount = 0;
     public bool GameStarted { get; private set; } = false;
 
+    // Pending inputs from remote clients, keyed by [tick][clientId].
+    private readonly Dictionary<ulong, Dictionary<ushort, List<InputBase>>> _pendingClientInputs = new();
+    // Last prediction tick signaled by the host; -1 means not yet started.
+    private long _hostReadyTick = -1;
+
+
     protected override void Awake()
     {
         base.Awake();
@@ -29,7 +35,7 @@ public class NetworkManager : Singleton<NetworkManager>
     void Start()
     {
         RegisterCommands();
-        TickManager.instance.AfterTick += OnAfterTick;
+        TickManager.instance.AfterServerTick += OnAfterServerTick;
     }
 
     void Update()
@@ -84,82 +90,70 @@ public class NetworkManager : Singleton<NetworkManager>
     public void SendToAll(byte[] data) => _server?.SendToAll(data);
     public void SendToServer(byte[] data) => _client?.Send(data);
 
-    // Called by TickManager.AfterTick — broadcasts the simulation delta to all clients after each tick.
-    void OnAfterTick()
+    // ── Lockstep: host and client readiness ──────────────────────────────────
+
+    // Called by the host's TickManager after each prediction tick.
+    public void NotifyHostTickReady(ulong predTick)
     {
-        if (!IsServer || !GameStarted) return;
-        SendToAll(BuildSimulationDeltaMessage(TickManager.instance.Tick, TickManager.instance.ECS, TickManager.instance.LastTickFlagEvents));
+        _hostReadyTick = (long)predTick;
     }
 
-    // Called by MessageConsumer when a GameStart message is received on a client.
-    public void OnGameStart(byte[] data)
+    // Returns true when all connected remote clients AND the host have submitted
+    // their inputs for the given server tick.
+    public bool IsAllClientsReadyForTick(ulong tick)
     {
-        if (!IsServer)
+        if (_server == null) return true; // standalone
+
+        foreach (ushort id in _server.ConnectedPlayerIds)
         {
-            TickManager.instance.SetupClientECS();
-
-            var (created, deleted, deletedComp, compDelta) = ReadDeltaStreams(data, 1);
-            TickManager.instance.SetPendingServerDelta(0, System.Array.Empty<byte>(), created, deleted, deletedComp, compDelta);
-
-            DevConsole.LogInfo("[Net] GameStart received. Local and server mirror ECS ready.");
+            if ((!_pendingClientInputs.TryGetValue(tick, out var byClient) ||
+                !byClient.ContainsKey(id))
+                && (!(NetworkManager.instance.IsServer && NetworkManager.instance.LocalPlayerId == id)))
+            {
+                return false;
+            }
         }
 
-        SendToServer(new byte[] { (byte)MessageType.ClientReady });
-        DevConsole.LogInfo("[Net] Sent ClientReady.");
+        // If the host has prediction set up, it must also have run at least this tick.
+        if (TickManager.instance.ClientLocalECS != null)
+            return _hostReadyTick >= (long)tick;
+
+        return true;
     }
 
-    // Called by MessageConsumer on the server when a ClientReady arrives.
-    public void NotifyClientReady()
+    // Moves buffered remote-client inputs for the given tick into InputBuffer.
+    public void ApplyClientInputsForTick(ulong tick)
     {
-        _readyClientCount++;
-        int total = _server.ConnectionCount;
-        DevConsole.LogInfo($"[Net] Client ready ({_readyClientCount}/{total}).");
-        if (_readyClientCount >= total && total > 0)
-        {
-            GameStarted = true;
-            SendToAll(new byte[] { (byte)MessageType.GameReady });
-            TickManager.instance.StartGame();
-            DevConsole.LogInfo("[Net] All clients ready. GameReady sent. Simulation started.");
-        }
+        if (!_pendingClientInputs.TryGetValue(tick, out var byClient)) return;
+        foreach (var kv in byClient)
+            foreach (var input in kv.Value)
+                InputBuffer.EnqueueForTick(input, tick);
+        _pendingClientInputs.Remove(tick);
     }
 
-    // Called by MessageConsumer when GameReady is received on a client.
-    public void OnGameReady()
-    {
-        TickManager.instance.StartGame();
-        DevConsole.LogInfo("[Net] GameReady received. Client simulation started.");
-    }
+    // ── Sending / receiving tick-input bundles ────────────────────────────────
 
-    // Called by MessageConsumer when PlayerIdAssigned is received on a client.
-    public void OnPlayerIdAssigned(ushort playerId)
+    // Called by TickManager on pure clients after each prediction tick.
+    public void SendClientTickInput(ulong tick)
     {
-        LocalPlayerId = playerId;
-        DevConsole.LogInfo($"[Net] Assigned player ID {playerId}.");
-    }
-
-    // Called by InputBuffer when a pure client enqueues an input, to forward it to the server.
-    public void SendInputToServer(InputBase input)
-    {
-        ushort typeId = TickManager.instance.InputTypeRegistry.GetIDForType(input.GetType());
-        byte[] inputData = input.Serialize();
+        byte[] inputBytes = InputBuffer.SerializeInputsForTick(tick, TickManager.instance.InputTypeRegistry);
 
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
-        writer.Write((byte)MessageType.ClientInput);
-        writer.Write(TickManager.instance.Tick);
-        writer.Write(typeId);
-        writer.Write((ushort)inputData.Length);
-        writer.Write(inputData);
+        writer.Write((byte)MessageType.ClientTickInput);
+        writer.Write(tick);
+        writer.Write(inputBytes.Length);
+        writer.Write(inputBytes);
 
         SendToServer(ms.ToArray());
     }
 
-    // Called by MessageConsumer when a ClientInput message arrives on the server.
+    // Legacy per-input path (kept for protocol compatibility; no longer the primary path).
     public void OnClientInput(InboundMessage msg)
     {
         using var ms = new MemoryStream(msg.Data, 1, msg.Data.Length - 1);
         using var reader = new BinaryReader(ms);
-        reader.ReadUInt64(); // tick (not used; server applies to current tick)
+        reader.ReadUInt64(); // tick (ignored; server uses current tick)
         ushort typeId = reader.ReadUInt16();
         ushort dataLen = reader.ReadUInt16();
         byte[] data = reader.ReadBytes(dataLen);
@@ -171,7 +165,103 @@ public class NetworkManager : Singleton<NetworkManager>
         InputBuffer.EnqueueRaw(input);
     }
 
-    // Called by MessageConsumer when a SimulationDelta arrives on a client.
+    // Called by MessageConsumer on the server when a ClientTickInput message arrives.
+    public void OnClientTickInput(InboundMessage msg)
+    {
+        using var ms = new MemoryStream(msg.Data, 1, msg.Data.Length - 1);
+        using var reader = new BinaryReader(ms);
+        ulong tick = reader.ReadUInt64();
+        int inputBytesLen = reader.ReadInt32();
+        byte[] inputBytes = reader.ReadBytes(inputBytesLen);
+
+        var inputs = DeserializeInputs(inputBytes, msg.SenderId);
+
+        if (!_pendingClientInputs.TryGetValue(tick, out var byClient))
+            _pendingClientInputs[tick] = byClient = new Dictionary<ushort, List<InputBase>>();
+        byClient[msg.SenderId] = inputs;
+    }
+
+    private List<InputBase> DeserializeInputs(byte[] data, ushort senderId)
+    {
+        var result = new List<InputBase>();
+        using var ms = new MemoryStream(data);
+        using var reader = new BinaryReader(ms);
+        int count = reader.ReadInt32();
+        var registry = TickManager.instance.InputTypeRegistry;
+        for (int i = 0; i < count; i++)
+        {
+            ushort typeId = reader.ReadUInt16();
+            ushort dataLen = reader.ReadUInt16();
+            byte[] inputData = reader.ReadBytes(dataLen);
+            Type inputType = registry.GetTypeForID(typeId);
+            InputBase input = (InputBase)Activator.CreateInstance(inputType);
+            input.Deserialize(inputData);
+            input.ClientId = senderId;
+            result.Add(input);
+        }
+        return result;
+    }
+
+    // ── Server → client delta broadcast ──────────────────────────────────────
+
+    void OnAfterServerTick()
+    {
+        if (!IsServer || !GameStarted) return;
+        SendToAll(BuildSimulationDeltaMessage(TickManager.instance.ServerTick,
+            TickManager.instance.ECS, TickManager.instance.LastTickFlagEvents));
+    }
+
+    // ── Game-start handshake ──────────────────────────────────────────────────
+
+    public void OnGameStart(byte[] data)
+    {
+        if (!IsServer)
+        {
+            TickManager.instance.SetupClientECS();
+
+            var (created, deleted, deletedComp, compDelta) = ReadDeltaStreams(data, 1);
+            TickManager.instance.SetPendingServerDelta(0, Array.Empty<byte>(), created, deleted, deletedComp, compDelta);
+
+            DevConsole.LogInfo("[Net] GameStart received. Local and server mirror ECS ready.");
+        }
+
+        SendToServer(new byte[] { (byte)MessageType.ClientReady });
+        DevConsole.LogInfo("[Net] Sent ClientReady.");
+    }
+
+    public void NotifyClientReady()
+    {
+        _readyClientCount++;
+        int total = _server.ConnectionCount;
+        DevConsole.LogInfo($"[Net] Client ready ({_readyClientCount}/{total}).");
+        if (_readyClientCount >= total && total > 0)
+        {
+            GameStarted = true;
+            SendToAll(new byte[] { (byte)MessageType.GameReady });
+
+            // Set up host prediction before starting the tick loop so that
+            // ClientLocalECS is ready on the very first tick.
+            TickManager.instance.SetupClientECS();
+            TickManager.instance.SetPendingServerStateDirectly(TickManager.instance.ServerTick);
+
+            TickManager.instance.StartGame();
+            DevConsole.LogInfo("[Net] All clients ready. GameReady sent. Simulation started.");
+        }
+    }
+
+    public void OnGameReady()
+    {
+        TickManager.instance.StartGame();
+        DevConsole.LogInfo("[Net] GameReady received. Client simulation started.");
+    }
+
+    public void OnPlayerIdAssigned(ushort playerId)
+    {
+        LocalPlayerId = playerId;
+        DevConsole.LogInfo($"[Net] Assigned player ID {playerId}.");
+    }
+
+    // Called by MessageConsumer when a SimulationDelta arrives on a pure client.
     // Wire layout: [type:byte][tick:ulong][serverTime:double][flagEventsLen:int][flagEvents][4x delta streams]
     public void OnSimulationDelta(byte[] data)
     {
@@ -191,21 +281,19 @@ public class NetworkManager : Singleton<NetworkManager>
         AdjustClientTickRate(serverTick, serverTime);
     }
 
+    // On the client (not host): keep prediction tick roughly in sync with server tick.
     void AdjustClientTickRate(ulong serverTick, double serverTime)
     {
-        // Estimate which tick the server is on right now by accounting for time elapsed
-        // since the delta was produced. This assumes server and client Unity clocks advance
-        // at the same rate (true on LAN / same machine); the absolute offset is irrelevant
-        // because we only care about the delta relative to our own local time.
-        double elapsedSinceServerTick = Time.timeAsDouble - serverTime;
-        double estimatedServerTickNow = serverTick + elapsedSinceServerTick / TickManager.TickInterval;
-
-        long tickError = Mathf.RoundToInt((float)estimatedServerTickNow) - (long)TickManager.instance.Tick;
+        // Compare server's next tick to client's current prediction tick.
+        // Time.timeAsDouble cannot be used across Unity instances (different app-start offsets).
+        long tickError = (long)serverTick - (long)TickManager.instance.Tick;
 
         // Proportional control: 1 tick of error → 10% speed adjustment, capped at ±50%.
         float scale = 1f + Mathf.Clamp(tickError * 0.1f, -0.5f, 0.5f);
         TickManager.instance.SetTickRateScale(scale);
     }
+
+    // ── Entity spawning ───────────────────────────────────────────────────────
 
     void SpawnPlayerEntities()
     {
@@ -222,6 +310,8 @@ public class NetworkManager : Singleton<NetworkManager>
         ecs.AddComponent(entity.Id, new PositionComponent());
         ecs.AddComponent(entity.Id, new PlayerComponent { PlayerId = playerId });
     }
+
+    // ── Message builders ──────────────────────────────────────────────────────
 
     static byte[] BuildHelloMessage(string text)
     {
@@ -271,12 +361,14 @@ public class NetworkManager : Singleton<NetworkManager>
     {
         using var ms = new MemoryStream(data, offset, data.Length - offset);
         using var reader = new BinaryReader(ms);
-        byte[] created    = reader.ReadBytes(reader.ReadInt32());
-        byte[] deleted    = reader.ReadBytes(reader.ReadInt32());
+        byte[] created     = reader.ReadBytes(reader.ReadInt32());
+        byte[] deleted     = reader.ReadBytes(reader.ReadInt32());
         byte[] deletedComp = reader.ReadBytes(reader.ReadInt32());
-        byte[] compDelta  = reader.ReadBytes(reader.ReadInt32());
+        byte[] compDelta   = reader.ReadBytes(reader.ReadInt32());
         return (created, deleted, deletedComp, compDelta);
     }
+
+    // ── Dev console commands ──────────────────────────────────────────────────
 
     void RegisterCommands()
     {
@@ -307,22 +399,16 @@ public class NetworkManager : Singleton<NetworkManager>
 
         DevConsole.RegisterCommand(
             "net-send-hello",
-            "Sends a TestHello message. Server broadcasts to all clients; client sends to server. Usage: net-send-hello <message>",
+            "Sends a TestHello message. Usage: net-send-hello <message>",
             info =>
             {
                 if (info.positionalArgs.Length == 0)
                     return DevCommandResult.Error("Usage: net-send-hello <message>");
-
                 string text = string.Join(" ", info.positionalArgs);
                 byte[] msg = BuildHelloMessage(text);
-
-                if (IsServer)
-                    SendToAll(msg);
-                else if (IsClient)
-                    SendToServer(msg);
-                else
-                    return DevCommandResult.Error("Not running as server or client.");
-
+                if (IsServer) SendToAll(msg);
+                else if (IsClient) SendToServer(msg);
+                else return DevCommandResult.Error("Not running as server or client.");
                 return DevCommandResult.Success();
             });
 
@@ -340,7 +426,7 @@ public class NetworkManager : Singleton<NetworkManager>
 
         DevConsole.RegisterCommand(
             "net-start-game",
-            "Server broadcasts GameStart with initial state and waits for all clients to respond ready.",
+            "Server spawns entities, sends GameStart to all clients, waits for ready.",
             _ =>
             {
                 if (!IsServer)
@@ -358,8 +444,11 @@ public class NetworkManager : Singleton<NetworkManager>
                 if (clientCount == 0)
                 {
                     GameStarted = true;
+                    // Set up host prediction before starting the tick loop.
+                    TickManager.instance.SetupClientECS();
+                    TickManager.instance.SetPendingServerStateDirectly(TickManager.instance.ServerTick);
                     TickManager.instance.StartGame();
-                    DevConsole.LogInfo("[Net] No clients connected. Game started immediately.");
+                    DevConsole.LogInfo("[Net] No clients. Game started immediately.");
                 }
 
                 return DevCommandResult.Success();

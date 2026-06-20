@@ -27,8 +27,6 @@ public static class RandomWalkSystem
         else
         {
             float step = walk.Speed * TickManager.TickInterval;
-            pos.PrevX = pos.X;
-            pos.PrevY = pos.Y;
             pos.X += dx / dist * step;
             pos.Y += dy / dist * step;
             flagEvents.Add<PositionUpdatedEvent>();

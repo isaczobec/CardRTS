@@ -7,4 +7,5 @@ public enum MessageType : byte
     GameReady        = 4,
     PlayerIdAssigned = 5,
     ClientInput      = 6,
+    ClientTickInput  = 7,
 }
