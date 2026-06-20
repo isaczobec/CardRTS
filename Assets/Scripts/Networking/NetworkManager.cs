@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -13,6 +14,9 @@ public class NetworkManager : Singleton<NetworkManager>
 
     public bool IsServer => Context.IsServer;
     public bool IsClient => Context.IsClient;
+
+    // 0 = server/host. Pure clients receive their ID via PlayerIdAssigned.
+    public ushort LocalPlayerId { get; private set; } = 0;
 
     private int _readyClientCount = 0;
     public bool GameStarted { get; private set; } = false;
@@ -126,6 +130,47 @@ public class NetworkManager : Singleton<NetworkManager>
         DevConsole.LogInfo("[Net] GameReady received. Client simulation started.");
     }
 
+    // Called by MessageConsumer when PlayerIdAssigned is received on a client.
+    public void OnPlayerIdAssigned(ushort playerId)
+    {
+        LocalPlayerId = playerId;
+        DevConsole.LogInfo($"[Net] Assigned player ID {playerId}.");
+    }
+
+    // Called by InputBuffer when a pure client enqueues an input, to forward it to the server.
+    public void SendInputToServer(InputBase input)
+    {
+        ushort typeId = TickManager.instance.InputTypeRegistry.GetIDForType(input.GetType());
+        byte[] inputData = input.Serialize();
+
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        writer.Write((byte)MessageType.ClientInput);
+        writer.Write(TickManager.instance.Tick);
+        writer.Write(typeId);
+        writer.Write((ushort)inputData.Length);
+        writer.Write(inputData);
+
+        SendToServer(ms.ToArray());
+    }
+
+    // Called by MessageConsumer when a ClientInput message arrives on the server.
+    public void OnClientInput(InboundMessage msg)
+    {
+        using var ms = new MemoryStream(msg.Data, 1, msg.Data.Length - 1);
+        using var reader = new BinaryReader(ms);
+        reader.ReadUInt64(); // tick (not used; server applies to current tick)
+        ushort typeId = reader.ReadUInt16();
+        ushort dataLen = reader.ReadUInt16();
+        byte[] data = reader.ReadBytes(dataLen);
+
+        Type inputType = TickManager.instance.InputTypeRegistry.GetTypeForID(typeId);
+        InputBase input = (InputBase)System.Activator.CreateInstance(inputType);
+        input.Deserialize(data);
+        input.ClientId = msg.SenderId;
+        InputBuffer.EnqueueRaw(input);
+    }
+
     // Called by MessageConsumer when a SimulationDelta arrives on a client.
     // Wire layout: [type:byte][tick:ulong][serverTime:double][flagEventsLen:int][flagEvents][4x delta streams]
     public void OnSimulationDelta(byte[] data)
@@ -160,6 +205,22 @@ public class NetworkManager : Singleton<NetworkManager>
         // Proportional control: 1 tick of error → 10% speed adjustment, capped at ±50%.
         float scale = 1f + Mathf.Clamp(tickError * 0.1f, -0.5f, 0.5f);
         TickManager.instance.SetTickRateScale(scale);
+    }
+
+    void SpawnPlayerEntities()
+    {
+        ECS ecs = TickManager.instance.ECS;
+        SpawnPlayerEntity(ecs, 0); // host / standalone is always player 0
+        if (_server != null)
+            foreach (ushort playerId in _server.ConnectedPlayerIds)
+                SpawnPlayerEntity(ecs, playerId);
+    }
+
+    static void SpawnPlayerEntity(ECS ecs, ushort playerId)
+    {
+        EntityHandle entity = ecs.CreateEntity();
+        ecs.AddComponent(entity.Id, new PositionComponent());
+        ecs.AddComponent(entity.Id, new PlayerComponent { PlayerId = playerId });
     }
 
     static byte[] BuildHelloMessage(string text)
@@ -288,6 +349,7 @@ public class NetworkManager : Singleton<NetworkManager>
                     return DevCommandResult.Error("Game already started.");
 
                 _readyClientCount = 0;
+                SpawnPlayerEntities();
                 SendToAll(BuildGameStartMessage(TickManager.instance.ECS));
 
                 int clientCount = _server.ConnectionCount;

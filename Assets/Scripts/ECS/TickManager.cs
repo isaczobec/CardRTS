@@ -27,6 +27,9 @@ public class TickManager : Singleton<TickManager>
     private readonly TypeRegistry<FlagEvent> _flagEventTypeRegistry = new();
     public TypeRegistry<FlagEvent> FlagEventTypeRegistry => _flagEventTypeRegistry;
 
+    private readonly TypeRegistry<InputBase> _inputTypeRegistry = new();
+    public TypeRegistry<InputBase> InputTypeRegistry => _inputTypeRegistry;
+
     public const float TickInterval = 0.1f;
     private ulong _tick;
     public ulong Tick => _tick;
@@ -77,10 +80,15 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry = new TypeRegistry<IComponent>();
         _componentTypeRegistry.Register<PositionComponent>(0);
         _componentTypeRegistry.Register<RandomWalkComponent>(1);
+        _componentTypeRegistry.Register<PlayerComponent>(2);
+
+        _inputTypeRegistry.Register<SpawnEntityInput>(0);
+        _inputTypeRegistry.Register<MoveInput>(1);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RandomWalkComponent>>(2);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerComponent>>(4);
 
         _flagEventTypeRegistry.Register<PositionUpdatedEvent>(3);
 
@@ -168,7 +176,9 @@ public class TickManager : Singleton<TickManager>
         var ecs = new ECS();
         ecs.AddComponentStore(new ComponentStore<PositionComponent>());
         ecs.AddComponentStore(new ComponentStore<RandomWalkComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
         ecs.RegisterSystem(SpawnEntitySystem.Instance);
+        ecs.RegisterSystem(PlayerMovementSystem.Instance);
         ecs.RegisterSystem(RandomWalkSystem.Instance);
         return ecs;
     }
@@ -179,6 +189,7 @@ public class TickManager : Singleton<TickManager>
         var ecs = new ECS();
         ecs.AddComponentStore(new ComponentStore<PositionComponent>());
         ecs.AddComponentStore(new ComponentStore<RandomWalkComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
         return ecs;
     }
 }

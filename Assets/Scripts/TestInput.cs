@@ -5,10 +5,11 @@ public class TestInput : MonoBehaviour
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
-        {
-            var input = new SpawnEntityInput();
-            InputBuffer.EnqueueInput(input);
-            Debug.Log($"Enqueued SpawnEntityInput for tick {TickManager.instance.Tick}");
-        }
+            InputBuffer.EnqueueInput(new SpawnEntityInput());
+
+        float dirX = Input.GetAxisRaw("Horizontal");
+        float dirY = Input.GetAxisRaw("Vertical");
+        if (dirX != 0f || dirY != 0f)
+            InputBuffer.EnqueueInput(new MoveInput { DirX = dirX, DirY = dirY });
     }
 }

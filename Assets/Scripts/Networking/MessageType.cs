@@ -1,8 +1,10 @@
 public enum MessageType : byte
 {
-    TestHello       = 0,
-    GameStart       = 1,
-    ClientReady     = 2,
-    SimulationDelta = 3,
-    GameReady       = 4,
+    TestHello        = 0,
+    GameStart        = 1,
+    ClientReady      = 2,
+    SimulationDelta  = 3,
+    GameReady        = 4,
+    PlayerIdAssigned = 5,
+    ClientInput      = 6,
 }

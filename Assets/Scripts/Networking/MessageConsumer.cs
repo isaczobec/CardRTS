@@ -33,6 +33,17 @@ public class MessageConsumer : MonoBehaviour
                     if (NetworkManager.instance.IsClient)
                         NetworkManager.instance.OnGameReady();
                     break;
+                case MessageType.PlayerIdAssigned:
+                    if (NetworkManager.instance.IsClient)
+                    {
+                        ushort playerId = System.BitConverter.ToUInt16(msg.Data, 1);
+                        NetworkManager.instance.OnPlayerIdAssigned(playerId);
+                    }
+                    break;
+                case MessageType.ClientInput:
+                    if (NetworkManager.instance.IsServer)
+                        NetworkManager.instance.OnClientInput(msg);
+                    break;
                 default:
                     DevConsole.LogWarning($"[Net] Unhandled message type: {(byte)type}");
                     break;

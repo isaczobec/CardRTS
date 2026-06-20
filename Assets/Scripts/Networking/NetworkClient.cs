@@ -47,7 +47,7 @@ public class NetworkClient
             {
                 var bytes = new NativeArray<byte>(stream.Length, Allocator.Temp);
                 stream.ReadBytes(bytes);
-                _inboundQueue.Enqueue(new InboundMessage(0, bytes.ToArray())); // 0 = from server
+                _inboundQueue.Enqueue(new InboundMessage(0, bytes.ToArray()));
                 bytes.Dispose();
             }
             else if (evt == NetworkEvent.Type.Disconnect)

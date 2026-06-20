@@ -9,13 +9,28 @@ public static class InputBuffer
 
     public static void EnqueueInput<T>(T input) where T : InputBase
     {
+        input.ClientId = NetworkManager.instance?.LocalPlayerId ?? 0;
+
+        bool isPureClient = NetworkManager.instance != null
+            && NetworkManager.instance.IsClient
+            && !NetworkManager.instance.IsServer;
+        if (isPureClient)
+            NetworkManager.instance.SendInputToServer(input);
+
+        EnqueueRaw(input);
+    }
+
+    // Enqueues a pre-constructed input (e.g. received from a remote client) at the current tick.
+    public static void EnqueueRaw(InputBase input)
+    {
         ulong currentTick = TickManager.instance.Tick;
         if (_buffer.IsEmpty || _buffer.PeekTail().tick != currentTick)
             _buffer.Enqueue(new TickInputStore { tick = currentTick, inputs = new() });
         TickInputStore store = _buffer.PeekTail();
-        if (!store.inputs.ContainsKey(typeof(T)))
-            store.inputs[typeof(T)] = new List<InputBase>();
-        store.inputs[typeof(T)].Add(input);
+        Type type = input.GetType();
+        if (!store.inputs.ContainsKey(type))
+            store.inputs[type] = new List<InputBase>();
+        store.inputs[type].Add(input);
     }
 
     public static List<T> GetInputsForTick<T>(ulong tick) where T : InputBase
@@ -53,6 +68,7 @@ public class TickInputStore
 
 public abstract class InputBase
 {
+    public ushort ClientId { get; set; }
     public abstract byte[] Serialize();
     public abstract void Deserialize(byte[] buffer);
 }

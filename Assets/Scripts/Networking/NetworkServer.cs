@@ -8,9 +8,12 @@ public class NetworkServer
     NetworkPipeline _reliable;
     NativeList<NetworkConnection> _connections;
     Queue<InboundMessage> _inboundQueue;
+    Dictionary<int, ushort> _connectionToPlayerId = new();
+    ushort _nextPlayerId = 1;
 
     public bool IsRunning => _driver.IsCreated;
     public int ConnectionCount => _connections.IsCreated ? _connections.Length : 0;
+    public IEnumerable<ushort> ConnectedPlayerIds => _connectionToPlayerId.Values;
 
     public NetworkServer(Queue<InboundMessage> inboundQueue)
     {
@@ -43,8 +46,11 @@ public class NetworkServer
         NetworkConnection incoming;
         while ((incoming = _driver.Accept()) != default)
         {
+            ushort playerId = _nextPlayerId++;
+            _connectionToPlayerId[incoming.GetHashCode()] = playerId;
             _connections.Add(incoming);
-            DevConsole.LogInfo($"[Net] Client connected (id={incoming.GetHashCode()}).");
+            SendTo(incoming, BuildPlayerIdAssignedMessage(playerId));
+            DevConsole.LogInfo($"[Net] Client connected (playerId={playerId}).");
         }
 
         for (int i = 0; i < _connections.Length; i++)
@@ -56,12 +62,16 @@ public class NetworkServer
                 {
                     var bytes = new NativeArray<byte>(stream.Length, Allocator.Temp);
                     stream.ReadBytes(bytes);
-                    _inboundQueue.Enqueue(new InboundMessage(_connections[i].GetHashCode(), bytes.ToArray()));
+                    ushort senderId = _connectionToPlayerId.TryGetValue(_connections[i].GetHashCode(), out var pid) ? pid : (ushort)0;
+                    _inboundQueue.Enqueue(new InboundMessage(senderId, bytes.ToArray()));
                     bytes.Dispose();
                 }
                 else if (evt == NetworkEvent.Type.Disconnect)
                 {
-                    DevConsole.LogInfo($"[Net] Client disconnected (id={_connections[i].GetHashCode()}).");
+                    int hash = _connections[i].GetHashCode();
+                    _connectionToPlayerId.TryGetValue(hash, out ushort disconnectedId);
+                    _connectionToPlayerId.Remove(hash);
+                    DevConsole.LogInfo($"[Net] Client disconnected (playerId={disconnectedId}).");
                     _connections[i] = default;
                 }
             }
@@ -70,6 +80,24 @@ public class NetworkServer
         for (int i = _connections.Length - 1; i >= 0; i--)
             if (!_connections[i].IsCreated)
                 _connections.RemoveAtSwapBack(i);
+    }
+
+    void SendTo(NetworkConnection conn, byte[] data)
+    {
+        var native = new NativeArray<byte>(data, Allocator.Temp);
+        _driver.BeginSend(_reliable, conn, out var writer);
+        writer.WriteBytes(native);
+        _driver.EndSend(writer);
+        native.Dispose();
+    }
+
+    static byte[] BuildPlayerIdAssignedMessage(ushort playerId)
+    {
+        using var ms = new System.IO.MemoryStream();
+        using var writer = new System.IO.BinaryWriter(ms);
+        writer.Write((byte)MessageType.PlayerIdAssigned);
+        writer.Write(playerId);
+        return ms.ToArray();
     }
 
     public void SendToAll(byte[] data)
