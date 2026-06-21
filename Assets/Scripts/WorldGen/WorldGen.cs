@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 public class WorldGenHandler
@@ -13,6 +14,7 @@ public class WorldGenHandler
     /// </summary>
     public static ushort WorldSizeChunks = 64;
     private TileType[] _tiles;
+    private float[] _heightMap;
 
     public List<WorldGenResource> resources = new List<WorldGenResource>();
     public List<WorldGenFeature> features = new List<WorldGenFeature>();
@@ -56,6 +58,7 @@ public class WorldGenHandler
     public void Generate()
     {
         _tiles = new TileType[CHUNK_SIZE_TILES * CHUNK_SIZE_TILES * WorldSizeChunks * WorldSizeChunks];
+        _heightMap = new float[CHUNK_SIZE_TILES * CHUNK_SIZE_TILES * WorldSizeChunks * WorldSizeChunks];
         for (_currentFeatureIndex = 0; _currentFeatureIndex < features.Count; _currentFeatureIndex++)
         {
             _currentFeatureLastChildIndex = _currentFeatureIndex;
@@ -117,6 +120,17 @@ public class WorldGenHandler
         ushort chunkY = (ushort)(tileY / CHUNK_SIZE_TILES);
         return GetChunk(chunkX, chunkY);
     }
+
+    public IEnumerable<Chunk> IterateChunks()
+    {
+        for (ushort chunkY = 0; chunkY < WorldSizeChunks; chunkY++)
+        {
+            for (ushort chunkX = 0; chunkX < WorldSizeChunks; chunkX++)
+            {
+                yield return GetChunk(chunkX, chunkY);
+            }
+        }
+    }
 }
 
 public enum TileType : byte
@@ -149,6 +163,30 @@ public class Chunk
         return _parent.SetTileType(_chunkX, _chunkY, inChunkX, inChunkY, type);
     }
     
+    // function to iterate all (x, y) pairs in the chunk in world space (returns world tile coordinates)
+    public IEnumerable<(ushort tileX, ushort tileY)> IterateWorldTiles()
+    {
+        for (ushort inChunkY = 0; inChunkY < WorldGenHandler.CHUNK_SIZE_TILES; inChunkY++)
+        {
+            for (ushort inChunkX = 0; inChunkX < WorldGenHandler.CHUNK_SIZE_TILES; inChunkX++)
+            {
+                ushort tileX = (ushort)(inChunkX + _chunkX * WorldGenHandler.CHUNK_SIZE_TILES);
+                ushort tileY = (ushort)(inChunkY + _chunkY * WorldGenHandler.CHUNK_SIZE_TILES);
+                yield return (tileX, tileY);
+            }
+        }
+    }
+
+    public IEnumerable<(ushort inChunkX, ushort inChunkY)> IterateInChunkTiles()
+    {
+        for (ushort inChunkY = 0; inChunkY < WorldGenHandler.CHUNK_SIZE_TILES; inChunkY++)
+        {
+            for (ushort inChunkX = 0; inChunkX < WorldGenHandler.CHUNK_SIZE_TILES; inChunkX++)
+            {
+                yield return (inChunkX, inChunkY);
+            }
+        }
+    }
 }
 
 /// <summary>
