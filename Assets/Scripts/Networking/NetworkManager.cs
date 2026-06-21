@@ -222,6 +222,8 @@ public class NetworkManager : Singleton<NetworkManager>
             var (created, deleted, deletedComp, compDelta) = ReadDeltaStreams(data, 1);
             TickManager.instance.SetPendingServerDelta(0, Array.Empty<byte>(), created, deleted, deletedComp, compDelta);
 
+            WorldManager.instance?.GenerateAndRender();
+
             DevConsole.LogInfo("[Net] GameStart received. Local and server mirror ECS ready.");
         }
 
@@ -436,6 +438,7 @@ public class NetworkManager : Singleton<NetworkManager>
 
                 _readyClientCount = 0;
                 SpawnPlayerEntities();
+                WorldManager.instance?.GenerateAndRender();
                 SendToAll(BuildGameStartMessage(TickManager.instance.ECS));
 
                 int clientCount = _server.ConnectionCount;

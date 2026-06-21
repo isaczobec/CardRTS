@@ -93,14 +93,42 @@ public class WorldGenHandler
         return SetTileType(x, y, type);
     }
 
-    public ushort TileXYToIndex(ushort tileX, ushort tileY)
+    public float GetHeight(ushort tileX, ushort tileY)
+    {
+        return _heightMap[TileXYToIndex(tileX, tileY)];
+    }
+
+    public float GetHeight(ushort chunkX, ushort chunkY, ushort inChunkX, ushort inChunkY)
+    {
+        ushort x = (ushort)(chunkX * CHUNK_SIZE_TILES + inChunkX);
+        ushort y = (ushort)(chunkY * CHUNK_SIZE_TILES + inChunkY);
+        return GetHeight(x, y);
+    }
+
+    public bool SetHeight(ushort tileX, ushort tileY, float height)
+    {
+        if (tileX >= CHUNK_SIZE_TILES * WorldSizeChunks || tileY >= CHUNK_SIZE_TILES * WorldSizeChunks)
+            return false;
+        _heightMap[TileXYToIndex(tileX, tileY)] = height;
+        return true;
+    }
+
+    public bool SetHeight(ushort chunkX, ushort chunkY, ushort inChunkX, ushort inChunkY, float height)
+    {
+        ushort x = (ushort)(chunkX * CHUNK_SIZE_TILES + inChunkX);
+        ushort y = (ushort)(chunkY * CHUNK_SIZE_TILES + inChunkY);
+        return SetHeight(x, y, height);
+    }
+
+    // Returns int — max index for a 1024×1024 world is ~1M, which overflows ushort.
+    public int TileXYToIndex(ushort tileX, ushort tileY)
     {
         int W = CHUNK_SIZE_TILES;
         int C = WorldSizeChunks;
-        return (ushort)((tileY / W * C + tileX / W) * W * W + tileY % W * W + tileX % W);
+        return (tileY / W * C + tileX / W) * W * W + tileY % W * W + tileX % W;
     }
 
-    public (ushort tileX, ushort tileY) TileIndexToXY(ushort index)
+    public (ushort tileX, ushort tileY) TileIndexToXY(int index)
     {
         int W = CHUNK_SIZE_TILES;
         int C = WorldSizeChunks;
@@ -135,7 +163,10 @@ public class WorldGenHandler
 
 public enum TileType : byte
 {
-    
+    Water,
+    Sand,
+    Grass,
+    Mountain
 }
 
 /// <summary>
@@ -162,7 +193,17 @@ public class Chunk
     {
         return _parent.SetTileType(_chunkX, _chunkY, inChunkX, inChunkY, type);
     }
-    
+
+    public float GetHeight(ushort inChunkX, ushort inChunkY)
+    {
+        return _parent.GetHeight(_chunkX, _chunkY, inChunkX, inChunkY);
+    }
+
+    public bool SetHeight(ushort inChunkX, ushort inChunkY, float height)
+    {
+        return _parent.SetHeight(_chunkX, _chunkY, inChunkX, inChunkY, height);
+    }
+
     // function to iterate all (x, y) pairs in the chunk in world space (returns world tile coordinates)
     public IEnumerable<(ushort tileX, ushort tileY)> IterateWorldTiles()
     {
