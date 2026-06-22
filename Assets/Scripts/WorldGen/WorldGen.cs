@@ -163,10 +163,10 @@ public class WorldGenHandler
 
 public enum TileType : byte
 {
-    Water,
-    Sand,
-    Grass,
-    Mountain
+    Water = 0,
+    Sand = 1,
+    Grass = 2,
+    Mountain = 3
 }
 
 /// <summary>

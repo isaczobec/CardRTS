@@ -49,12 +49,9 @@ public class WorldManager : Singleton<WorldManager>
         Renderer.Render(Handler);
     }
 
-    /// <summary>
-    /// Configure resources and features here. Add tile-type thresholds once
-    /// TileType values are defined in WorldGen.cs.
-    /// </summary>
     void SetupWorldGen(WorldGenHandler handler)
     {
+        // --- Terrain noise ---
         handler.AddResource(new PerlinNoiseGenerator("terrain")
         {
             Scale   = 0.04f,
@@ -62,16 +59,47 @@ public class WorldManager : Singleton<WorldManager>
             OffsetY = 0f,
         });
 
-        // Example: add a NoiseTileFeature once TileType has values.
-        handler.features.Add(new NoiseTileFeature
+        // --- Biome axes: temperature (X) and humidity (Y) ---
+        handler.AddResource(new PerlinNoiseGenerator("biomeTemp")
         {
-            NoiseResourceKey = "terrain",
-            Thresholds = new()
+            Scale   = 0.005f,
+            OffsetX = 500f,
+            OffsetY = 300f,
+        });
+        handler.AddResource(new PerlinNoiseGenerator("biomeHumidity")
+        {
+            Scale   = 0.005f,
+            OffsetX = 200f,
+            OffsetY = 700f,
+        });
+
+        // Desert biome: hot (high temp) and dry (low humidity).
+        handler.features.Add(new BiomeFeature
+        {
+            NoiseKeyX = "biomeTemp",
+            NoiseKeyY = "biomeHumidity",
+            MinX = 0.60f, MaxX = 1.00f,
+            MinY = 0.00f, MaxY = 1.00f,
+            ChildFeatures = new WorldGenFeature[]
             {
-                new(0.35f, TileType.Water),
-                new(0.45f, TileType.Sand),
-                new(0.70f, TileType.Grass),
-                new(1.00f, TileType.Mountain),
+                // Repaint interior terrain with arid thresholds (more sand, no grass).
+                // Water is preserved so existing lakes/rivers remain as oases.
+                new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Sand },
+            }
+        });
+
+        // Wetland biome: cold (low temp) and humid (high humidity).
+        handler.features.Add(new BiomeFeature
+        {
+            NoiseKeyX = "biomeTemp",
+            NoiseKeyY = "biomeHumidity",
+            MinX = 0.00f, MaxX = 0.60f,
+            MinY = 0.00f, MaxY = 1.00f,
+            ChildFeatures = new WorldGenFeature[]
+            {
+                // Repaint interior terrain with lush thresholds (more grass, less sand).
+                // Water is preserved so rivers flow through the wetland naturally.
+                new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Grass },
             }
         });
     }

@@ -1833,11 +1833,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dbe391b6c0cba5b8b2be2fd20a61cbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TileTextureRegistry
-  TileTextures:
-  - {fileID: 2800000, guid: 9fa30415447262cbab9afbdfa471bb3c, type: 3}
-  - {fileID: 2800000, guid: 079dcf3ac1965c6d88c86b657578a4ba, type: 3}
-  - {fileID: 2800000, guid: 43d03837dc812a5029a9067cd865412b, type: 3}
-  - {fileID: 2800000, guid: b29f5c76c2b58ae73b38af71e23d605c, type: 3}
+  Entries:
+  - Type: 0
+    Texture: {fileID: 2800000, guid: 079dcf3ac1965c6d88c86b657578a4ba, type: 3}
+  - Type: 1
+    Texture: {fileID: 2800000, guid: 43d03837dc812a5029a9067cd865412b, type: 3}
+  - Type: 2
+    Texture: {fileID: 2800000, guid: b29f5c76c2b58ae73b38af71e23d605c, type: 3}
+  - Type: 3
+    Texture: {fileID: 2800000, guid: 32514e31dd675a2e99c358ee15bd090a, type: 3}
 --- !u!114 &1537083957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1878,19 +1882,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a19138ea00b6ce75ae025a0cfb1af5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GoTileManager
-  _goTiles:
-  - Type: 0
-    Objects:
-    - Prefab: {fileID: 8077043507155612275, guid: f0244e81374f7238cbecb7fb216b8bfc, type: 3}
-      ChanceToSpawn: 0.5
-      randomRotation: 0
-      minScale: 1
-      maxScale: 1.2
-    - Prefab: {fileID: 8077043507155612275, guid: 6474f6462e5036b9e93b0f9d954f8ab2, type: 3}
-      ChanceToSpawn: 0.5
-      randomRotation: 0
-      minScale: 1
-      maxScale: 1.4
+  _goTiles: []
 --- !u!1 &1539881325
 GameObject:
   m_ObjectHideFlags: 0
