@@ -8,7 +8,12 @@ public class WorldManager : Singleton<WorldManager>
 {
     public WorldRenderer Renderer;
 
+    [SerializeField] TileSettings[] _tileSettings;
+
     public WorldGenHandler Handler { get; private set; }
+
+    // Indexed by (int)TileType for O(1) lookup. Built in GenerateAndRender.
+    TileSettings[] _settingsByType;
 
     /// <summary>
     /// Converts tile coordinates to a world-space Vector3.
@@ -47,7 +52,22 @@ public class WorldManager : Singleton<WorldManager>
         SetupWorldGen(Handler);
         Handler.Generate();
         Renderer.Render(Handler);
+        BuildTileSettingsLookup();
     }
+
+    void BuildTileSettingsLookup()
+    {
+        int count = System.Enum.GetValues(typeof(TileType)).Length;
+        _settingsByType = new TileSettings[count];
+        if (_tileSettings != null)
+            foreach (var s in _tileSettings)
+                _settingsByType[(int)s.Type] = s;
+    }
+
+    public TileSettings GetTileSettings(TileType type) => _settingsByType[(int)type];
+
+    public bool HasCollision(ushort tileX, ushort tileY)
+        => _settingsByType[(int)Handler.GetTileType(tileX, tileY)].HasCollision;
 
     void SetupWorldGen(WorldGenHandler handler)
     {

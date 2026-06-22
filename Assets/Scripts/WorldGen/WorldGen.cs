@@ -12,7 +12,7 @@ public class WorldGenHandler
     /// <summary>
     /// The suqare root of the amount of chunks in the world. 
     /// </summary>
-    public static ushort WorldSizeChunks = 64;
+    public static ushort WorldSizeChunks = 16;
     private TileType[] _tiles;
     private float[] _heightMap;
 
