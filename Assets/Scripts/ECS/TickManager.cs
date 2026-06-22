@@ -107,15 +107,20 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<PositionComponent>(0);
         _componentTypeRegistry.Register<RandomWalkComponent>(1);
         _componentTypeRegistry.Register<PlayerComponent>(2);
+        _componentTypeRegistry.Register<TroopComponent>(3);
+        _componentTypeRegistry.Register<RenderableComponent>(4);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
+        _inputTypeRegistry.Register<SpawnTroopInput>(2);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RandomWalkComponent>>(2);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerComponent>>(4);
         _flagEventTypeRegistry.Register<PositionUpdatedEvent>(3);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<TroopComponent>>(5);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RenderableComponent>>(6);
 
         ECS = CreateSimulationECS();
     }
@@ -129,7 +134,11 @@ public class TickManager : Singleton<TickManager>
         _clientDeltaManager = new ComponentDeltaManager(ClientServerMirrorECS, _componentTypeRegistry);
     }
 
-    public void StartGame() => _gameStarted = true;
+    public void StartGame()
+    {
+        _gameStarted = true;   
+        RenderingSetup.instance.SetupRendering();
+    }
 
     void Update()
     {
@@ -254,7 +263,10 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PositionComponent>());
         ecs.AddComponentStore(new ComponentStore<RandomWalkComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
+        ecs.AddComponentStore(new ComponentStore<TroopComponent>());
+        ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
         ecs.RegisterSystem(SpawnEntitySystem.Instance);
+        ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(PlayerMovementSystem.Instance);
         ecs.RegisterSystem(RandomWalkSystem.Instance);
         return ecs;
@@ -266,6 +278,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PositionComponent>());
         ecs.AddComponentStore(new ComponentStore<RandomWalkComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
+        ecs.AddComponentStore(new ComponentStore<TroopComponent>());
+        ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
         return ecs;
     }
 }
