@@ -13,6 +13,9 @@ public class WorldRenderer : MonoBehaviour
 
     private readonly List<GameObject> _chunkObjects = new();
 
+    [SerializeField]
+    private GoTileManager _goTileManager;
+
     public void Render(WorldGenHandler handler)
     {
         Clear();
@@ -24,16 +27,24 @@ public class WorldRenderer : MonoBehaviour
         for (ushort cy = 0; cy < WorldGenHandler.WorldSizeChunks; cy++)
             for (ushort cx = 0; cx < WorldGenHandler.WorldSizeChunks; cx++)
                 SpawnChunk(handler, cx, cy);
+        
+        foreach (Chunk c in handler.IterateChunks())
+        {
+            foreach ((ushort tx, ushort ty) in c.IterateWorldTiles())
+            {
+                _goTileManager.TrySpawnGoTile(tx, ty);
+            }
+        }
     }
 
     void SpawnChunk(WorldGenHandler handler, ushort cx, ushort cy)
     {
         var go = new GameObject($"Chunk_{cx}_{cy}");
         go.transform.SetParent(transform, false);
-        go.transform.localPosition = new Vector3(
-            cx * WorldGenHandler.CHUNK_SIZE_TILES,
-            0f,
-            cy * WorldGenHandler.CHUNK_SIZE_TILES);
+        go.transform.localPosition = WorldManager.instance.TileToWorldPosition(
+            (ushort)(cx * WorldGenHandler.CHUNK_SIZE_TILES),
+            (ushort)(cy * WorldGenHandler.CHUNK_SIZE_TILES),
+            useHeightmap: false);
 
         var mf = go.AddComponent<MeshFilter>();
         var mr = go.AddComponent<MeshRenderer>();
