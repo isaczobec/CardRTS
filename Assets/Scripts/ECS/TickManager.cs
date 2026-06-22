@@ -136,8 +136,9 @@ public class TickManager : Singleton<TickManager>
 
     public void StartGame()
     {
-        _gameStarted = true;   
+        _gameStarted = true;
         RenderingSetup.instance.SetupRendering();
+        GameEvents.FireGameStarting();
     }
 
     void Update()

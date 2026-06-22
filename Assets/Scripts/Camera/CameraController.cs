@@ -35,6 +35,21 @@ public class CameraController : MonoBehaviour
         // scene-view placement is respected when entering play mode.
         _pivot = transform.position + transform.forward * _distance;
         _pivot.y = 0f;
+
+        GameEvents.OnGameStarting += MoveToMapCenter;
+    }
+
+    void OnDestroy()
+    {
+        GameEvents.OnGameStarting -= MoveToMapCenter;
+    }
+
+    void MoveToMapCenter()
+    {
+        if (WorldManager.instance == null) return;
+        ushort half = (ushort)(WorldGenHandler.CHUNK_SIZE_TILES * WorldGenHandler.WorldSizeChunks / 2);
+        Vector3 center = WorldManager.instance.TileToWorldPosition(half, half, center: true);
+        _pivot = new Vector3(center.x, 0f, center.z);
     }
 
     void LateUpdate()
