@@ -6,7 +6,7 @@ using UnityEngine;
 /// Controls:
 ///   Cursor near screen edge       — pan
 ///   Space + Left Mouse drag       — pan
-///   Right Mouse drag              — rotate around world Y axis
+///   Space + Right Mouse drag      — rotate around world Y axis
 /// </summary>
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
@@ -39,10 +39,11 @@ public class CameraController : MonoBehaviour
 
     void LateUpdate()
     {
-        bool dragPanning = Input.GetKey(KeyCode.Space) && Input.GetMouseButton(0);
-        bool rotating    = Input.GetMouseButton(1);
+        bool spacePressed = Input.GetKey(KeyCode.Space);
+        bool dragPanning  = spacePressed && Input.GetMouseButton(0);
+        bool rotating     = spacePressed && Input.GetMouseButton(1);
 
-        if (!dragPanning) HandleEdgeScroll();
+        if (!spacePressed) HandleEdgeScroll();
         if (dragPanning)  HandleDragPan();
         if (rotating)     HandleRotation();
 
