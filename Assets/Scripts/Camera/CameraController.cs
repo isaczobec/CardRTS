@@ -36,7 +36,15 @@ public class CameraController : MonoBehaviour
         _pivot = transform.position + transform.forward * _distance;
         _pivot.y = 0f;
 
+        Cursor.lockState = CursorLockMode.Confined;
+
         GameEvents.OnGameStarting += MoveToMapCenter;
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus)
+            Cursor.lockState = CursorLockMode.Confined;
     }
 
     void OnDestroy()
@@ -54,6 +62,8 @@ public class CameraController : MonoBehaviour
 
     void LateUpdate()
     {
+        if (!Application.isFocused) return;
+
         bool spacePressed = Input.GetKey(KeyCode.Space);
         bool dragPanning  = spacePressed && Input.GetMouseButton(0);
         bool rotating     = spacePressed && Input.GetMouseButton(1);

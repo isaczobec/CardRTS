@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using TMPro;
@@ -238,9 +239,6 @@ public class DevConsole : Singleton<DevConsole>
             {
                 ExecuteCommandInput(value);
                 inputField.text = string.Empty;
-                Canvas.ForceUpdateCanvases();
-                scrollRect.verticalNormalizedPosition = 0f;
-                scrollbar.value = 0f;
                 inputField.ActivateInputField(); // keep focus
             }
         });
@@ -301,7 +299,13 @@ public class DevConsole : Singleton<DevConsole>
         TMP_Text text = messageObject.GetComponent<TMP_Text>();
         text.text = message;
 
-        // Force scroll to bottom after new message
+        // Wait one frame so the layout system rebuilds Content height before scrolling
+        StartCoroutine(ScrollToBottomNextFrame());
+    }
+
+    private IEnumerator ScrollToBottomNextFrame()
+    {
+        yield return null;
         Canvas.ForceUpdateCanvases();
         scrollRect.verticalNormalizedPosition = 0f;
         scrollbar.value = 0f;

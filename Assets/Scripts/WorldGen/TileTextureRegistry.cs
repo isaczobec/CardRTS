@@ -59,7 +59,8 @@ public class TileTextureRegistry : MonoBehaviour
                 Graphics.CopyTexture(tex, 0, mip, arr, i, mip);
         }
 
-        arr.Apply(false, true);
+        // Graphics.CopyTexture writes GPU-to-GPU; calling Apply() here would
+        // upload the (white-initialized) CPU buffer and overwrite the copied data.
         return arr;
     }
 }

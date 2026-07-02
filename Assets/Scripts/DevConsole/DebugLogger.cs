@@ -15,6 +15,10 @@ public class DebugLogger : Singleton<DebugLogger>
     protected override void Awake()
     {
         base.Awake();
+    }
+
+    void Start()
+    {
         // Register command to toggle debug categories
         DevConsole.RegisterCommand("togglecategory", "Toggles a debug category on or off. Usage: togglecategory [categoryName]",
             (info) =>

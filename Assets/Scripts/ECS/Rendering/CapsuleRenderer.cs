@@ -9,19 +9,23 @@ public class CapsuleRenderer : IComponentRenderer
 {
     private readonly ECS _ecs;
     private readonly Dictionary<ulong, GameObject> _objects = new();
+    private readonly Material _material;
 
     // Capsule primitive is 2 units tall; offset by 1 so it stands on the ground plane.
     private const float GroundOffset = 1f;
 
-    public CapsuleRenderer(ECS ecs)
+    public CapsuleRenderer(ECS ecs, Material material = null)
     {
         _ecs = ecs;
+        _material = material;
     }
 
     public void OnEntityAdded(ulong entityId)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         go.name = $"Troop_{entityId}";
+        if (_material != null)
+            go.GetComponent<MeshRenderer>().sharedMaterial = _material;
         _objects[entityId] = go;
     }
 
