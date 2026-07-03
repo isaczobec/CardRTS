@@ -113,6 +113,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
         _inputTypeRegistry.Register<SpawnTroopInput>(2);
+        _inputTypeRegistry.Register<MoveTroopInput>(3);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -270,6 +271,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(PlayerMovementSystem.Instance);
         ecs.RegisterSystem(RandomWalkSystem.Instance);
+        ecs.RegisterSystem(PathfindingSystem.Instance);
         return ecs;
     }
 

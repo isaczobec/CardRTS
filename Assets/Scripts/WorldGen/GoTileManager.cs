@@ -78,7 +78,7 @@ public class GoTileManager : MonoBehaviour
 
         // Spawn the prefab with optional random rotation and scale.
         var instance = Instantiate(chosenSettings.Prefab);
-        instance.transform.position = WorldManager.instance.TileToWorldPosition(tileX, tileY, center: true);
+        instance.transform.position = WorldManager.instance.TileToWorldPosition(tileX, tileY);
 
         if (chosenSettings.randomRotation)
             instance.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);

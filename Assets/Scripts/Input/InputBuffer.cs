@@ -8,6 +8,16 @@ public static class InputBuffer
     public const int INPUTBUFFER_CAPCITY = 1 << 10;
     private static readonly RingBuffer<TickInputStore> _buffer = new(INPUTBUFFER_CAPCITY);
 
+    // The buffer models a sliding window of recent ticks. Capacity is far larger than
+    // any tick range actually read back (reconciliation replay, tick sends), so once
+    // full it's safe to drop the oldest entry to make room for the new one.
+    private static void EnqueueTick(TickInputStore store)
+    {
+        if (_buffer.IsFull)
+            _buffer.Dequeue();
+        _buffer.Enqueue(store);
+    }
+
     public static void EnqueueInput<T>(T input) where T : InputBase
     {
         input.ClientId = NetworkManager.instance?.LocalPlayerId ?? 0;
@@ -21,7 +31,7 @@ public static class InputBuffer
     {
         ulong currentTick = TickManager.instance.Tick;
         if (_buffer.IsEmpty || _buffer.PeekTail().tick != currentTick)
-            _buffer.Enqueue(new TickInputStore { tick = currentTick, inputs = new() });
+            EnqueueTick(new TickInputStore { tick = currentTick, inputs = new() });
         TickInputStore store = _buffer.PeekTail();
         Type type = input.GetType();
         if (!store.inputs.ContainsKey(type))
@@ -50,7 +60,7 @@ public static class InputBuffer
         // Tick not found; add a new entry at the tail (tick must be the next value).
         if (_buffer.IsEmpty || _buffer.PeekTail().tick < tick)
         {
-            _buffer.Enqueue(new TickInputStore { tick = tick, inputs = new() });
+            EnqueueTick(new TickInputStore { tick = tick, inputs = new() });
             var newStore = _buffer.PeekTail();
             Type type = input.GetType();
             newStore.inputs[type] = new List<InputBase> { input };
@@ -68,7 +78,7 @@ public static class InputBuffer
             if (_buffer[index].tick < tick) break;
         }
         if (_buffer.IsEmpty || _buffer.PeekTail().tick < tick)
-            _buffer.Enqueue(new TickInputStore { tick = tick, inputs = new() });
+            EnqueueTick(new TickInputStore { tick = tick, inputs = new() });
     }
 
     // Serializes all inputs stored for the given tick.

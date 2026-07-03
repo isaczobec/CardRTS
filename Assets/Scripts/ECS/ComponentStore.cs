@@ -47,6 +47,7 @@ public class ComponentStore<T> : IComponentStore where T : struct, IComponent
             _idsToComponents[movedId] = res.removedIndex;
         }
     }
+    
 
     public bool HasComponent(ulong entityId) => _idsToComponents.ContainsKey(entityId);
 
