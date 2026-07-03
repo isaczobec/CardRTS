@@ -32,28 +32,49 @@ public static class Pathfinding
         if (startNode == null || endNode == null)
             return null;
 
-        float distance(float originX, float originY, NavMeshNode a, NeighborInfo b)
+        Vector2 goalPos = new Vector2(desX, desY);
+
+        // Closest point on the portal segment to the goal, rather than always the
+        // portal's midpoint. A wide doorway crossed dead-center forces a detour when
+        // the true shortest route hugs one side of it; this stays just as valid for
+        // A* as the midpoint was — it's still a fixed point per (portal, goal), so the
+        // same triangle-inequality consistency argument applies — while tracking the
+        // true taut path much more closely, especially through large rooms.
+        Vector2 ClosestPointOnPortal(NeighborInfo portal)
         {
-            float distance = Vector2.Distance(new Vector2(originX, originY), b.portalMidpoint);
-            return distance;
+            Vector2 a = new Vector2(portal.pX1, portal.pY1);
+            Vector2 b = new Vector2(portal.pX2, portal.pY2);
+            Vector2 ab = b - a;
+            float lengthSq = ab.sqrMagnitude;
+            if (lengthSq < 1e-6f)
+                return a;
+            float t = Mathf.Clamp01(Vector2.Dot(goalPos - a, ab) / lengthSq);
+            return a + ab * t;
         }
 
-        float heuristic(NavMeshNode a, NeighborInfo b)
-        {
-            float distance = Vector2.Distance(b.portalMidpoint, new Vector2(desX, desY));
-            return distance;
-        }
+        // Entries carry a snapshot of fCost taken at enqueue time rather than ordering by
+        // NavMeshNode's own (mutable) fCost live. A node is commonly enqueued more than
+        // once as cheaper paths to it are found; without a snapshot, an older heap entry
+        // sifted into position for its *old*, worse fCost would silently start reporting
+        // its new, better fCost without ever being re-sifted, breaking the min-heap
+        // invariant and letting Dequeue return nodes out of true priority order.
+        var nodes = new PriorityQueue<(float fCost, NavMeshNode node)>(
+            Comparer<(float fCost, NavMeshNode node)>.Create((a, b) => a.fCost.CompareTo(b.fCost)));
 
-        PriorityQueue<NavMeshNode> nodes = new PriorityQueue<NavMeshNode>();
         startNode.EnsurePathFindingIterationCorrectness(_currentPathfindingIteration);
         startNode.gCost = 0f;
+        startNode.fCost = 0f;
         startNode.entryPoint = new Vector2(worldX, worldY);
-        nodes.Enqueue(startNode);
+        nodes.Enqueue((startNode.fCost, startNode));
 
         while (nodes.Count > 0)
         {
-            NavMeshNode current = nodes.Dequeue();
+            (float snapshotFCost, NavMeshNode current) = nodes.Dequeue();
             current.EnsurePathFindingIterationCorrectness(_currentPathfindingIteration);
+
+            // A cheaper path to this node was found after this entry was queued — stale.
+            if (snapshotFCost > current.fCost)
+                continue;
 
             if (current == endNode)
             {
@@ -73,19 +94,21 @@ public static class Pathfinding
             {
                 NavMeshNode neighborNode = neighborInfo.node;
                 neighborNode.EnsurePathFindingIterationCorrectness(_currentPathfindingIteration);
-                float g = current.gCost + distance(current.entryPoint.x, current.entryPoint.y, current, neighborInfo);
+
+                Vector2 crossingPoint = ClosestPointOnPortal(neighborInfo);
+                float g = current.gCost + Vector2.Distance(current.entryPoint, crossingPoint);
 
                 if (g > neighborNode.gCost)
                     continue;
 
-                float h = heuristic(current, neighborInfo);
+                float h = Vector2.Distance(crossingPoint, goalPos);
 
                 neighborNode.gCost = g;
                 neighborNode.fCost = g + h;
                 neighborNode.prev = current;
-                neighborNode.entryPoint = neighborInfo.portalMidpoint;
+                neighborNode.entryPoint = crossingPoint;
 
-                nodes.Enqueue(neighborNode);
+                nodes.Enqueue((neighborNode.fCost, neighborNode));
             }
         }
         return null;

@@ -22,7 +22,83 @@ public static class FunnelPathSmoother
             return new List<Vector2> { start, end };
 
         List<Portal> portals = BuildPortals(path, start, end);
-        return Funnel(portals);
+        List<Vector2> funneled = Funnel(portals);
+        return SimplifyWithLineOfSight(funneled);
+    }
+
+    // Safety net after funneling: greedily skip ahead to the farthest waypoint that's
+    // still in a straight, unobstructed line, dropping anything in between. Chains of
+    // narrow, offset doorways are exactly where discrete portal-based funneling is most
+    // fragile, so this catches and removes any residual zigzag regardless of its cause.
+    private static List<Vector2> SimplifyWithLineOfSight(List<Vector2> waypoints)
+    {
+        if (waypoints == null || waypoints.Count <= 2)
+            return waypoints;
+
+        var simplified = new List<Vector2> { waypoints[0] };
+        int current = 0;
+
+        while (current < waypoints.Count - 1)
+        {
+            int farthest = current + 1;
+            for (int candidate = waypoints.Count - 1; candidate > current + 1; candidate--)
+            {
+                if (HasLineOfSight(waypoints[current], waypoints[candidate]))
+                {
+                    farthest = candidate;
+                    break;
+                }
+            }
+            simplified.Add(waypoints[farthest]);
+            current = farthest;
+        }
+
+        return simplified;
+    }
+
+    // Supercover grid walk: visits every tile the segment passes through (not just
+    // fixed-interval samples), so it can't skip over a thin wall between two samples.
+    private static bool HasLineOfSight(Vector2 from, Vector2 to)
+    {
+        int x0 = Mathf.FloorToInt(from.x);
+        int y0 = Mathf.FloorToInt(from.y);
+        int x1 = Mathf.FloorToInt(to.x);
+        int y1 = Mathf.FloorToInt(to.y);
+
+        int dx = Mathf.Abs(x1 - x0);
+        int dy = Mathf.Abs(y1 - y0);
+        int x = x0, y = y0;
+        int xInc = to.x > from.x ? 1 : -1;
+        int yInc = to.y > from.y ? 1 : -1;
+        int error = dx - dy;
+        dx *= 2;
+        dy *= 2;
+
+        for (int n = 1 + dx / 2 + dy / 2; n > 0; n--)
+        {
+            if (x < 0 || y < 0 || NavMeshHandler.instance.GetNodeAt((ushort)x, (ushort)y) == null)
+                return false;
+
+            if (error > 0)
+            {
+                x += xInc;
+                error -= dy;
+            }
+            else if (error < 0)
+            {
+                y += yInc;
+                error += dx;
+            }
+            else
+            {
+                x += xInc;
+                y += yInc;
+                error -= dy;
+                error += dx;
+                n--;
+            }
+        }
+        return true;
     }
 
     private static List<Portal> BuildPortals(List<NavMeshNode> path, Vector2 start, Vector2 end)

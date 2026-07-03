@@ -44,10 +44,9 @@ public class NeighborInfo
     /// <summary>
     /// Portal coordinates crossing this and the next node, in world space (same
     /// convention as the outer node corners: index+1 for the far edge), not tile
-    /// indices — so portalMidpoint can be used directly in distance calculations.
+    /// indices — so they can be used directly in distance calculations.
     /// </summary>
     public readonly ushort pX1, pY1, pX2, pY2;
-    public Vector2 portalMidpoint {get; private set;}
     public NavMeshNode node;
 
     public NeighborInfo(ushort pX1, ushort pY1, ushort pX2, ushort pY2, NavMeshNode node)
@@ -57,8 +56,6 @@ public class NeighborInfo
         this.pX2 = pX2;
         this.pY2 = pY2;
         this.node = node;
-
-        portalMidpoint = new Vector2((pX1 + pX2) * 0.5f, (pY1 + pY2) * 0.5f);
     }
 }
 
