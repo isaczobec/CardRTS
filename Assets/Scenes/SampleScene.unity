@@ -2046,7 +2046,7 @@ MonoBehaviour:
   - Type: 2
     HasCollision: 0
   - Type: 3
-    HasCollision: 0
+    HasCollision: 1
 --- !u!114 &1537083959
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2059,7 +2059,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a19138ea00b6ce75ae025a0cfb1af5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GoTileManager
-  _goTiles: []
+  _goTiles:
+  - Type: 3
+    Objects:
+    - Prefab: {fileID: 8077043507155612275, guid: 6474f6462e5036b9e93b0f9d954f8ab2, type: 3}
+      ChanceToSpawn: 0.5
+      randomRotation: 0
+      minScale: 1
+      maxScale: 1.2
+    - Prefab: {fileID: 8077043507155612275, guid: f0244e81374f7238cbecb7fb216b8bfc, type: 3}
+      ChanceToSpawn: 0.5
+      randomRotation: 0
+      minScale: 1
+      maxScale: 1.2
 --- !u!1 &1539881325
 GameObject:
   m_ObjectHideFlags: 0

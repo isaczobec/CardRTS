@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -49,10 +51,11 @@ public class WorldManager : Singleton<WorldManager>
     public void GenerateAndRender()
     {
         Handler = new WorldGenHandler();
+        BuildTileSettingsLookup();
         SetupWorldGen(Handler);
         Handler.Generate();
+        NavMeshHandler.instance.CreateNavMesh(this);
         Renderer.Render(Handler);
-        BuildTileSettingsLookup();
     }
 
     void BuildTileSettingsLookup()
@@ -120,7 +123,17 @@ public class WorldManager : Singleton<WorldManager>
                 // Repaint interior terrain with lush thresholds (more grass, less sand).
                 // Water is preserved so rivers flow through the wetland naturally.
                 new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Grass },
+                new NoiseTileFeature
+                {
+                    NoiseResourceKey = "terrain",
+                    NoiseMinThreshold = 0.75f,
+                    Thresholds = new List<NoiseThreshold>
+                    {
+                        new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
+                    },
+                }
             }
         });
     }
+
 }
