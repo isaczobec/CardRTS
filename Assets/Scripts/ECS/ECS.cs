@@ -67,7 +67,7 @@ public class ECS
         }
         store.AddComponent(entityId, component);
         Delta.MarkComponentDirty(entityId, typeof(T));
-        FlagEvents.Add<ComponentAddedEvent<T>>();
+        FlagEvents.Add(new ComponentAddedEvent<T> { EntityId = entityId });
     }
 
     public void RemoveComponent<T>(ulong entityId) where T : struct, IComponent
@@ -81,6 +81,7 @@ public class ECS
         }
         store.RemoveComponent(entityId);
         Delta.MarkComponentDeleted(entityId, typeof(T));
+        FlagEvents.Add(new ComponentRemovedEvent<T> { EntityId = entityId });
     }
 
     public EntityHandle CreateEntity()
@@ -90,7 +91,7 @@ public class ECS
         var addRes = _entities.Add(new EntityData(id));
         _entityIdsToIndicies[id] = (int) addRes.addedIndex;
 
-        FlagEvents.Add<EntityCreatedEvent>();
+        FlagEvents.Add(new EntityCreatedEvent { EntityId = id });
         Delta.MarkEntityCreated(id);
         return new EntityHandle(id);
     }
@@ -101,7 +102,7 @@ public class ECS
     {
         var addRes = _entities.Add(new EntityData(id));
         _entityIdsToIndicies[id] = (int)addRes.addedIndex;
-        FlagEvents.Add<EntityCreatedEvent>();
+        FlagEvents.Add(new EntityCreatedEvent { EntityId = id });
     }
 
     public void DeleteEntity(ulong entityId)
@@ -114,6 +115,7 @@ public class ECS
         int index = _entityIdsToIndicies[entityId];
         _entities.Remove((uint)index);
         Delta.MarkEntityDeleted(entityId);
+        FlagEvents.Add(new EntityDeletedEvent { EntityId = entityId });
     }
 
     public void RegisterSystem(ISystem system)

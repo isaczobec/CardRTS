@@ -33,6 +33,10 @@ public static class SpawnTroopSystem
             {
                 Type = RenderableType.Capsule,
             });
+
+            ecs.AddComponent(entity.Id, new SelectableComponent
+            {
+            });
         }
     }
 }

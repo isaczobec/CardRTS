@@ -1,4 +1,4 @@
-public class EntityCreatedEvent : FlagEvent
+public class ComponentRemovedEvent<T> : FlagEvent where T : IComponent
 {
     public ulong EntityId { get; set; }
 

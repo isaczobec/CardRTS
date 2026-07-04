@@ -109,6 +109,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<PlayerComponent>(2);
         _componentTypeRegistry.Register<TroopComponent>(3);
         _componentTypeRegistry.Register<RenderableComponent>(4);
+        _componentTypeRegistry.Register<SelectableComponent>(5);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -122,6 +123,14 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<PositionUpdatedEvent>(3);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<TroopComponent>>(5);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RenderableComponent>>(6);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<SelectableComponent>>(7);
+        _flagEventTypeRegistry.Register<EntityDeletedEvent>(8);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PositionComponent>>(9);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RandomWalkComponent>>(10);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerComponent>>(11);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<TroopComponent>>(12);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RenderableComponent>>(13);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<SelectableComponent>>(14);
 
         ECS = CreateSimulationECS();
     }
@@ -267,6 +276,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
         ecs.AddComponentStore(new ComponentStore<TroopComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
+        ecs.AddComponentStore(new ComponentStore<SelectableComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
@@ -283,6 +293,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
         ecs.AddComponentStore(new ComponentStore<TroopComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
+        ecs.AddComponentStore(new ComponentStore<SelectableComponent>());
+
         return ecs;
     }
 }

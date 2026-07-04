@@ -95,6 +95,11 @@ public class WorldGenHandler
 
     public float GetHeight(ushort tileX, ushort tileY)
     {
+        if (tileX >= CHUNK_SIZE_TILES * WorldSizeChunks || tileY >= CHUNK_SIZE_TILES * WorldSizeChunks)
+        {
+            DebugLogger.LogWarning($"Tile coordinates ({tileX}, {tileY}) are out of bounds.");
+            return 0f;
+        }
         return _heightMap[TileXYToIndex(tileX, tileY)];
     }
 

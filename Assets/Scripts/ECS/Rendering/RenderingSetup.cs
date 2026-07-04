@@ -11,5 +11,8 @@ public class RenderingSetup : Singleton<RenderingSetup>
         ECS ecs = TickManager.instance.ActiveECS;
         _renderableManager.Initialize(ecs);
         _renderableManager.Register(RenderableType.Capsule, new CapsuleRenderer(ecs, _capsuleMaterial));
+
+
+        SelectionManager.instance.Initialize();
     }
 }

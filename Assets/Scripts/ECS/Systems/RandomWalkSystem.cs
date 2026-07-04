@@ -29,7 +29,7 @@ public static class RandomWalkSystem
             float step = walk.Speed * TickManager.TickInterval;
             pos.X += dx / dist * step;
             pos.Y += dy / dist * step;
-            flagEvents.Add<PositionUpdatedEvent>();
+            flagEvents.Add(new PositionUpdatedEvent());
             ecs.Delta.MarkComponentDirty(entityId, typeof(PositionComponent));
         }
     }

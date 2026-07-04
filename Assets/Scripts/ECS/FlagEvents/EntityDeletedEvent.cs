@@ -1,4 +1,4 @@
-public class EntityCreatedEvent : FlagEvent
+public class EntityDeletedEvent : FlagEvent
 {
     public ulong EntityId { get; set; }
 

@@ -1,0 +1,4 @@
+public struct SelectableComponent : IComponent
+{
+    
+}

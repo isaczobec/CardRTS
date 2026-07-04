@@ -29,7 +29,7 @@ public static class PlayerMovementSystem
                 pos.X += input.DirX * Speed * TickManager.TickInterval;
                 pos.Y += input.DirY * Speed * TickManager.TickInterval;
                 ecs.Delta.MarkComponentDirty(entityId, typeof(PositionComponent));
-                flagEvents.Add<PositionUpdatedEvent>();
+                flagEvents.Add(new PositionUpdatedEvent());
                 break;
             }
         });
