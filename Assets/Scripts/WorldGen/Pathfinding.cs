@@ -87,6 +87,10 @@ public static class Pathfinding
                     pathNode = pathNode.prev;
                 }
                 path.Reverse();
+
+                if (NavMeshVisualizer.instance != null)
+                    NavMeshVisualizer.instance.HighlightPath(path, 10f);
+
                 return path;
             }
 

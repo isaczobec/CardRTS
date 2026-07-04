@@ -12,6 +12,7 @@ public class NavMeshNode : IComparable<NavMeshNode>
     public float gCost = float.MaxValue;
     public float fCost;
     public Vector2 entryPoint;
+    public Vector2 Center => new Vector2((x1 + x2 + 1) / 2f, (y1 + y2 + 1) / 2f);
 
     public NavMeshNode(ushort x1, ushort y1, ushort x2, ushort y2)
     {
@@ -92,6 +93,26 @@ public class NavMeshHandler : Singleton<NavMeshHandler>
             ushort xStart = a.x1 > b.x1 ? a.x1 : b.x1;
             ushort xEnd = (ushort)((a.x2 < b.x2 ? a.x2 : b.x2) + 1);
             return (xStart, boundaryY, xEnd, boundaryY);
+        }
+    }
+
+    public static (Vector2 p1, Vector2 p2) ComputePortalFloat(NavMeshNode a, NavMeshNode b)
+    {
+        if (a.x2 + 1 == b.x1 || b.x2 + 1 == a.x1)
+        {
+            // vertical boundary: nodes are adjacent left/right
+            float boundaryX = (float)(a.x2 + 1 == b.x1 ? a.x2 + 1 : a.x1);
+            float yStart = a.y1 > b.y1 ? a.y1 : b.y1;
+            float yEnd = (float)((a.y2 < b.y2 ? a.y2 : b.y2) + 1);
+            return (new Vector2(boundaryX, yStart), new Vector2(boundaryX, yEnd));
+        }
+        else
+        {
+            // horizontal boundary: nodes are adjacent above/below
+            float boundaryY = (float)(a.y2 + 1 == b.y1 ? a.y2 + 1 : a.y1);
+            float xStart = a.x1 > b.x1 ? a.x1 : b.x1;
+            float xEnd = (float)((a.x2 < b.x2 ? a.x2 : b.x2) + 1);
+            return (new Vector2(xStart, boundaryY), new Vector2(xEnd, boundaryY));
         }
     }
 

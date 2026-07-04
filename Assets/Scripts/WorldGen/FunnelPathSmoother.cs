@@ -1,238 +1,146 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// String-pulling ("simple stupid funnel algorithm") over the portals connecting a
-// NavMeshNode path from Pathfinding.PathFind. Turns the coarse node sequence into
-// a taut list of waypoints that hugs corners instead of routing through node/portal
-// centers.
 public static class FunnelPathSmoother
 {
-    private struct Portal
-    {
-        public Vector2 left;
-        public Vector2 right;
-    }
-
     public static List<Vector2> Pull(List<NavMeshNode> path, Vector2 start, Vector2 end)
     {
+        List<Vector2> points = new();
+
         if (path == null || path.Count == 0)
-            return null;
-
-        if (path.Count == 1)
-            return new List<Vector2> { start, end };
-
-        List<Portal> portals = BuildPortals(path, start, end);
-        List<Vector2> funneled = Funnel(portals);
-        return SimplifyWithLineOfSight(funneled);
-    }
-
-    // Safety net after funneling: greedily skip ahead to the farthest waypoint that's
-    // still in a straight, unobstructed line, dropping anything in between. Chains of
-    // narrow, offset doorways are exactly where discrete portal-based funneling is most
-    // fragile, so this catches and removes any residual zigzag regardless of its cause.
-    private static List<Vector2> SimplifyWithLineOfSight(List<Vector2> waypoints)
-    {
-        if (waypoints == null || waypoints.Count <= 2)
-            return waypoints;
-
-        var simplified = new List<Vector2> { waypoints[0] };
-        int current = 0;
-
-        while (current < waypoints.Count - 1)
         {
-            int farthest = current + 1;
-            for (int candidate = waypoints.Count - 1; candidate > current + 1; candidate--)
-            {
-                if (HasLineOfSight(waypoints[current], waypoints[candidate]))
-                {
-                    farthest = candidate;
-                    break;
-                }
-            }
-            simplified.Add(waypoints[farthest]);
-            current = farthest;
+            points.Add(start);
+            points.Add(end);
+            return points;
         }
 
-        return simplified;
-    }
+        int portalCount = path.Count - 1;
 
-    // Supercover grid walk: visits every tile the segment passes through (not just
-    // fixed-interval samples), so it can't skip over a thin wall between two samples.
-    private static bool HasLineOfSight(Vector2 from, Vector2 to)
-    {
-        int x0 = Mathf.FloorToInt(from.x);
-        int y0 = Mathf.FloorToInt(from.y);
-        int x1 = Mathf.FloorToInt(to.x);
-        int y1 = Mathf.FloorToInt(to.y);
+        // Left/right chains of the corridor, bookended by the degenerate start/end
+        // "portals". Each real portal's raw endpoints are unordered (the same segment
+        // is shared by both directions of travel), so each portal is oriented against
+        // the previous one: a portal and its predecessor bound the same convex node,
+        // and of the two ways to pair up their endpoints, exactly one keeps the
+        // left-to-left and right-to-right connector segments from crossing inside
+        // that node. Picking that pairing at every step keeps both chains simple.
+        Vector2[] portalLeft = new Vector2[portalCount + 2];
+        Vector2[] portalRight = new Vector2[portalCount + 2];
 
-        int dx = Mathf.Abs(x1 - x0);
-        int dy = Mathf.Abs(y1 - y0);
-        int x = x0, y = y0;
-        int xInc = to.x > from.x ? 1 : -1;
-        int yInc = to.y > from.y ? 1 : -1;
-        int error = dx - dy;
-        dx *= 2;
-        dy *= 2;
+        portalLeft[0] = start;
+        portalRight[0] = start;
 
-        for (int n = 1 + dx / 2 + dy / 2; n > 0; n--)
+        for (int i = 0; i < portalCount; i++)
         {
-            if (x < 0 || y < 0 || NavMeshHandler.instance.GetNodeAt((ushort)x, (ushort)y) == null)
-                return false;
+            NeighborInfo portal = FindPortal(path[i], path[i + 1]);
 
-            if (error > 0)
+            Vector2 a = new(portal.pX1, portal.pY1);
+            Vector2 b = new(portal.pX2, portal.pY2);
+
+            Vector2 portalMid = (a + b) * 0.5f;
+            Vector2 dir = path[i + 1].Center - path[i].Center;
+
+            if (TriArea2(portalMid, portalMid + dir, a) > 0f)
             {
-                x += xInc;
-                error -= dy;
-            }
-            else if (error < 0)
-            {
-                y += yInc;
-                error += dx;
+                portalLeft[i + 1] = a;
+                portalRight[i + 1] = b;
             }
             else
             {
-                x += xInc;
-                y += yInc;
-                error -= dy;
-                error += dx;
-                n--;
+                portalLeft[i + 1] = b;
+                portalRight[i + 1] = a;
             }
         }
-        return true;
+
+        portalLeft[portalCount + 1] = end;
+        portalRight[portalCount + 1] = end;
+
+        // Simple Stupid Funnel Algorithm.
+        points.Add(start);
+
+        Vector2 apex = start;
+        Vector2 left = portalLeft[0];
+        Vector2 right = portalRight[0];
+        int apexIndex, leftIndex = 0, rightIndex = 0;
+
+        for (int i = 1; i < portalLeft.Length; i++)
+        {
+            Vector2 newLeft = portalLeft[i];
+            Vector2 newRight = portalRight[i];
+
+            if (TriArea2(apex, right, newRight) <= 0f)
+            {
+                if (apex == right || TriArea2(apex, left, newRight) > 0f)
+                {
+                    right = newRight;
+                    rightIndex = i;
+                }
+                else
+                {
+                    points.Add(left);
+                    apex = left;
+                    apexIndex = leftIndex;
+                    left = apex;
+                    right = apex;
+                    leftIndex = apexIndex;
+                    rightIndex = apexIndex;
+                    i = apexIndex;
+                    continue;
+                }
+            }
+
+            if (TriArea2(apex, left, newLeft) >= 0f)
+            {
+                if (apex == left || TriArea2(apex, right, newLeft) < 0f)
+                {
+                    left = newLeft;
+                    leftIndex = i;
+                }
+                else
+                {
+                    points.Add(right);
+                    apex = right;
+                    apexIndex = rightIndex;
+                    left = apex;
+                    right = apex;
+                    leftIndex = apexIndex;
+                    rightIndex = apexIndex;
+                    i = apexIndex;
+                    continue;
+                }
+            }
+        }
+
+        points.Add(end);
+
+        return points;
     }
 
-    private static List<Portal> BuildPortals(List<NavMeshNode> path, Vector2 start, Vector2 end)
+    private static NeighborInfo FindPortal(NavMeshNode from, NavMeshNode to)
     {
-        var portals = new List<Portal>(path.Count + 1)
+        foreach (NeighborInfo neighbor in from.Neighbors)
         {
-            new Portal { left = start, right = start }
-        };
-
-        for (int i = 0; i < path.Count - 1; i++)
-        {
-            NavMeshNode a = path[i];
-            NavMeshNode b = path[i + 1];
-
-            NeighborInfo link = a.Neighbors.Find(n => n.node == b);
-            GetPortalLeftRight(a, b, link, out Vector2 left, out Vector2 right);
-            portals.Add(new Portal { left = left, right = right });
+            if (neighbor.node == to)
+                return neighbor;
         }
-
-        portals.Add(new Portal { left = end, right = end });
-        return portals;
+        return null;
     }
 
-    // Nodes are unordered axis-aligned rectangles, so the portal's two stored
-    // endpoints (NeighborInfo.pX1/pY1/pX2/pY2) aren't inherently "left" or "right" —
-    // that depends on which way you're walking through the doorway. Which side of A
-    // node B sits on fully determines that, with no ambiguity, since portals here are
-    // always axis-aligned (purely vertical or purely horizontal).
-    private static void GetPortalLeftRight(NavMeshNode a, NavMeshNode b, NeighborInfo portal, out Vector2 left, out Vector2 right)
-    {
-        Vector2 p0 = new Vector2(portal.pX1, portal.pY1);
-        Vector2 p1 = new Vector2(portal.pX2, portal.pY2);
-
-        if (b.x1 == a.x2 + 1)
-        {
-            // b is to the right of a: larger Y is left, smaller Y is right.
-            if (p0.y >= p1.y) { left = p0; right = p1; } else { left = p1; right = p0; }
-        }
-        else if (a.x1 == b.x2 + 1)
-        {
-            // b is to the left of a: smaller Y is left, larger Y is right.
-            if (p0.y <= p1.y) { left = p0; right = p1; } else { left = p1; right = p0; }
-        }
-        else if (b.y1 == a.y2 + 1)
-        {
-            // b is above a: smaller X is left, larger X is right.
-            if (p0.x <= p1.x) { left = p0; right = p1; } else { left = p1; right = p0; }
-        }
-        else
-        {
-            // b is below a: larger X is left, smaller X is right.
-            if (p0.x >= p1.x) { left = p0; right = p1; } else { left = p1; right = p0; }
-        }
-    }
-
-    // Twice the signed area of triangle abc. Positive when c is left of the
-    // directed line a->b, negative when c is right of it, zero when collinear.
     private static float TriArea2(Vector2 a, Vector2 b, Vector2 c)
     {
         return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
     }
 
-    private static List<Vector2> Funnel(List<Portal> portals)
+    // Proper segment-crossing test (shared endpoints, e.g. the degenerate start
+    // "portal", never count as crossing, which is what allows the first real
+    // portal to be paired arbitrarily).
+    private static bool SegmentsCross(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
     {
-        var result = new List<Vector2>();
+        float d1 = TriArea2(p3, p4, p1);
+        float d2 = TriArea2(p3, p4, p2);
+        float d3 = TriArea2(p1, p2, p3);
+        float d4 = TriArea2(p1, p2, p4);
 
-        Vector2 portalApex = portals[0].left;
-        Vector2 portalLeft = portals[0].left;
-        Vector2 portalRight = portals[0].right;
-
-        int apexIndex = 0;
-        int leftIndex = 0;
-        int rightIndex = 0;
-
-        result.Add(portalApex);
-
-        for (int i = 1; i < portals.Count; i++)
-        {
-            Vector2 left = portals[i].left;
-            Vector2 right = portals[i].right;
-
-            // Try to tighten the funnel from the right.
-            if (TriArea2(portalApex, portalRight, right) <= 0f)
-            {
-                if (portalApex == portalRight || TriArea2(portalApex, portalLeft, right) > 0f)
-                {
-                    portalRight = right;
-                    rightIndex = i;
-                }
-                else
-                {
-                    // Right crossed over left: the funnel has collapsed. portalLeft
-                    // becomes a waypoint and the new apex; restart scanning from there.
-                    result.Add(portalLeft);
-
-                    portalApex = portalLeft;
-                    apexIndex = leftIndex;
-                    portalLeft = portalApex;
-                    portalRight = portalApex;
-                    leftIndex = apexIndex;
-                    rightIndex = apexIndex;
-
-                    i = apexIndex;
-                    continue;
-                }
-            }
-
-            // Try to tighten the funnel from the left.
-            if (TriArea2(portalApex, portalLeft, left) >= 0f)
-            {
-                if (portalApex == portalLeft || TriArea2(portalApex, portalRight, left) < 0f)
-                {
-                    portalLeft = left;
-                    leftIndex = i;
-                }
-                else
-                {
-                    // Left crossed over right: same collapse, mirrored.
-                    result.Add(portalRight);
-
-                    portalApex = portalRight;
-                    apexIndex = rightIndex;
-                    portalLeft = portalApex;
-                    portalRight = portalApex;
-                    leftIndex = apexIndex;
-                    rightIndex = apexIndex;
-
-                    i = apexIndex;
-                    continue;
-                }
-            }
-        }
-
-        result.Add(portals[portals.Count - 1].left);
-        return result;
+        return ((d1 > 0f && d2 < 0f) || (d1 < 0f && d2 > 0f)) &&
+               ((d3 > 0f && d4 < 0f) || (d3 < 0f && d4 > 0f));
     }
 }

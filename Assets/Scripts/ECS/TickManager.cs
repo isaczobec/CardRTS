@@ -267,10 +267,10 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerComponent>());
         ecs.AddComponentStore(new ComponentStore<TroopComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
-        ecs.RegisterSystem(SpawnEntitySystem.Instance);
+        // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
-        ecs.RegisterSystem(PlayerMovementSystem.Instance);
-        ecs.RegisterSystem(RandomWalkSystem.Instance);
+        // ecs.RegisterSystem(PlayerMovementSystem.Instance);
+        // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(PathfindingSystem.Instance);
         return ecs;
     }
