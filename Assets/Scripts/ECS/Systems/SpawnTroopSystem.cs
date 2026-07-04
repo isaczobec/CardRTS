@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 
 /// <summary>
 /// Server-only. Reads SpawnTroopInput each tick and creates a troop entity whose
@@ -29,6 +30,7 @@ public static class SpawnTroopSystem
                 tickToBecomeActive = ecs.CurrentSimulationTick + 20,
             });
 
+            DebugLogger.Log($"Spawned troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");
             ecs.AddComponent(entity.Id, new RenderableComponent
             {
                 Type = RenderableType.Capsule,

@@ -7,7 +7,7 @@ public class TestInput : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
             InputBuffer.EnqueueInput(new SpawnEntityInput());
 
-        if (Input.GetKeyDown(KeyCode.T) && TileSpaceMouse.TryGetPosition(out float tx, out float ty))
+        if (Input.GetKeyDown(KeyCode.X) && TileSpaceMouse.TryGetPosition(out float tx, out float ty))
             InputBuffer.EnqueueInput(new SpawnTroopInput { X = tx, Y = ty });
 
         if (Input.GetKeyDown(KeyCode.R) && TileSpaceMouse.TryGetPosition(out float tx1, out float ty1))

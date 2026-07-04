@@ -11,6 +11,9 @@ public class WorldRenderer : MonoBehaviour
     public Material ChunkMaterial;
     public TileTextureRegistry TextureRegistry;
 
+    [SerializeField] private RenderingLayerMask _terrainRenderingLayerMask = RenderingLayerMask.defaultRenderingLayerMask;
+    public RenderingLayerMask TerrainRenderingLayerMask => _terrainRenderingLayerMask;
+
     private readonly List<GameObject> _chunkObjects = new();
 
     [SerializeField]
@@ -51,6 +54,7 @@ public class WorldRenderer : MonoBehaviour
 
         mf.sharedMesh    = WorldMeshGenerator.BuildChunkMesh(handler, cx, cy);
         mr.sharedMaterial = ChunkMaterial;
+        mr.renderingLayerMask = _terrainRenderingLayerMask;
 
         var mpb = new MaterialPropertyBlock();
         mpb.SetTexture("_TileIDTex", WorldMeshGenerator.BuildChunkTileTexture(handler, cx, cy));

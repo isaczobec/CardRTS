@@ -18,6 +18,14 @@ Shader "Custom/WorldMesh"
             #pragma fragment frag
             #pragma require 2darray
 
+            // Decals' Screen-Space technique (unlike DBuffer) expects rendering-layer
+            // data written as a second render target straight from the main opaque
+            // pass, rather than from a DepthNormalsOnly prepass. Without this, this
+            // mesh's Rendering Layer Mask is never visible to the decal system and
+            // rendering-layer-filtered decals silently fail to project onto it.
+            #pragma multi_compile_fragment _ _WRITE_RENDERING_LAYERS
+            #pragma target 4.5 _WRITE_RENDERING_LAYERS
+
             // Core.hlsl must come first — it defines TEXTURE2D_ARRAY, SAMPLER,
             // SAMPLE_TEXTURE2D, CBUFFER_START, and TransformObjectToHClip.
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -43,9 +51,18 @@ Shader "Custom/WorldMesh"
                 return OUT;
             }
 
-            float4 frag(Varyings IN) : SV_Target
+            void frag(
+                Varyings IN
+                , out half4 outColor : SV_Target0
+            #ifdef _WRITE_RENDERING_LAYERS
+                , out uint outRenderingLayers : SV_Target1
+            #endif
+            )
             {
-                return SampleTerrain(IN.uv);
+                outColor = SampleTerrain(IN.uv);
+            #ifdef _WRITE_RENDERING_LAYERS
+                outRenderingLayers = EncodeMeshRenderingLayer();
+            #endif
             }
 
             ENDHLSL
