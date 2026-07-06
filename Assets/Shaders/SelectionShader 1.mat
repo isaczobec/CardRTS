@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: SelectionShader
+  m_Name: SelectionShader 1
   m_Shader: {fileID: -6465566751694194690, guid: 2e775d14fd999c74f9d8e6c81ea0f1f7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - Base_Map:
-        m_Texture: {fileID: 2800000, guid: 9fa30415447262cbab9afbdfa471bb3c, type: 3}
+        m_Texture: {fileID: 2800000, guid: 027c066ed297b39f9a944ba9fc37ea9c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Normal_Map:

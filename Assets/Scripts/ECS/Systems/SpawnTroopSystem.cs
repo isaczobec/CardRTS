@@ -38,6 +38,7 @@ public static class SpawnTroopSystem
 
             ecs.AddComponent(entity.Id, new SelectableComponent
             {
+                OwnerPlayerId = input.ClientId,
             });
         }
     }

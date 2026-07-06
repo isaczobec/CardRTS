@@ -11,6 +11,8 @@ public class ComponentDeltaManager
     private readonly ECS _ecs;
     private readonly TypeRegistry<IComponent> _componentTypeRegistry;
 
+    public readonly EventDispatcher<IComponentChangedEvent> ComponentChangedEvents = new();
+
     public struct ComponentMarker : IEquatable<ComponentMarker>
     {
         public ulong EntityId;
@@ -57,7 +59,31 @@ public class ComponentDeltaManager
     }
 
     /// <summary>
-    /// Gets and clears the delta of the ECS up to the previous call. 
+    /// Groups dirty components by type, raises a <see cref="ComponentChangedEvent{T}"/> for each,
+    /// and flushes the dispatcher. Call once at the end of a tick, before <see cref="GetComponentsDelta"/>.
+    /// </summary>
+    public void DispatchComponentChangedEvents()
+    {
+        var byType = new Dictionary<Type, List<ulong>>();
+        foreach (var marker in _dirtyComponents)
+        {
+            if (!byType.TryGetValue(marker.ComponentType, out var list))
+                byType[marker.ComponentType] = list = new List<ulong>();
+            list.Add(marker.EntityId);
+        }
+
+        foreach (var (componentType, entityIds) in byType)
+        {
+            Type eventType = typeof(ComponentChangedEvent<>).MakeGenericType(componentType);
+            var evt = (IComponentChangedEvent)Activator.CreateInstance(eventType, entityIds);
+            ComponentChangedEvents.Raise(evt);
+        }
+
+        ComponentChangedEvents.Flush();
+    }
+
+    /// <summary>
+    /// Gets and clears the delta of the ECS up to the previous call.
     /// Wire format: `[count: int32][entityId: ulong][typeId: ushort][dataLen: ushort][data: bytes]...`
     /// </summary>
     /// <returns></returns>

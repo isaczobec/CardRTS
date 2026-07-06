@@ -17,11 +17,14 @@ public class ECS
     private ComponentDeltaManager _deltaManager;
     public ComponentDeltaManager Delta => _deltaManager;
 
+    public EntityChunkTracker ChunkTracker { get; } = new EntityChunkTracker();
+
     public ECS()
     {
         _entities = new CopyBackArray<EntityData>(ENTITIES_CAPACITY);
         _entityIdsToIndicies = new();
         _deltaManager = new ComponentDeltaManager(this, TickManager.instance.ComponentTypeRegistry);
+        ChunkTracker.Initialize(this);
     }
 
     public void AddComponentStore<T>(ComponentStore<T> componentStore) where T : struct, IComponent
@@ -168,5 +171,7 @@ public class ECS
                 targetStore.ApplyComponentData(entityId, data);
             });
         }
+
+        ChunkTracker.Rebuild();
     }
 }

@@ -77,6 +77,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a5c1ab1f92682746835fe27731d6ed7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectionPrefab
+  _decalProjector: {fileID: 325330115890785319}
+  _selectedMaterial: {fileID: 2100000, guid: 624dddff256115e4b928c7ef279f7d53, type: 2}
+  _unselectedMaterial: {fileID: 2100000, guid: f740206c5b8e48ccdaf8ef62832176b5, type: 2}
 --- !u!1 &8171552275874510326
 GameObject:
   m_ObjectHideFlags: 0

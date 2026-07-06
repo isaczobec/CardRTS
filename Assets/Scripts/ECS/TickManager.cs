@@ -189,6 +189,7 @@ public class TickManager : Singleton<TickManager>
             ECS.ExecuteSystems();
             LastTickFlagEvents = Array.Empty<byte>();
             ECS.FlagEvents.Flush();
+            ECS.Delta.DispatchComponentChangedEvents();
             _serverTick = _tick;
             _tick++;
             AfterServerTick?.Invoke();
@@ -204,6 +205,7 @@ public class TickManager : Singleton<TickManager>
             ClientLocalECS.CurrentSimulationTick = _tick;
             ClientLocalECS.ExecuteSystems();
             ClientLocalECS.FlagEvents.Flush();
+            ClientLocalECS.Delta.DispatchComponentChangedEvents();
 
             // Guarantee an InputBuffer entry so the server can attach remote inputs later.
             InputBuffer.EnsureTickEntry(_tick);
@@ -231,6 +233,7 @@ public class TickManager : Singleton<TickManager>
             ECS.ExecuteSystems();
             LastTickFlagEvents = ECS.FlagEvents.SerializePending(_flagEventTypeRegistry);
             ECS.FlagEvents.Flush();
+            ECS.Delta.DispatchComponentChangedEvents();
 
             _serverTick++;
             AfterServerTick?.Invoke();
