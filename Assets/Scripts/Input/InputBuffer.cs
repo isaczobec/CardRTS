@@ -45,7 +45,7 @@ public static class InputBuffer
     {
         for (int i = 0; i < _buffer.Count; i++)
         {
-            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            int index = _buffer.Count - 1 - i;
             TickInputStore store = _buffer[index];
             if (store.tick == tick)
             {
@@ -73,7 +73,7 @@ public static class InputBuffer
     {
         for (int i = 0; i < _buffer.Count; i++)
         {
-            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            int index = _buffer.Count - 1 - i;
             if (_buffer[index].tick == tick) return;
             if (_buffer[index].tick < tick) break;
         }
@@ -87,7 +87,7 @@ public static class InputBuffer
     {
         for (int i = 0; i < _buffer.Count; i++)
         {
-            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            int index = _buffer.Count - 1 - i;
             TickInputStore store = _buffer[index];
             if (store.tick == tick)
             {
@@ -118,7 +118,7 @@ public static class InputBuffer
     {
         for (int i = 0; i < _buffer.Count; i++)
         {
-            int index = (_buffer.TailIndex - 1 - i + _buffer.Capacity) % _buffer.Capacity;
+            int index = _buffer.Count - 1 - i;
             TickInputStore store = _buffer[index];
             if (store.tick == tick)
             {

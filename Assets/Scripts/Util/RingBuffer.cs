@@ -7,7 +7,6 @@ public class RingBuffer<T> : IEnumerable<T>
     private readonly T[] _buffer;
     private int _head;  // oldest item
     private int _tail;  // next write position
-    public int TailIndex => _tail;
     private int _count;
 
     public int Count    => _count;
