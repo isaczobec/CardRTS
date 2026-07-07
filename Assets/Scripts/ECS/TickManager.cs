@@ -134,6 +134,7 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SelectableComponent>>(14);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<MovableComponent>>(15);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<MovableComponent>>(16);
+        _flagEventTypeRegistry.Register<TroopActivatedEvent>(17);
 
         ECS = CreateSimulationECS();
     }
@@ -286,6 +287,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<MovableComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
+        ecs.RegisterSystem(TroopActivationSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(PathfindingSystem.Instance);

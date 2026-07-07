@@ -65,6 +65,7 @@ public static class PathfindingSystem
 
             ref TroopComponent troop = ref troopStore.GetComponent(entityId);
             if (troop.OwnerPlayerId != input.ClientId) continue;
+            if (!troop.IsActive) continue;
 
             ref PositionComponent pos = ref posStore.GetComponent(entityId);
             List<Vector2> path = Pathfinding.PathFind(pos.X, pos.Y, move.DestinationX, move.DestinationY);

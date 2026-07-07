@@ -21,6 +21,7 @@ public class SelectionManager : Singleton<SelectionManager>
 
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<SelectableComponent> _selectableStore;
+    private ComponentStore<TroopComponent> _troopStore;
     private EntityChunkTracker _chunkTracker;
 
     private readonly Dictionary<ulong, SelectionPrefab> _selectionObjects = new();
@@ -37,13 +38,14 @@ public class SelectionManager : Singleton<SelectionManager>
 
     public void Initialize()
     {
-        TickManager.instance.ServerFlagEvents.Subscribe<ComponentAddedEvent<SelectableComponent>>(SetupSelection);
+        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(SetupSelection);
         TickManager.instance.ServerFlagEvents.Subscribe<ComponentRemovedEvent<SelectableComponent>>(RemoveSelectionObject);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(DeleteSelectionObject);
 
         ECS ecs = TickManager.instance.ActiveECS;
         _positionStore = ecs.GetComponentStore<PositionComponent>();
         _selectableStore = ecs.GetComponentStore<SelectableComponent>();
+        _troopStore = ecs.GetComponentStore<TroopComponent>();
         _chunkTracker = ecs.ChunkTracker;
 
         if (_dragSelectionBox != null)
@@ -114,6 +116,7 @@ public class SelectionManager : Singleton<SelectionManager>
     private bool IsFriendly(ulong entityId)
     {
         if (!_selectableStore.HasComponent(entityId)) return false;
+        if (_troopStore.HasComponent(entityId) && !_troopStore.GetComponent(entityId).IsActive) return false;
         return _selectableStore.GetComponent(entityId).OwnerPlayerId == LocalPlayerId();
     }
 
@@ -213,9 +216,10 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // ── Selection object lifecycle ────────────────────────────────────────────
 
-    public void SetupSelection(ComponentAddedEvent<SelectableComponent> e)
+    public void SetupSelection(TroopActivatedEvent e)
     {
         if (_selectionObjects.ContainsKey(e.EntityId)) return;
+        if (!_selectableStore.HasComponent(e.EntityId)) return;
         if (!_positionStore.HasComponent(e.EntityId)) return;
 
         PositionComponent pos = _positionStore.GetComponent(e.EntityId);

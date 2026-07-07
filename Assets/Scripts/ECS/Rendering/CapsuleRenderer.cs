@@ -22,11 +22,8 @@ public class CapsuleRenderer : IComponentRenderer
 
     public void OnEntityAdded(ulong entityId)
     {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        go.name = $"Troop_{entityId}";
-        if (_material != null)
-            go.GetComponent<MeshRenderer>().sharedMaterial = _material;
-        _objects[entityId] = go;
+        // No visual yet — the capsule is created on activation (see OnEntityActivated)
+        // so troops stay invisible until then.
     }
 
     public void OnEntityRemoved(ulong entityId)
@@ -34,6 +31,17 @@ public class CapsuleRenderer : IComponentRenderer
         if (!_objects.TryGetValue(entityId, out var go)) return;
         Object.Destroy(go);
         _objects.Remove(entityId);
+    }
+
+    public void OnEntityActivated(ulong entityId)
+    {
+        if (_objects.ContainsKey(entityId)) return;
+
+        var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        go.name = $"Troop_{entityId}";
+        if (_material != null)
+            go.GetComponent<MeshRenderer>().sharedMaterial = _material;
+        _objects[entityId] = go;
     }
 
     public void Update(List<ulong> entityIds)

@@ -12,6 +12,9 @@ public interface IComponentRenderer
     /// <summary>Called once when such an entity is removed or its RenderableComponent is stripped.</summary>
     void OnEntityRemoved(ulong entityId);
 
+    /// <summary>Called once when TroopActivatedEvent fires for an entity belonging to this renderer's type.</summary>
+    void OnEntityActivated(ulong entityId);
+
     /// <summary>
     /// Called every Unity Update with the full current list of entities belonging to this renderer.
     /// </summary>

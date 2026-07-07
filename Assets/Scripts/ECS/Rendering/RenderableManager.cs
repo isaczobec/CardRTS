@@ -21,6 +21,19 @@ public class RenderableManager : MonoBehaviour
     public void Initialize(ECS ecs)
     {
         _ecs = ecs;
+        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+    }
+
+    private void OnTroopActivated(TroopActivatedEvent e)
+    {
+        if (_ecs == null) return;
+
+        var store = _ecs.GetComponentStore<RenderableComponent>();
+        if (store == null || !store.HasComponent(e.EntityId)) return;
+
+        RenderableType type = store.GetComponent(e.EntityId).Type;
+        if (_renderers.TryGetValue(type, out IComponentRenderer renderer))
+            renderer.OnEntityActivated(e.EntityId);
     }
 
     /// <summary>

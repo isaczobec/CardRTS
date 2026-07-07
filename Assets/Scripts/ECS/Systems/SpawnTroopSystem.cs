@@ -29,7 +29,7 @@ public static class SpawnTroopSystem
             ecs.AddComponent(entity.Id, new TroopComponent
             {
                 OwnerPlayerId      = input.ClientId,
-                tickToBecomeActive = ecs.CurrentSimulationTick + 20,
+                _ticksUntilActive = 20,
             });
 
             DebugLogger.Log($"Spawned troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");

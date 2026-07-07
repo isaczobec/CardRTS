@@ -6,6 +6,7 @@ public class ECS
     public static readonly uint ENTITIES_CAPACITY = 1048576;
 
     public FlagEventManager FlagEvents { get; } = new FlagEventManager();
+    public RequestManager Requests { get; } = new RequestManager();
 
     // Set by TickManager before each ExecuteSystems() call so systems can query inputs for the right tick.
     public ulong CurrentSimulationTick { get; set; }
