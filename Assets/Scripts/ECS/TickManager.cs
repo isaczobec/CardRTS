@@ -110,6 +110,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<TroopComponent>(3);
         _componentTypeRegistry.Register<RenderableComponent>(4);
         _componentTypeRegistry.Register<SelectableComponent>(5);
+        _componentTypeRegistry.Register<MovableComponent>(6);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -131,6 +132,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<TroopComponent>>(12);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RenderableComponent>>(13);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SelectableComponent>>(14);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<MovableComponent>>(15);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<MovableComponent>>(16);
 
         ECS = CreateSimulationECS();
     }
@@ -280,6 +283,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<TroopComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
         ecs.AddComponentStore(new ComponentStore<SelectableComponent>());
+        ecs.AddComponentStore(new ComponentStore<MovableComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
@@ -297,6 +301,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<TroopComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
         ecs.AddComponentStore(new ComponentStore<SelectableComponent>());
+        ecs.AddComponentStore(new ComponentStore<MovableComponent>());
 
         return ecs;
     }

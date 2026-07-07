@@ -10,6 +10,8 @@ public static class SpawnTroopSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
+    private const float DefaultSpeed = 10f;
+
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
         List<SpawnTroopInput> inputs = ecs.GetInputsForTick<SpawnTroopInput>();
@@ -39,6 +41,13 @@ public static class SpawnTroopSystem
             ecs.AddComponent(entity.Id, new SelectableComponent
             {
                 OwnerPlayerId = input.ClientId,
+            });
+
+            ecs.AddComponent(entity.Id, new MovableComponent
+            {
+                DestinationX = input.X,
+                DestinationY = input.Y,
+                Speed = DefaultSpeed,
             });
         }
     }

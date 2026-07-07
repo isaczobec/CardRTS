@@ -18,6 +18,10 @@ public static class Pathfinding
 
     public static List<NavMeshNode> PathFindNavMesh(float worldX, float worldY, float desX, float desY)
     {
+        NavMeshHandler navMeshHandler = NavMeshHandler;
+        if (navMeshHandler == null)
+            return null;
+
         _currentPathfindingIteration++;
 
         // convert world coordinates to tile coordinates with floor
@@ -26,8 +30,8 @@ public static class Pathfinding
         ushort desTileX = (ushort)Mathf.FloorToInt(desX);
         ushort desTileY = (ushort)Mathf.FloorToInt(desY);
 
-        NavMeshNode startNode = NavMeshHandler.GetNodeAt(tileX, tileY);
-        NavMeshNode endNode = NavMeshHandler.GetNodeAt(desTileX, desTileY);
+        NavMeshNode startNode = navMeshHandler.GetNodeAt(tileX, tileY);
+        NavMeshNode endNode = navMeshHandler.GetNodeAt(desTileX, desTileY);
 
         if (startNode == null || endNode == null)
             return null;
@@ -67,8 +71,27 @@ public static class Pathfinding
         startNode.entryPoint = new Vector2(worldX, worldY);
         nodes.Enqueue((startNode.fCost, startNode));
 
+        // Safety valve: with well-behaved (non-negative, strictly-relaxed) edges this loop
+        // expands each node a small, bounded number of times, but a degenerate/near-zero
+        // length portal (two nodes touching at a corner) can make two routes compare as
+        // exactly equal cost. Re-relaxing on ties used to let A and B keep re-enqueueing
+        // each other forever, growing the heap without bound and hanging the tick that
+        // called this. The strict "<" relax check below already rules that out, but this
+        // cap is a hard backstop against any other latent graph bug (duplicate/self edges,
+        // corrupted prev chains) doing the same thing.
+        int maxExpansions = Mathf.Max(2048, navMeshHandler.Nodes.Count * 8);
+        int expansions = 0;
+
         while (nodes.Count > 0)
         {
+            if (++expansions > maxExpansions)
+            {
+                DebugLogger.LogWarning(
+                    $"Pathfinding aborted after {maxExpansions} node expansions ({navMeshHandler.Nodes.Count} nav nodes total) — likely a cyclic/degenerate graph state.",
+                    "NavMesh");
+                return null;
+            }
+
             (float snapshotFCost, NavMeshNode current) = nodes.Dequeue();
             current.EnsurePathFindingIterationCorrectness(_currentPathfindingIteration);
 
@@ -81,8 +104,16 @@ public static class Pathfinding
                 // reconstruct path, later apply funnel algorithm
                 List<NavMeshNode> path = new List<NavMeshNode>();
                 NavMeshNode pathNode = endNode;
+                int maxPathNodes = navMeshHandler.Nodes.Count + 1;
                 while (pathNode != null)
                 {
+                    if (path.Count > maxPathNodes)
+                    {
+                        DebugLogger.LogError(
+                            "Pathfinding path reconstruction exceeded the total nav node count — prev chain is cyclic; aborting.",
+                            "NavMesh");
+                        return null;
+                    }
                     path.Add(pathNode);
                     pathNode = pathNode.prev;
                 }
@@ -102,7 +133,9 @@ public static class Pathfinding
                 Vector2 crossingPoint = ClosestPointOnPortal(neighborInfo);
                 float g = current.gCost + Vector2.Distance(current.entryPoint, crossingPoint);
 
-                if (g > neighborNode.gCost)
+                // Strict improvement only — relaxing on ties is what let equal-cost
+                // corner-adjacent nodes re-enqueue each other indefinitely (see comment above).
+                if (g >= neighborNode.gCost)
                     continue;
 
                 float h = Vector2.Distance(crossingPoint, goalPos);
