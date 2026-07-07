@@ -1,15 +1,19 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class PathfindingSystem
+// Instance (not static) so each ECS gets its own path cache — a client's prediction
+// ECS and the host's authoritative ECS must never share this state.
+public class PathfindingSystem : ISystem
 {
-    public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
-    private static Dictionary<ulong, List<Vector2>> _entityIdsToPaths = new Dictionary<ulong, List<Vector2>>();
+    public Type[] ComponentTypes => Array.Empty<Type>();
+
+    private readonly Dictionary<ulong, List<Vector2>> _entityIdsToPaths = new Dictionary<ulong, List<Vector2>>();
 
     private const float ArrivalRadius = 0.05f;
     private const int DefaultSpeed = 10;
 
-    private static void Execute(ECS ecs, FlagEventManager flagEvents)
+    public void Execute(ECS ecs)
     {
         List<MoveTroopInput> inputs = ecs.GetInputsForTick<MoveTroopInput>();
         ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
@@ -50,7 +54,7 @@ public static class PathfindingSystem
 
     // Applies each requested (entity, destination) pair, ignoring any entity that isn't
     // movable or that the requesting client doesn't own.
-    private static void ApplyInput(
+    private void ApplyInput(
         ECS ecs,
         MoveTroopInput input,
         ComponentStore<PositionComponent> posStore,

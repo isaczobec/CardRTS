@@ -39,6 +39,7 @@ public class TickManager : Singleton<TickManager>
 
     private float _timer;
     private bool _gameStarted = false;
+    public bool IsGameStarted => _gameStarted;
 
     // Fires after each authoritative server tick (and after standalone ticks).
     public Action AfterServerTick;
@@ -118,6 +119,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<MoveInput>(1);
         _inputTypeRegistry.Register<SpawnTroopInput>(2);
         _inputTypeRegistry.Register<MoveTroopInput>(3);
+        _inputTypeRegistry.Register<SetTargetsInput>(4);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -299,7 +301,8 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(TroopActivationSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
-        ecs.RegisterSystem(PathfindingSystem.Instance);
+        ecs.RegisterSystem(new TargetingSystem());
+        ecs.RegisterSystem(new PathfindingSystem());
         ecs.RegisterSystem(DeathSystem.Instance);
         return ecs;
     }

@@ -141,6 +141,16 @@ public class ECS
             system.Execute(this);
     }
 
+    // Finds a registered system instance by its concrete type, so other code can query
+    // state it tracks (e.g. TargetingSystem's target records). Returns null if no
+    // system of that type is registered on this ECS.
+    public T GetSystem<T>() where T : class, ISystem
+    {
+        foreach (ISystem system in _systems)
+            if (system is T typed) return typed;
+        return null;
+    }
+
     // Returns inputs of type T for the given tick, or CurrentSimulationTick if omitted.
     public List<T> GetInputsForTick<T>(ulong? tick = null) where T : InputBase
         => InputBuffer.GetInputsForTick<T>(tick ?? CurrentSimulationTick);

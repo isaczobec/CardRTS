@@ -973,12 +973,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectionManager
   _selectionPrefab: {fileID: 8077043507155612275, guid: 94a09ca5a92901d47b0334c4fa30a584, type: 3}
+  _targetingPrefab: {fileID: 8077043507155612275, guid: 1921721a99e90ce44ae36d080b5672b9, type: 3}
   _dragSelectionBox: {fileID: 809644850}
   _friendlyColor: {r: 0.59685385, g: 0.8726415, b: 0.59685385, a: 1}
   _friendlySelectedColor: {r: 0, g: 1, b: 0.06529057, a: 1}
   _friendlySingleSelectedColor: {r: 0, g: 0.8595506, b: 1, a: 1}
   _neutralColor: {r: 0.6509434, g: 0.6509434, b: 0.6509434, a: 1}
   _enemyColor: {r: 0.9339623, g: 0.5323907, b: 0.502225, a: 1}
+  _targetedColor: {r: 1, g: 0, b: 0, a: 1}
   _selectionColorProperty: _SelectionColor
 --- !u!1 &649030905
 GameObject:
