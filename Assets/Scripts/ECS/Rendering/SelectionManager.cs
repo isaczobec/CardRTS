@@ -116,7 +116,7 @@ public class SelectionManager : Singleton<SelectionManager>
     private bool IsFriendly(ulong entityId)
     {
         if (!_selectableStore.HasComponent(entityId)) return false;
-        if (_troopStore.HasComponent(entityId) && !_troopStore.GetComponent(entityId).IsActive) return false;
+        if (_troopStore.HasComponent(entityId) && !_troopStore.GetComponent(entityId).CanTakeActions) return false;
         return _selectableStore.GetComponent(entityId).OwnerPlayerId == LocalPlayerId();
     }
 

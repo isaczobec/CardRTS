@@ -10,7 +10,11 @@ public static class SpawnTroopSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
-    private const float DefaultSpeed = 10f;
+    private const int DefaultMaxHealth = 100;
+    private const int DefaultSpeed = 10;
+    private const int DefaultRange = 5;
+    private const int DefaultArmor = 0;
+    private const int DefaultDamage = 10;
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
@@ -47,7 +51,20 @@ public static class SpawnTroopSystem
             {
                 DestinationX = input.X,
                 DestinationY = input.Y,
-                Speed = DefaultSpeed,
+            });
+
+            ecs.AddComponent(entity.Id, new StatsComponent
+            {
+                MaxHealth = DefaultMaxHealth,
+                Speed     = DefaultSpeed,
+                Range     = DefaultRange,
+                Armor     = DefaultArmor,
+                Damage    = DefaultDamage,
+            });
+
+            ecs.AddComponent(entity.Id, new HealthComponent
+            {
+                CurrentHealth = DefaultMaxHealth,
             });
         }
     }

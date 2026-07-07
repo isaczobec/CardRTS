@@ -111,6 +111,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<RenderableComponent>(4);
         _componentTypeRegistry.Register<SelectableComponent>(5);
         _componentTypeRegistry.Register<MovableComponent>(6);
+        _componentTypeRegistry.Register<HealthComponent>(7);
+        _componentTypeRegistry.Register<StatsComponent>(8);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -135,6 +137,11 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<MovableComponent>>(15);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<MovableComponent>>(16);
         _flagEventTypeRegistry.Register<TroopActivatedEvent>(17);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<HealthComponent>>(18);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<HealthComponent>>(19);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<StatsComponent>>(20);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<StatsComponent>>(21);
+        _flagEventTypeRegistry.Register<TroopDiedEvent>(22);
 
         ECS = CreateSimulationECS();
     }
@@ -285,12 +292,15 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
         ecs.AddComponentStore(new ComponentStore<SelectableComponent>());
         ecs.AddComponentStore(new ComponentStore<MovableComponent>());
+        ecs.AddComponentStore(new ComponentStore<HealthComponent>());
+        ecs.AddComponentStore(new ComponentStore<StatsComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(TroopActivationSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(PathfindingSystem.Instance);
+        ecs.RegisterSystem(DeathSystem.Instance);
         return ecs;
     }
 
@@ -304,6 +314,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<RenderableComponent>());
         ecs.AddComponentStore(new ComponentStore<SelectableComponent>());
         ecs.AddComponentStore(new ComponentStore<MovableComponent>());
+        ecs.AddComponentStore(new ComponentStore<HealthComponent>());
+        ecs.AddComponentStore(new ComponentStore<StatsComponent>());
 
         return ecs;
     }

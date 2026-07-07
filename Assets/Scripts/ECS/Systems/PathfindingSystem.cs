@@ -7,6 +7,7 @@ public static class PathfindingSystem
     private static Dictionary<ulong, List<Vector2>> _entityIdsToPaths = new Dictionary<ulong, List<Vector2>>();
 
     private const float ArrivalRadius = 0.05f;
+    private const int DefaultSpeed = 10;
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
@@ -26,7 +27,6 @@ public static class PathfindingSystem
             if (!_entityIdsToPaths.TryGetValue(id, out List<Vector2> path)) return;
 
             ref PositionComponent pos = ref posStore.GetComponent(id);
-            ref MovableComponent mov = ref movStore.GetComponent(id);
             Vector2 currentPos = new Vector2(pos.X, pos.Y);
 
             if (Vector2.Distance(path[0], currentPos) < ArrivalRadius)
@@ -39,7 +39,8 @@ public static class PathfindingSystem
                 }
             }
 
-            float step = mov.Speed * TickManager.TickInterval;
+            int speed = StatsQuery.GetSpeed(ecs, id, DefaultSpeed);
+            float step = speed * TickManager.TickInterval;
             Vector2 nextPos = Vector2.MoveTowards(currentPos, path[0], step);
             pos.X = nextPos.x;
             pos.Y = nextPos.y;
@@ -65,7 +66,7 @@ public static class PathfindingSystem
 
             ref TroopComponent troop = ref troopStore.GetComponent(entityId);
             if (troop.OwnerPlayerId != input.ClientId) continue;
-            if (!troop.IsActive) continue;
+            if (!troop.CanTakeActions) continue;
 
             ref PositionComponent pos = ref posStore.GetComponent(entityId);
             List<Vector2> path = Pathfinding.PathFind(pos.X, pos.Y, move.DestinationX, move.DestinationY);
