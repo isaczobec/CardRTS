@@ -5,4 +5,5 @@ public struct StatsComponent : IComponent
     public int Range;
     public int Armor;
     public int Damage;
+    public int AttackSpeed;
 }

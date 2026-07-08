@@ -3,12 +3,16 @@ using UnityEngine.Rendering.Universal;
 
 // Decal shown on a troop while it is targeted by at least one friendly troop.
 // Managed the same way as SelectionPrefab (instantiated per troop, repositioned every
-// frame to follow it), but stays hidden until SetTargeted is called.
+// frame to follow it), but stays hidden until SetTargeted is called. Colors itself
+// based on whether the target was player-assigned or picked automatically by AI.
 public class TargetingPrefab : MonoBehaviour
 {
     [SerializeField] private DecalProjector _decalProjector;
+    [SerializeField] private Color _playerAssignedColor = Color.red;
+    [SerializeField] private Color _automaticColor = Color.yellow;
 
     public bool IsTargeted { get; private set; }
+    public TargetKind? CurrentKind { get; private set; }
 
     void Awake()
     {
@@ -23,9 +27,11 @@ public class TargetingPrefab : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    public void SetTargeted(Color color, string colorProperty)
+    public void SetTargeted(TargetKind kind, string colorProperty)
     {
         IsTargeted = true;
+        CurrentKind = kind;
+        Color color = kind == TargetKind.Automatic ? _automaticColor : _playerAssignedColor;
         _decalProjector.material.SetColor(colorProperty, color);
         gameObject.SetActive(true);
     }
@@ -33,6 +39,7 @@ public class TargetingPrefab : MonoBehaviour
     public void SetUntargeted()
     {
         IsTargeted = false;
+        CurrentKind = null;
         gameObject.SetActive(false);
     }
 }

@@ -8,7 +8,19 @@ public class PathfindingSystem : ISystem
 {
     public Type[] ComponentTypes => Array.Empty<Type>();
 
-    private readonly Dictionary<ulong, List<Vector2>> _entityIdsToPaths = new Dictionary<ulong, List<Vector2>>();
+    // The path currently being followed for an entity, plus the destination it was
+    // computed for. Comparing against MovableComponent.CurrentDestinationX/Y each tick
+    // lets us detect a new player order (or a future AI-driven destination change) and
+    // recompute lazily, without redoing pathfinding every tick. A null Path means that
+    // destination was found unreachable; we don't retry until the destination changes.
+    private struct CachedPath
+    {
+        public List<Vector2> Path;
+        public float DestinationX;
+        public float DestinationY;
+    }
+
+    private readonly Dictionary<ulong, CachedPath> _entityIdsToPaths = new Dictionary<ulong, CachedPath>();
 
     private const float ArrivalRadius = 0.05f;
     private const int DefaultSpeed = 10;
@@ -19,19 +31,46 @@ public class PathfindingSystem : ISystem
         ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
         ComponentStore<MovableComponent> movStore = ecs.GetComponentStore<MovableComponent>();
         ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<BasicMeleeAIComponent> aiStore = ecs.GetComponentStore<BasicMeleeAIComponent>();
 
         if (inputs != null)
         {
             foreach (MoveTroopInput input in inputs)
-                ApplyInput(ecs, input, posStore, movStore, troopStore);
+                ApplyInput(ecs, input, posStore, movStore, troopStore, aiStore);
         }
 
         movStore.ForEach((ulong id) => {
             if (!posStore.HasComponent(id)) return;
-            if (!_entityIdsToPaths.TryGetValue(id, out List<Vector2> path)) return;
+
+            ref MovableComponent mov = ref movStore.GetComponent(id);
+            if (mov.currentMovementMode == MovementMode.NotMoving)
+            {
+                _entityIdsToPaths.Remove(id);
+                return;
+            }
+
+            float destX = mov.CurrentDestinationX;
+            float destY = mov.CurrentDestinationY;
 
             ref PositionComponent pos = ref posStore.GetComponent(id);
             Vector2 currentPos = new Vector2(pos.X, pos.Y);
+
+            // Recompute only when there's no cached path yet, or it was computed for a
+            // different destination than the one currently active.
+            if (!_entityIdsToPaths.TryGetValue(id, out CachedPath cached)
+                || cached.DestinationX != destX || cached.DestinationY != destY)
+            {
+                cached = new CachedPath
+                {
+                    Path         = Pathfinding.PathFind(pos.X, pos.Y, destX, destY),
+                    DestinationX = destX,
+                    DestinationY = destY,
+                };
+                _entityIdsToPaths[id] = cached;
+            }
+
+            List<Vector2> path = cached.Path;
+            if (path == null || path.Count == 0) return;
 
             if (Vector2.Distance(path[0], currentPos) < ArrivalRadius)
             {
@@ -39,6 +78,12 @@ public class PathfindingSystem : ISystem
                 if (path.Count == 0)
                 {
                     _entityIdsToPaths.Remove(id);
+
+                    if (mov.currentMovementMode == MovementMode.MoveToPlayerSetDestination)
+                        mov.playerDestinationSet = false;
+                    mov.currentMovementMode = MovementMode.NotMoving;
+                    ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
+
                     return;
                 }
             }
@@ -52,14 +97,16 @@ public class PathfindingSystem : ISystem
         });
     }
 
-    // Applies each requested (entity, destination) pair, ignoring any entity that isn't
-    // movable or that the requesting client doesn't own.
+    // Applies each requested (entity, destination) pair as a player move order,
+    // ignoring any entity that isn't movable/owned/able to act. The actual path is
+    // (re)computed lazily in Execute once the destination change is observed there.
     private void ApplyInput(
         ECS ecs,
         MoveTroopInput input,
         ComponentStore<PositionComponent> posStore,
         ComponentStore<MovableComponent> movStore,
-        ComponentStore<TroopComponent> troopStore)
+        ComponentStore<TroopComponent> troopStore,
+        ComponentStore<BasicMeleeAIComponent> aiStore)
     {
         foreach (MoveTroopInput.EntityDestination move in input.Moves)
         {
@@ -72,16 +119,22 @@ public class PathfindingSystem : ISystem
             if (troop.OwnerPlayerId != input.ClientId) continue;
             if (!troop.CanTakeActions) continue;
 
-            ref PositionComponent pos = ref posStore.GetComponent(entityId);
-            List<Vector2> path = Pathfinding.PathFind(pos.X, pos.Y, move.DestinationX, move.DestinationY);
-            if (path == null || path.Count == 0) continue;
-
             ref MovableComponent mov = ref movStore.GetComponent(entityId);
-            mov.DestinationX = move.DestinationX;
-            mov.DestinationY = move.DestinationY;
+            mov.playerSetDestinationX = move.DestinationX;
+            mov.playerSetDestinationY = move.DestinationY;
+            mov.playerDestinationSet  = true;
+            mov.currentMovementMode   = MovementMode.MoveToPlayerSetDestination;
             ecs.Delta.MarkComponentDirty(entityId, typeof(MovableComponent));
 
-            _entityIdsToPaths[entityId] = path;
+            // A player move order re-homes the troop's AI leash point, so it returns
+            // here (rather than its spawn point) once it's done chasing/fighting.
+            if (aiStore.HasComponent(entityId))
+            {
+                ref BasicMeleeAIComponent ai = ref aiStore.GetComponent(entityId);
+                ai.OriginalX = move.DestinationX;
+                ai.OriginalY = move.DestinationY;
+                ecs.Delta.MarkComponentDirty(entityId, typeof(BasicMeleeAIComponent));
+            }
         }
     }
 }

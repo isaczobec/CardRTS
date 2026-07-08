@@ -9,6 +9,7 @@ public static class StatsQuery
     public static int GetRange(ECS ecs, ulong entityId, int defaultValue) => Get(ecs, entityId, defaultValue, s => s.Range);
     public static int GetArmor(ECS ecs, ulong entityId, int defaultValue) => Get(ecs, entityId, defaultValue, s => s.Armor);
     public static int GetDamage(ECS ecs, ulong entityId, int defaultValue) => Get(ecs, entityId, defaultValue, s => s.Damage);
+    public static int GetAttackSpeed(ECS ecs, ulong entityId, int defaultValue) => Get(ecs, entityId, defaultValue, s => s.AttackSpeed);
 
     private static int Get(ECS ecs, ulong entityId, int defaultValue, Func<StatsComponent, int> selector)
     {

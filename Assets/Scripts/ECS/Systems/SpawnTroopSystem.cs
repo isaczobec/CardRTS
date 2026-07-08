@@ -15,6 +15,11 @@ public static class SpawnTroopSystem
     private const int DefaultRange = 5;
     private const int DefaultArmor = 0;
     private const int DefaultDamage = 10;
+    private const int DefaultAttackSpeed = 10;
+
+    private const float DefaultDetectionRangeMultiplier = 3f;
+    private const float DefaultChaseRangeMultiplier = 5f;
+    private const float DefaultAttackRangeMultiplier = 1.5f;
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
@@ -49,22 +54,32 @@ public static class SpawnTroopSystem
 
             ecs.AddComponent(entity.Id, new MovableComponent
             {
-                DestinationX = input.X,
-                DestinationY = input.Y,
+                destinationX = input.X,
+                destinationY = input.Y,
             });
 
             ecs.AddComponent(entity.Id, new StatsComponent
             {
-                MaxHealth = DefaultMaxHealth,
-                Speed     = DefaultSpeed,
-                Range     = DefaultRange,
-                Armor     = DefaultArmor,
-                Damage    = DefaultDamage,
+                MaxHealth   = DefaultMaxHealth,
+                Speed       = DefaultSpeed,
+                Range       = DefaultRange,
+                Armor       = DefaultArmor,
+                Damage      = DefaultDamage,
+                AttackSpeed = DefaultAttackSpeed,
             });
 
             ecs.AddComponent(entity.Id, new HealthComponent
             {
                 CurrentHealth = DefaultMaxHealth,
+            });
+
+            ecs.AddComponent(entity.Id, new BasicMeleeAIComponent
+            {
+                OriginalX                 = input.X,
+                OriginalY                 = input.Y,
+                DetectionRangeMultiplier   = DefaultDetectionRangeMultiplier,
+                ChaseRangeMultiplier       = DefaultChaseRangeMultiplier,
+                AttackRangeMultiplier      = DefaultAttackRangeMultiplier,
             });
         }
     }

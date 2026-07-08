@@ -17,7 +17,6 @@ public class SelectionManager : Singleton<SelectionManager>
     [SerializeField] private Color _friendlySingleSelectedColor = Color.green;
     [SerializeField] private Color _neutralColor = Color.green;
     [SerializeField] private Color _enemyColor = Color.green;
-    [SerializeField] private Color _targetedColor = Color.red;
     [SerializeField] private string _selectionColorProperty = "_SelectionColor";
 
 
@@ -32,11 +31,11 @@ public class SelectionManager : Singleton<SelectionManager>
     private readonly HashSet<ulong> _selectedEntityIds = new();
     public IReadOnlyCollection<ulong> SelectedEntityIds => _selectedEntityIds;
 
-    // Scratch sets reused each frame to diff which entities are currently targeted by
-    // one of the local player's troops, so we only call SetTargeted/SetUntargeted on
-    // entities whose state actually changed.
-    private readonly HashSet<ulong> _currentlyTargetedIds = new();
-    private readonly HashSet<ulong> _previouslyTargetedIds = new();
+    // Scratch maps (entityId -> effective TargetKind) reused each frame to diff which
+    // entities are currently targeted by one of the local player's troops, so we only
+    // call SetTargeted/SetUntargeted on entities whose state actually changed.
+    private readonly Dictionary<ulong, TargetKind> _currentlyTargetedIds = new();
+    private readonly Dictionary<ulong, TargetKind> _previouslyTargetedIds = new();
 
     // Left-drag (select) state
     private Vector2 _dragStartScreen;
@@ -105,7 +104,9 @@ public class SelectionManager : Singleton<SelectionManager>
     }
 
     // Diffs which entities are currently targeted by one of the local player's troops
-    // against last frame's set, and toggles the corresponding decal only on change.
+    // (and with what effective kind) against last frame's set, and toggles/recolors the
+    // corresponding decal only on change. If different friendly troops target the same
+    // entity with different kinds, PlayerAssigned wins for display purposes.
     private void RefreshTargetingVisuals()
     {
         TargetingSystem targeting = TickManager.instance.ActiveECS.GetSystem<TargetingSystem>();
@@ -117,25 +118,33 @@ public class SelectionManager : Singleton<SelectionManager>
         _troopStore.ForEach((ulong friendlyId) => {
             if (_troopStore.GetComponent(friendlyId).OwnerPlayerId != localId) return;
             foreach (ulong targetId in targeting.GetTargets(friendlyId))
-                _currentlyTargetedIds.Add(targetId);
+            {
+                TargetKind kind = targeting.GetTargetKind(friendlyId, targetId) ?? TargetKind.Automatic;
+                if (_currentlyTargetedIds.TryGetValue(targetId, out TargetKind existing) && existing == TargetKind.PlayerAssigned)
+                    continue;
+                _currentlyTargetedIds[targetId] = kind;
+            }
         });
 
-        foreach (ulong entityId in _currentlyTargetedIds)
+        foreach (KeyValuePair<ulong, TargetKind> kvp in _currentlyTargetedIds)
         {
-            if (_previouslyTargetedIds.Contains(entityId)) continue;
+            ulong entityId = kvp.Key;
+            TargetKind kind = kvp.Value;
+            if (_previouslyTargetedIds.TryGetValue(entityId, out TargetKind prevKind) && prevKind == kind) continue;
             if (_targetingObjects.TryGetValue(entityId, out TargetingPrefab prefab))
-                prefab.SetTargeted(_targetedColor, _selectionColorProperty);
+                prefab.SetTargeted(kind, _selectionColorProperty);
         }
 
-        foreach (ulong entityId in _previouslyTargetedIds)
+        foreach (ulong entityId in _previouslyTargetedIds.Keys)
         {
-            if (_currentlyTargetedIds.Contains(entityId)) continue;
+            if (_currentlyTargetedIds.ContainsKey(entityId)) continue;
             if (_targetingObjects.TryGetValue(entityId, out TargetingPrefab prefab))
                 prefab.SetUntargeted();
         }
 
         _previouslyTargetedIds.Clear();
-        _previouslyTargetedIds.UnionWith(_currentlyTargetedIds);
+        foreach (KeyValuePair<ulong, TargetKind> kvp in _currentlyTargetedIds)
+            _previouslyTargetedIds[kvp.Key] = kvp.Value;
     }
 
     // ── Input ────────────────────────────────────────────────────────────────
