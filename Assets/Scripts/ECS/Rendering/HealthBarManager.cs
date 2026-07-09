@@ -9,10 +9,12 @@ public class HealthBarManager : Singleton<HealthBarManager>
     [SerializeField] private GameObject _healthBarPrefab;
 
     private readonly Dictionary<ulong, HealthBarPrefab> _healthBars = new();
+    private readonly TickPositionInterpolator _interpolator = new();
 
     private ECS _ecs;
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<HealthComponent> _healthStore;
+    private ComponentStore<MovableComponent> _movableStore;
 
     public void Initialize()
     {
@@ -24,6 +26,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
         _ecs = TickManager.instance.ActiveECS;
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
         _healthStore = _ecs.GetComponentStore<HealthComponent>();
+        _movableStore = _ecs.GetComponentStore<MovableComponent>();
     }
 
     void Update()
@@ -36,7 +39,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
             if (!_positionStore.HasComponent(entityId)) continue;
 
             PositionComponent pos = _positionStore.GetComponent(entityId);
-            ApplyPosition(pos, kvp.Value);
+            ApplyPosition(entityId, pos, kvp.Value);
         }
     }
 
@@ -51,7 +54,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
         HealthBarPrefab bar = go.GetComponent<HealthBarPrefab>();
         _healthBars[e.EntityId] = bar;
 
-        ApplyPosition(_positionStore.GetComponent(e.EntityId), bar);
+        ApplyPosition(e.EntityId, _positionStore.GetComponent(e.EntityId), bar);
         ApplyHealth(e.EntityId, bar);
     }
 
@@ -73,10 +76,14 @@ public class HealthBarManager : Singleton<HealthBarManager>
         bar.SetFillAmount(maxHealth > 0 ? (float)currentHealth / maxHealth : 0f);
     }
 
-    private void ApplyPosition(PositionComponent pos, HealthBarPrefab bar)
+    private void ApplyPosition(ulong entityId, PositionComponent pos, HealthBarPrefab bar)
     {
         float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
-        bar.transform.position = new Vector3(pos.X, height, pos.Y) + bar.WorldOffset;
+        Vector3 worldPos = new Vector3(pos.X, height, pos.Y);
+        bool isMoving = _movableStore != null && _movableStore.HasComponent(entityId)
+            && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+
+        bar.transform.position = _interpolator.Update(entityId, worldPos, isMoving) + bar.WorldOffset;
     }
 
     private void DestroyHealthBar(ulong entityId)
@@ -84,5 +91,6 @@ public class HealthBarManager : Singleton<HealthBarManager>
         if (!_healthBars.TryGetValue(entityId, out HealthBarPrefab bar)) return;
         Destroy(bar.gameObject);
         _healthBars.Remove(entityId);
+        _interpolator.Remove(entityId);
     }
 }

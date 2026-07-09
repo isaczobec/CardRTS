@@ -98,6 +98,7 @@ public class BasicMeleeAISystem : ISystem
             ai.AttackTicksRemaining = StatsQuery.GetAttackSpeed(_ecs, id, DefaultAttackSpeed);
             _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
             _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+            _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id });
         }
         else
         {

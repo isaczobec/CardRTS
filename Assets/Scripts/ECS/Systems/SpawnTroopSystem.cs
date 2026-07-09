@@ -44,7 +44,7 @@ public static class SpawnTroopSystem
             DebugLogger.Log($"Spawned troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");
             ecs.AddComponent(entity.Id, new RenderableComponent
             {
-                Type = RenderableType.Capsule,
+                Type = RenderableType.BasicMelee,
             });
 
             ecs.AddComponent(entity.Id, new SelectableComponent

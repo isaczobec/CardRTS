@@ -1140,6 +1140,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RenderingSetup
   _renderableManager: {fileID: 695582579}
   _capsuleMaterial: {fileID: 2100000, guid: 09c3ee61af37bc24483487eaae6a9b01, type: 2}
+  _basicMeleeRenderer: {fileID: 1914037912}
 --- !u!114 &695582579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2699,8 +2700,54 @@ Transform:
   - {fileID: 379280427}
   - {fileID: 648465013}
   - {fileID: 1292187812}
+  - {fileID: 1914037911}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1914037910
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1914037911}
+  - component: {fileID: 1914037912}
+  m_Layer: 0
+  m_Name: BasicMeeleeRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1914037911
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1914037910}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1914037912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1914037910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26d0909a1d996654ab75789cd4e32d3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 5e19c257e7d7515438efa3458bc5ecaf, type: 3}
 --- !u!1 &1944284376
 GameObject:
   m_ObjectHideFlags: 0

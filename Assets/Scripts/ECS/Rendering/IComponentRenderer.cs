@@ -6,6 +6,10 @@ using System.Collections.Generic;
 /// </summary>
 public interface IComponentRenderer
 {
+    /// <summary>Called once, before any other callback, so the renderer can stash the
+    /// ECS reference and subscribe to whatever flag events it needs.</summary>
+    void Initialize(ECS ecs);
+
     /// <summary>Called once when an entity with this renderer's type first appears.</summary>
     void OnEntityAdded(ulong entityId);
 

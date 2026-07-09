@@ -24,10 +24,12 @@ public class SelectionManager : Singleton<SelectionManager>
     private ComponentStore<SelectableComponent> _selectableStore;
     private ComponentStore<TroopComponent> _troopStore;
     private ComponentStore<HealthComponent> _healthStore;
+    private ComponentStore<MovableComponent> _movableStore;
     private EntityChunkTracker _chunkTracker;
 
     private readonly Dictionary<ulong, SelectionPrefab> _selectionObjects = new();
     private readonly Dictionary<ulong, TargetingPrefab> _targetingObjects = new();
+    private readonly TickPositionInterpolator _interpolator = new();
     private readonly HashSet<ulong> _selectedEntityIds = new();
     public IReadOnlyCollection<ulong> SelectedEntityIds => _selectedEntityIds;
 
@@ -62,6 +64,7 @@ public class SelectionManager : Singleton<SelectionManager>
         _selectableStore = ecs.GetComponentStore<SelectableComponent>();
         _troopStore = ecs.GetComponentStore<TroopComponent>();
         _healthStore = ecs.GetComponentStore<HealthComponent>();
+        _movableStore = ecs.GetComponentStore<MovableComponent>();
         _chunkTracker = ecs.ChunkTracker;
 
         if (_dragSelectionBox != null)
@@ -83,7 +86,7 @@ public class SelectionManager : Singleton<SelectionManager>
             if (_positionStore.HasComponent(entityId))
             {
                 PositionComponent pos = _positionStore.GetComponent(entityId);
-                ApplySelectionPosition(ref pos, selection);
+                ApplySelectionPosition(entityId, ref pos, selection);
             }
         }
 
@@ -95,7 +98,7 @@ public class SelectionManager : Singleton<SelectionManager>
             if (_positionStore.HasComponent(entityId))
             {
                 PositionComponent pos = _positionStore.GetComponent(entityId);
-                ApplyTargetingPosition(ref pos, targeting);
+                ApplyTargetingPosition(entityId, ref pos, targeting);
             }
         }
 
@@ -453,7 +456,7 @@ public class SelectionManager : Singleton<SelectionManager>
         go.name = $"Selection_{e.EntityId}";
         SelectionPrefab prefab = go.GetComponent<SelectionPrefab>();
         _selectionObjects[e.EntityId] = prefab;
-        ApplySelectionPosition(ref pos, prefab);
+        ApplySelectionPosition(e.EntityId, ref pos, prefab);
         prefab.SetUnselected(GetUnselectedColor(e.EntityId), _selectionColorProperty);
 
         if (_targetingPrefab != null)
@@ -462,7 +465,7 @@ public class SelectionManager : Singleton<SelectionManager>
             targetingGo.name = $"Targeting_{e.EntityId}";
             TargetingPrefab targetingObj = targetingGo.GetComponent<TargetingPrefab>();
             _targetingObjects[e.EntityId] = targetingObj;
-            ApplyTargetingPosition(ref pos, targetingObj);
+            ApplyTargetingPosition(e.EntityId, ref pos, targetingObj);
         }
     }
 
@@ -474,6 +477,7 @@ public class SelectionManager : Singleton<SelectionManager>
 
         DestroySelectionObject(e.EntityId);
         DestroyTargetingObject(e.EntityId);
+        _interpolator.Remove(e.EntityId);
     }
 
     public void DeleteSelectionObject(EntityDeletedEvent e)
@@ -481,6 +485,7 @@ public class SelectionManager : Singleton<SelectionManager>
         _selectedEntityIds.Remove(e.EntityId);
         DestroySelectionObject(e.EntityId);
         DestroyTargetingObject(e.EntityId);
+        _interpolator.Remove(e.EntityId);
     }
 
     private void DestroySelectionObject(ulong entityId)
@@ -497,15 +502,25 @@ public class SelectionManager : Singleton<SelectionManager>
         _targetingObjects.Remove(entityId);
     }
 
-    public void ApplySelectionPosition(ref PositionComponent pos, SelectionPrefab selection)
+    public void ApplySelectionPosition(ulong entityId, ref PositionComponent pos, SelectionPrefab selection)
     {
-        float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
-        selection.transform.position = new Vector3(pos.X, height + 1f, pos.Y);
+        Vector3 worldPos = WorldPositionFor(pos);
+        selection.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId));
     }
 
-    public void ApplyTargetingPosition(ref PositionComponent pos, TargetingPrefab targeting)
+    public void ApplyTargetingPosition(ulong entityId, ref PositionComponent pos, TargetingPrefab targeting)
+    {
+        Vector3 worldPos = WorldPositionFor(pos);
+        targeting.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId));
+    }
+
+    private static Vector3 WorldPositionFor(PositionComponent pos)
     {
         float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
-        targeting.transform.position = new Vector3(pos.X, height + 1f, pos.Y);
+        return new Vector3(pos.X, height + 1f, pos.Y);
     }
+
+    private bool IsMoving(ulong entityId)
+        => _movableStore != null && _movableStore.HasComponent(entityId)
+            && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
 }

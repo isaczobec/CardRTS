@@ -46,6 +46,8 @@ public class RenderableManager : MonoBehaviour
         _tracked[type]      = new HashSet<ulong>();
         _current[type]      = new HashSet<ulong>();
         _entityLists[type]  = new List<ulong>();
+
+        renderer.Initialize(_ecs);
     }
 
     void Update()

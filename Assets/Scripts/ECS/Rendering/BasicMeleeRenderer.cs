@@ -1,0 +1,115 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Renders troop entities driven by BasicMeleeAISystem. Instantiates a BasicMeleeGameObject
+/// prefab per entity, smoothly interpolates it between the two most recent simulation-tick
+/// positions, and fires animator triggers off server-authoritative flag events.
+/// Register an instance with RenderableManager for RenderableType.BasicMelee.
+/// </summary>
+public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
+{
+    [SerializeField] private BasicMeleeGameObject _prefab;
+    [SerializeField] private float _rotationDegreesPerSecond = 540f;
+
+    // Capsule primitive (used by the prefab's placeholder mesh, if any) is 2 units tall;
+    // offset by 1 so it stands on the ground plane.
+    private const float GroundOffset = 1f;
+
+    private static readonly int AttackTrigger = Animator.StringToHash("Attack");
+    private static readonly int DieTrigger = Animator.StringToHash("Die");
+    private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
+
+    private ECS _ecs;
+    private readonly Dictionary<ulong, BasicMeleeGameObject> _objects = new();
+    private readonly TickPositionInterpolator _interpolator = new();
+
+    public void Initialize(ECS ecs)
+    {
+        _ecs = ecs;
+        TickManager.instance.ServerFlagEvents.Subscribe<TroopBeginAttackEvent>(OnTroopBeginAttack);
+        TickManager.instance.ServerFlagEvents.Subscribe<TroopDiedEvent>(OnTroopDied);
+    }
+
+    private void OnTroopBeginAttack(TroopBeginAttackEvent e)
+    {
+        if (_objects.TryGetValue(e.EntityId, out BasicMeleeGameObject go) && go.Animator != null)
+            go.Animator.SetTrigger(AttackTrigger);
+    }
+
+    private void OnTroopDied(TroopDiedEvent e)
+    {
+        if (_objects.TryGetValue(e.EntityId, out BasicMeleeGameObject go) && go.Animator != null)
+            go.Animator.SetTrigger(DieTrigger);
+    }
+
+    public void OnEntityAdded(ulong entityId)
+    {
+        // No visual yet — the prefab is spawned on activation (see OnEntityActivated)
+        // so troops stay invisible until then.
+    }
+
+    public void OnEntityRemoved(ulong entityId)
+    {
+        if (_objects.TryGetValue(entityId, out BasicMeleeGameObject go))
+            Destroy(go.gameObject);
+        _objects.Remove(entityId);
+        _interpolator.Remove(entityId);
+    }
+
+    public void OnEntityActivated(ulong entityId)
+    {
+        if (_objects.ContainsKey(entityId) || _prefab == null) return;
+
+        BasicMeleeGameObject go = Instantiate(_prefab);
+        go.name = $"Troop_{entityId}";
+        _objects[entityId] = go;
+    }
+
+    public void Update(List<ulong> entityIds)
+    {
+        var posStore = _ecs?.GetComponentStore<PositionComponent>();
+        var movStore = _ecs?.GetComponentStore<MovableComponent>();
+        if (posStore == null) return;
+
+        foreach (ulong id in entityIds)
+        {
+            if (!_objects.TryGetValue(id, out BasicMeleeGameObject go)) continue;
+            if (!posStore.HasComponent(id)) continue;
+
+            bool isMoving = movStore != null && movStore.HasComponent(id)
+                && movStore.GetComponent(id).currentMovementMode != MovementMode.NotMoving;
+
+            Vector3 worldPos = ToWorldPosition(posStore.GetComponent(id));
+            go.transform.position = _interpolator.Update(id, worldPos, isMoving);
+
+            if (isMoving)
+            {
+                Vector3 dir = _interpolator.GetLastMoveDirection(id);
+                if (dir.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+                    go.transform.rotation = Quaternion.RotateTowards(
+                        go.transform.rotation, targetRotation, _rotationDegreesPerSecond * Time.deltaTime);
+                }
+            }
+
+            if (go.Animator != null)
+                go.Animator.SetBool(IsMovingParam, isMoving);
+        }
+    }
+
+    private Vector3 ToWorldPosition(PositionComponent pos)
+    {
+        float h = 0f;
+        if (WorldManager.instance?.Handler != null)
+        {
+            ushort maxTile = (ushort)(WorldGenHandler.CHUNK_SIZE_TILES * WorldGenHandler.WorldSizeChunks - 1);
+            ushort tx = (ushort)Mathf.Clamp(pos.X, 0, maxTile);
+            ushort ty = (ushort)Mathf.Clamp(pos.Y, 0, maxTile);
+            h = WorldManager.instance.Handler.GetHeight(tx, ty);
+        }
+
+        return new Vector3(pos.X, h + GroundOffset, pos.Y);
+    }
+}

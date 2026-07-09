@@ -20,6 +20,11 @@ public class CapsuleRenderer : IComponentRenderer
         _material = material;
     }
 
+    public void Initialize(ECS ecs)
+    {
+        // Nothing to subscribe to yet — ecs is already supplied via the constructor.
+    }
+
     public void OnEntityAdded(ulong entityId)
     {
         // No visual yet — the capsule is created on activation (see OnEntityActivated)
