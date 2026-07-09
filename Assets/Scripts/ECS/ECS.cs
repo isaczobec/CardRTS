@@ -128,6 +128,13 @@ public class ECS
             _entityIdsToIndicies[movedEntityId] = (int)result.removedIndex;
         }
 
+        // Otherwise every component store keeps this entity's data forever — component
+        // stores are diffed directly (e.g. RenderableManager against RenderableComponent),
+        // so a "deleted" entity would still look alive to anything reading them.
+        foreach (IComponentStore store in _componentStores.Values)
+            if (store.HasComponent(entityId))
+                store.RemoveComponent(entityId);
+
         Delta.MarkEntityDeleted(entityId);
         FlagEvents.Add(new EntityDeletedEvent { EntityId = entityId });
     }

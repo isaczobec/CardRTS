@@ -22,5 +22,5 @@ public interface IComponentRenderer
     /// <summary>
     /// Called every Unity Update with the full current list of entities belonging to this renderer.
     /// </summary>
-    void Update(List<ulong> entityIds);
+    void UpdateRenderable(List<ulong> entityIds);
 }

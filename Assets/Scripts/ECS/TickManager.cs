@@ -28,7 +28,24 @@ public class TickManager : Singleton<TickManager>
     private readonly TypeRegistry<InputBase> _inputTypeRegistry = new();
     public TypeRegistry<InputBase> InputTypeRegistry => _inputTypeRegistry;
 
-    public const float TickInterval = 0.1f;
+    public const float TickInterval = 0.05f;
+
+    // ── Seconds ⇄ ticks conversions ─────────────────────────────────────────
+    // Durations/rates should be authored as seconds constants at the call site and
+    // converted here, rather than hard-coding raw tick counts throughout the codebase.
+    public static int SecondsToTicks(float seconds) => Mathf.RoundToInt(seconds / TickInterval);
+    public static int SecondsToTicksFloor(float seconds) => Mathf.FloorToInt(seconds / TickInterval);
+    public static int SecondsToTicksCeil(float seconds) => Mathf.CeilToInt(seconds / TickInterval);
+    public static float SecondsToTicksExact(float seconds) => seconds / TickInterval;
+
+    public static float TicksToSeconds(float ticks) => ticks * TickInterval;
+
+    public static int MillisecondsToTicks(float milliseconds) => SecondsToTicks(milliseconds / 1000f);
+    public static int MillisecondsToTicksFloor(float milliseconds) => SecondsToTicksFloor(milliseconds / 1000f);
+    public static int MillisecondsToTicksCeil(float milliseconds) => SecondsToTicksCeil(milliseconds / 1000f);
+    public static float MillisecondsToTicksExact(float milliseconds) => SecondsToTicksExact(milliseconds / 1000f);
+
+    public static float TicksToMilliseconds(float ticks) => TicksToSeconds(ticks) * 1000f;
 
     private ulong _tick;       // prediction tick — timer-driven, used by ClientLocalECS and clients
     private ulong _serverTick; // authoritative tick — lockstep-driven, used by server ECS
@@ -224,6 +241,10 @@ public class TickManager : Singleton<TickManager>
             ClientLocalECS.ExecuteSystems();
             ClientLocalECS.FlagEvents.Flush();
             ClientLocalECS.Delta.DispatchComponentChangedEvents();
+            // ClientLocalECS's delta is never serialized (unlike the authoritative ECS's,
+            // drained via GetComponentsDelta et al. in NetworkManager) — discard it here
+            // instead of letting it grow for the life of the session.
+            ClientLocalECS.Delta.ClearPendingState();
 
             // Guarantee an InputBuffer entry so the server can attach remote inputs later.
             InputBuffer.EnsureTickEntry(_tick);
@@ -277,6 +298,11 @@ public class TickManager : Singleton<TickManager>
                 newestServerTick = delta.ServerTick;
         }
 
+        // Same reasoning as ClearPendingState in DoPredictionTick — ApplyDelta's
+        // ecs.DeleteEntity calls above touch this ECS's own delta bookkeeping too, and
+        // it's likewise never read.
+        ClientServerMirrorECS.Delta.ClearPendingState();
+
         ClientLocalECS.CopyStateFrom(ClientServerMirrorECS);
         ServerFlagEvents.Flush();
 
@@ -286,6 +312,8 @@ public class TickManager : Singleton<TickManager>
             ClientLocalECS.CurrentSimulationTick = newestServerTick + i;
             ClientLocalECS.ExecuteSystems();
             ClientLocalECS.FlagEvents.Flush();
+            ClientLocalECS.Delta.DispatchComponentChangedEvents();
+            ClientLocalECS.Delta.ClearPendingState();
         }
     }
 

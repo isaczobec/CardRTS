@@ -2748,6 +2748,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: 5e19c257e7d7515438efa3458bc5ecaf, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimationDuration: 1.0666667
+  _attackAnimationTimeUntilImpact: 0.67
 --- !u!1 &1944284376
 GameObject:
   m_ObjectHideFlags: 0

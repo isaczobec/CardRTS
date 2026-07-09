@@ -14,11 +14,14 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
 
     // Capsule primitive (used by the prefab's placeholder mesh, if any) is 2 units tall;
     // offset by 1 so it stands on the ground plane.
-    private const float GroundOffset = 1f;
+    [SerializeField] private float _attackAnimationDuration = 1;
+    [SerializeField] private float _attackAnimationTimeUntilImpact = 0.5f;
+    private const float GroundOffset = 0f;
 
     private static readonly int AttackTrigger = Animator.StringToHash("Attack");
     private static readonly int DieTrigger = Animator.StringToHash("Die");
     private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
+    private static readonly int AttackSpeedMultiplierFloat = Animator.StringToHash("AttackSpeedMultiplier");
 
     private ECS _ecs;
     private readonly Dictionary<ulong, BasicMeleeGameObject> _objects = new();
@@ -34,7 +37,37 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
     private void OnTroopBeginAttack(TroopBeginAttackEvent e)
     {
         if (_objects.TryGetValue(e.EntityId, out BasicMeleeGameObject go) && go.Animator != null)
+        {
+            int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, e.EntityId, TickManager.MillisecondsToTicks(1000f));
+            float windupSeconds = TickManager.TicksToSeconds(attackSpeedTicks);
+            float ratio = _attackAnimationTimeUntilImpact / windupSeconds;
+            float duration = ratio / _attackAnimationDuration;
+            float multiplier = duration / _attackAnimationDuration;
+            go.Animator.SetFloat(AttackSpeedMultiplierFloat, multiplier);
             go.Animator.SetTrigger(AttackTrigger);
+        }
+
+        FaceTarget(e.EntityId, e.TargetEntityId);
+    }
+
+    // Snaps the troop to face its target the instant the attack windup starts. This is
+    // stable for the whole windup: BasicMeleeAISystem sets MovableComponent to NotMoving
+    // before firing this event, so UpdateRenderable's movement-direction rotation (gated
+    // on isMoving) won't run and fight with it until the troop starts moving again.
+    private void FaceTarget(ulong entityId, ulong targetEntityId)
+    {
+        if (targetEntityId == 0) return;
+        if (!_objects.TryGetValue(entityId, out BasicMeleeGameObject go)) return;
+
+        var posStore = _ecs?.GetComponentStore<PositionComponent>();
+        if (posStore == null || !posStore.HasComponent(targetEntityId)) return;
+
+        Vector3 targetPos = ToWorldPosition(posStore.GetComponent(targetEntityId));
+        Vector3 dir = targetPos - go.transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude <= 0.0001f) return;
+
+        go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
     }
 
     private void OnTroopDied(TroopDiedEvent e)
@@ -66,7 +99,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
         _objects[entityId] = go;
     }
 
-    public void Update(List<ulong> entityIds)
+    public void UpdateRenderable(List<ulong> entityIds)
     {
         var posStore = _ecs?.GetComponentStore<PositionComponent>();
         var movStore = _ecs?.GetComponentStore<MovableComponent>();

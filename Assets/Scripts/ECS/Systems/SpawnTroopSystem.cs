@@ -3,8 +3,8 @@ using System.Diagnostics;
 
 /// <summary>
 /// Server-only. Reads SpawnTroopInput each tick and creates a troop entity whose
-/// tickToBecomeActive is 20 ticks ahead, giving the delta time to reach the client
-/// before the troop activates.
+/// tickToBecomeActive is DefaultActivationDelaySeconds ahead, giving the delta time to
+/// reach the client before the troop activates.
 /// </summary>
 public static class SpawnTroopSystem
 {
@@ -15,7 +15,8 @@ public static class SpawnTroopSystem
     private const int DefaultRange = 5;
     private const int DefaultArmor = 0;
     private const int DefaultDamage = 10;
-    private const int DefaultAttackSpeed = 10;
+    private const float DefaultAttackSpeedMilliseconds = 1000f;
+    private const float DefaultActivationDelaySeconds = 2f;
 
     private const float DefaultDetectionRangeMultiplier = 3f;
     private const float DefaultChaseRangeMultiplier = 5f;
@@ -38,7 +39,7 @@ public static class SpawnTroopSystem
             ecs.AddComponent(entity.Id, new TroopComponent
             {
                 OwnerPlayerId      = input.ClientId,
-                _ticksUntilActive = 20,
+                _ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds),
             });
 
             DebugLogger.Log($"Spawned troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");
@@ -65,7 +66,7 @@ public static class SpawnTroopSystem
                 Range       = DefaultRange,
                 Armor       = DefaultArmor,
                 Damage      = DefaultDamage,
-                AttackSpeed = DefaultAttackSpeed,
+                AttackSpeed = TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds),
             });
 
             ecs.AddComponent(entity.Id, new HealthComponent

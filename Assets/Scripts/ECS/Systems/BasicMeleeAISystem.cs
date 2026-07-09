@@ -4,13 +4,15 @@ using UnityEngine;
 
 // Very small "aggro" melee AI. Each tick, per BasicMeleeAIComponent troop:
 //  - If mid attack windup, just count it down and resolve it — nothing else happens.
+//  - If a successful hit just landed, a cooldown (half the attack windup) counts down
+//    before anything else happens, same as the windup.
 //  - Otherwise, while not under an explicit player move order, opportunistically
 //    auto-targets nearby enemies (TargetingSystem.SetAutomaticTarget).
 //  - Picks an active target: the closest player-assigned one always wins and is always
 //    pursued; otherwise the closest automatic one, which is dropped
 //    (RemoveAutomaticTarget) if it strays beyond the chase range.
 //  - If the active target is within Range, stops and starts an attack windup
-//    (AttackSpeed ticks); otherwise chases it.
+//    (AttackSpeed milliseconds, converted to ticks); otherwise chases it.
 //  - With no target at all (and no player move order in progress), returns to its
 //    original ("leash") position.
 // Instance (not static) and registered per ECS, like PathfindingSystem/TargetingSystem,
@@ -20,7 +22,7 @@ public class BasicMeleeAISystem : ISystem
     public Type[] ComponentTypes => Array.Empty<Type>();
 
     private const int DefaultRange = 5;
-    private const int DefaultAttackSpeed = 10;
+    private const float DefaultAttackSpeedMilliseconds = 1000f;
     private const int DefaultDamage = 10;
     private const float HomeRadius = 0.1f;
 
@@ -66,6 +68,14 @@ public class BasicMeleeAISystem : ISystem
             return;
         }
 
+        // Post-attack cooldown — can't act again until it counts down to zero.
+        if (ai.CooldownTicksRemaining > 0)
+        {
+            ai.CooldownTicksRemaining--;
+            _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+            return;
+        }
+
         int range = StatsQuery.GetRange(_ecs, id, DefaultRange);
 
         if (!mov.playerDestinationSet)
@@ -95,10 +105,10 @@ public class BasicMeleeAISystem : ISystem
         {
             mov.currentMovementMode = MovementMode.NotMoving;
             ai.AttackTargetId = activeTarget;
-            ai.AttackTicksRemaining = StatsQuery.GetAttackSpeed(_ecs, id, DefaultAttackSpeed);
+            ai.AttackTicksRemaining = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
             _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
             _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
-            _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id });
+            _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id, TargetEntityId = activeTarget });
         }
         else
         {
@@ -122,6 +132,9 @@ public class BasicMeleeAISystem : ISystem
         {
             int damage = StatsQuery.GetDamage(_ecs, id, DefaultDamage);
             _ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = id });
+
+            int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
+            ai.CooldownTicksRemaining = attackSpeedTicks / 2;
         }
 
         ai.AttackTargetId = 0;

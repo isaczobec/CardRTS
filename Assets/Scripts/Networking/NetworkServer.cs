@@ -22,7 +22,13 @@ public class NetworkServer
 
     public bool Start(ushort port)
     {
-        _driver = NetworkDriver.Create();
+        // Default queue capacity (512, shared across all connections) is sized for a much
+        // lower tick rate than we now run at; the server fans a message out to every
+        // connected client each server tick, so give it more headroom than the client.
+        var settings = new NetworkSettings();
+        settings.WithNetworkConfigParameters(receiveQueueCapacity: 2048, sendQueueCapacity: 2048);
+
+        _driver = NetworkDriver.Create(settings);
         _reliable = _driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
         _connections = new NativeList<NetworkConnection>(16, Allocator.Persistent);
 

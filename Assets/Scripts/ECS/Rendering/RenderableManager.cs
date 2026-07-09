@@ -93,7 +93,7 @@ public class RenderableManager : MonoBehaviour
             tracked.Clear();
             tracked.UnionWith(current);
 
-            renderer.Update(_entityLists[type]);
+            renderer.UpdateRenderable(_entityLists[type]);
         }
     }
 }

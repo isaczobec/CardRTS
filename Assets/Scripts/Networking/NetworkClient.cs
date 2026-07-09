@@ -24,7 +24,10 @@ public class NetworkClient
             return false;
         }
 
-        _driver = NetworkDriver.Create();
+        var settings = new NetworkSettings();
+        settings.WithNetworkConfigParameters(receiveQueueCapacity: 1024, sendQueueCapacity: 1024);
+
+        _driver = NetworkDriver.Create(settings);
         _reliable = _driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
         _connection = _driver.Connect(endpoint);
         return true;

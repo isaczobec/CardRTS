@@ -49,7 +49,7 @@ public class CapsuleRenderer : IComponentRenderer
         _objects[entityId] = go;
     }
 
-    public void Update(List<ulong> entityIds)
+    public void UpdateRenderable(List<ulong> entityIds)
     {
         var posStore = _ecs.GetComponentStore<PositionComponent>();
         if (posStore == null) return;

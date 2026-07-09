@@ -48,14 +48,34 @@ public class ComponentDeltaManager
         if (_createdEntities.Contains(entityId))
             _createdEntities.Remove(entityId);
         _deletedEntities.Add(entityId);
+
+        // The entity's components are gone (ECS.DeleteEntity strips them before calling
+        // this), so any pending dirty markers for it now point at nothing. Left in place,
+        // GetComponentsDelta would throw trying to read them — and since that exception
+        // aborts before _dirtyComponents is cleared, the same stale marker would keep
+        // crashing every subsequent tick.
+        _dirtyComponents.RemoveWhere(marker => marker.EntityId == entityId);
     }
 
     public void MarkComponentDeleted(ulong entityId, Type componentType)
     {
         ComponentMarker marker = new ComponentMarker { EntityId = entityId, ComponentType = componentType };
-        if (_dirtyComponents.Contains(marker)) 
+        if (_dirtyComponents.Contains(marker))
             _dirtyComponents.Remove(marker);
         _deletedComponents.Add(marker);
+    }
+
+    // Discards all pending change-tracking without serializing it. For an ECS whose delta
+    // is never read (e.g. the client's local prediction ECS, or the server mirror once its
+    // pending deltas have been applied), the Mark* calls above still fire every tick as
+    // systems run — without this, those sets grow unbounded for the life of the session,
+    // and DispatchComponentChangedEvents' cost grows right along with them.
+    public void ClearPendingState()
+    {
+        _dirtyComponents.Clear();
+        _createdEntities.Clear();
+        _deletedEntities.Clear();
+        _deletedComponents.Clear();
     }
 
     /// <summary>
@@ -92,17 +112,26 @@ public class ComponentDeltaManager
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
 
-        writer.Write(_dirtyComponents.Count);
-
+        // Filter out any stale marker whose component no longer exists before writing
+        // the leading count — skipping one mid-loop without also excluding it here would
+        // desync the count from the records actually written and corrupt the stream for
+        // every entry after it.
+        var validDirty = new List<(ComponentMarker marker, IComponentStore store)>();
         foreach (var dirty in _dirtyComponents)
         {
             IComponentStore store = _ecs.GetIComponentStore(dirty.ComponentType);
-            if (store == null) continue;
+            if (store == null || !store.HasComponent(dirty.EntityId)) continue;
+            validDirty.Add((dirty, store));
+        }
 
-            byte[] data = store.GetComponentData(dirty.EntityId);
-            ushort typeId = _componentTypeRegistry.GetIDForType(dirty.ComponentType);
+        writer.Write(validDirty.Count);
 
-            writer.Write(dirty.EntityId);
+        foreach (var (marker, store) in validDirty)
+        {
+            byte[] data = store.GetComponentData(marker.EntityId);
+            ushort typeId = _componentTypeRegistry.GetIDForType(marker.ComponentType);
+
+            writer.Write(marker.EntityId);
             writer.Write(typeId);
             writer.Write((ushort)data.Length);
             writer.Write(data);

@@ -20,6 +20,10 @@ public struct BasicMeleeAIComponent : IComponent
     public ulong AttackTargetId;
     public int AttackTicksRemaining;
 
+    // Post-attack recovery: set after a successful hit lands, counted down before this
+    // troop will act again (move, target, or attack) — see BasicMeleeAISystem.Tick.
+    public int CooldownTicksRemaining;
+
     // Target + position the last chase path was computed for. A moving target's
     // position changes almost every tick; repathing on every single one of those
     // changes is wasteful, so we only do it once the target has drifted more than the
