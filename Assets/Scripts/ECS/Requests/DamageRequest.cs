@@ -1,6 +1,8 @@
 // Deals Amount damage to EntityId's HealthComponent when executed. Cancel() (inherited
 // from Request) fully negates the damage — e.g. a shield/invulnerability listener can
 // call req.Cancel() from a Subscribe callback before this runs.
+using UnityEngine;
+
 public class DamageRequest : Request
 {
     public const ulong NO_DEALER_ENTITYID = ulong.MaxValue;
@@ -22,5 +24,12 @@ public class DamageRequest : Request
         ref HealthComponent health = ref healthStore.GetComponent(EntityId);
         health.CurrentHealth -= Amount;
         ecs.Delta.MarkComponentDirty(EntityId, typeof(HealthComponent));
+
+        ecs.FlagEvents.Add(new DamageDealtEvent
+        {
+            EntityId = EntityId,
+            DealerEntityId = DealerEntityId,
+            Amount = Amount,
+        });
     }
 }

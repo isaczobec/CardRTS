@@ -147,6 +147,7 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<TroopDiedEvent>(22);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<BasicMeleeAIComponent>>(23);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BasicMeleeAIComponent>>(24);
+        _flagEventTypeRegistry.Register<DamageDealtEvent>(25);
 
         ECS = CreateSimulationECS();
     }
@@ -308,6 +309,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new TargetingSystem());
         ecs.RegisterSystem(new BasicMeleeAISystem());
         ecs.RegisterSystem(new PathfindingSystem());
+        ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         return ecs;
     }

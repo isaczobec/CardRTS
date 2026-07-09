@@ -14,5 +14,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
 
 
         SelectionManager.instance.Initialize();
+        HealthBarManager.instance.Initialize();
     }
 }

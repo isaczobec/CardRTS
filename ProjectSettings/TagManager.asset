@@ -12,7 +12,7 @@ TagManager:
   - Water
   - UI
   - 
-  - 
+  - WorldSpaceUI
   - 
   - 
   - 
@@ -43,5 +43,4 @@ TagManager:
     locked: 0
   m_RenderingLayers:
   - Default
-  - WorldMesh
   m_MigratedRenderPipelines: []
