@@ -63,6 +63,9 @@ public class CameraController : MonoBehaviour
     void LateUpdate()
     {
         if (!Application.isFocused) return;
+        // A selection/targeting drag box is active — don't let edge-scroll (or anything
+        // else) move the camera out from under an in-progress drag.
+        if (SelectionManager.instance != null && SelectionManager.instance.IsDragActive) return;
 
         bool spacePressed = Input.GetKey(KeyCode.Space);
         bool dragPanning  = spacePressed && Input.GetMouseButton(0);

@@ -3,8 +3,10 @@ using UnityEngine;
 
 public class SelectionManager : Singleton<SelectionManager>
 {
-    private const float SingleSelectRadius = 2f;
-    private const float DragThresholdPixels = 5f;
+    private const float SingleSelectRadius = 4f;
+    // Deliberately generous: a plain click that twitches a few pixels while releasing
+    // the mouse button should never be misread as the start of a drag-select.
+    private const float DragThresholdPixels = 60f;
 
     [SerializeField] private GameObject _selectionPrefab;
     [SerializeField] private GameObject _targetingPrefab;
@@ -33,6 +35,11 @@ public class SelectionManager : Singleton<SelectionManager>
     private readonly HashSet<ulong> _selectedEntityIds = new();
     public IReadOnlyCollection<ulong> SelectedEntityIds => _selectedEntityIds;
 
+    // True while a selection or targeting drag box is actively being dragged. CameraController
+    // checks this to suppress edge-scroll — otherwise dragging a box near the screen edge
+    // would also pan the camera out from under you.
+    public bool IsDragActive => _isDragging || _isRightDragging;
+
     // Scratch maps (entityId -> effective TargetKind) reused each frame to diff which
     // entities are currently targeted by one of the local player's troops, so we only
     // call SetTargeted/SetUntargeted on entities whose state actually changed.
@@ -41,14 +48,10 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // Left-drag (select) state
     private Vector2 _dragStartScreen;
-    private float _dragStartTileX;
-    private float _dragStartTileY;
     private bool _isDragging;
 
     // Right-drag (target/move) state
     private Vector2 _rightDragStartScreen;
-    private float _rightDragStartTileX;
-    private float _rightDragStartTileY;
     private bool _isRightDragging;
 
     private readonly List<ulong> _queryBuffer = new();
@@ -152,40 +155,52 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // ── Input ────────────────────────────────────────────────────────────────
 
+    // Held Space is reserved for camera pan/rotate (see CameraController) — while it's
+    // down, no selection box may appear and no selection (drag or point) can be made.
     private void HandleSelectionInput()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKey(KeyCode.Space))
         {
-            _dragStartScreen = Input.mousePosition;
-            TileSpaceMouse.TryGetPosition(out _dragStartTileX, out _dragStartTileY);
+            // Cancel any drag that was already in progress before Space was pressed,
+            // rather than leaving it to resolve once Space is released.
+            if (_isDragging && _dragSelectionBox != null)
+                _dragSelectionBox.gameObject.SetActive(false);
             _isDragging = false;
         }
-
-        if (Input.GetMouseButton(0))
+        else
         {
-            Vector2 delta = (Vector2)Input.mousePosition - _dragStartScreen;
-            if (!_isDragging && delta.magnitude > DragThresholdPixels)
+            if (Input.GetMouseButtonDown(0))
             {
-                _isDragging = true;
-                if (_dragSelectionBox != null)
-                    _dragSelectionBox.gameObject.SetActive(true);
+                _dragStartScreen = Input.mousePosition;
+                _isDragging = false;
             }
 
-            if (_isDragging)
-                UpdateDragBox(_dragStartScreen);
-        }
+            if (Input.GetMouseButton(0))
+            {
+                Vector2 delta = (Vector2)Input.mousePosition - _dragStartScreen;
+                if (!_isDragging && delta.magnitude > DragThresholdPixels)
+                {
+                    _isDragging = true;
+                    if (_dragSelectionBox != null)
+                        _dragSelectionBox.gameObject.SetActive(true);
+                }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            if (_dragSelectionBox != null)
-                _dragSelectionBox.gameObject.SetActive(false);
+                if (_isDragging)
+                    UpdateDragBox(_dragStartScreen);
+            }
 
-            if (_isDragging)
-                PerformRectSelect();
-            else
-                PerformPointSelect();
+            if (Input.GetMouseButtonUp(0))
+            {
+                if (_dragSelectionBox != null)
+                    _dragSelectionBox.gameObject.SetActive(false);
 
-            _isDragging = false;
+                if (_isDragging)
+                    PerformRectSelect();
+                else
+                    PerformPointSelect();
+
+                _isDragging = false;
+            }
         }
 
         HandleRightClickInput();
@@ -198,12 +213,19 @@ public class SelectionManager : Singleton<SelectionManager>
     // instead of replacing the friendly troops' current targets.
     private void HandleRightClickInput()
     {
-        if (Input.GetKey(KeyCode.Space)) return;
+        if (Input.GetKey(KeyCode.Space))
+        {
+            // Cancel any drag that was already in progress before Space was pressed,
+            // rather than leaving the box stuck on screen until Space is released.
+            if (_isRightDragging && _dragSelectionBox != null)
+                _dragSelectionBox.gameObject.SetActive(false);
+            _isRightDragging = false;
+            return;
+        }
 
         if (Input.GetMouseButtonDown(1))
         {
             _rightDragStartScreen = Input.mousePosition;
-            TileSpaceMouse.TryGetPosition(out _rightDragStartTileX, out _rightDragStartTileY);
             _isRightDragging = false;
         }
 
@@ -240,6 +262,9 @@ public class SelectionManager : Singleton<SelectionManager>
     private ushort LocalPlayerId()
         => NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
 
+    private static bool IsAdditiveModifierHeld()
+        => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
     private bool IsFriendly(ulong entityId)
     {
         if (!_selectableStore.HasComponent(entityId)) return false;
@@ -268,9 +293,11 @@ public class SelectionManager : Singleton<SelectionManager>
 
     private void PerformPointSelect()
     {
+        bool additive = IsAdditiveModifierHeld();
+
         if (!TileSpaceMouse.TryGetPosition(out float tx, out float ty))
         {
-            DeselectAll();
+            if (!additive) DeselectAll();
             return;
         }
 
@@ -293,29 +320,47 @@ public class SelectionManager : Singleton<SelectionManager>
             }
         }
 
-        DeselectAll();
+        if (!additive) DeselectAll();
         if (bestId != 0)
-            Select(bestId, _friendlySingleSelectedColor);
+            Select(bestId, additive ? _friendlySelectedColor : _friendlySingleSelectedColor);
     }
 
     private void PerformRectSelect()
     {
-        if (!TileSpaceMouse.TryGetPosition(out float tx, out float ty)) return;
-
-        float minX = Mathf.Min(_dragStartTileX, tx);
-        float maxX = Mathf.Max(_dragStartTileX, tx);
-        float minY = Mathf.Min(_dragStartTileY, ty);
-        float maxY = Mathf.Max(_dragStartTileY, ty);
-
         _queryBuffer.Clear();
-        _chunkTracker.GetEntitiesInRect(minX, minY, maxX, maxY, _queryBuffer);
+        GetEntitiesInScreenRect(_dragStartScreen, Input.mousePosition, IsFriendly, _queryBuffer);
 
-        DeselectAll();
+        if (!IsAdditiveModifierHeld()) DeselectAll();
         foreach (ulong entityId in _queryBuffer)
-        {
-            if (!IsFriendly(entityId)) continue;
             Select(entityId, _friendlySelectedColor);
-        }
+    }
+
+    // Screen-space containment test: projects each candidate's rendered world position
+    // through the camera and checks it against the on-screen drag rectangle. The old
+    // approach built an axis-aligned world-space rect from just the two ground-ray-hit
+    // corner points, which only matches what's visually enclosed when the camera looks
+    // straight down the world axes — for any rotated/angled camera the on-screen
+    // rectangle corresponds to a general quadrilateral in world space, not an axis-aligned
+    // box, so troops visually inside the drag box could be missed (or outside ones caught).
+    private void GetEntitiesInScreenRect(Vector2 screenStart, Vector2 screenEnd, System.Func<ulong, bool> filter, List<ulong> results)
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector2 min = Vector2.Min(screenStart, screenEnd);
+        Vector2 max = Vector2.Max(screenStart, screenEnd);
+
+        _selectableStore.ForEach((ulong entityId) =>
+        {
+            if (!filter(entityId)) return;
+            if (!_positionStore.HasComponent(entityId)) return;
+
+            Vector3 screenPos = cam.WorldToScreenPoint(WorldPositionFor(_positionStore.GetComponent(entityId)));
+            if (screenPos.z <= 0f) return; // behind the camera
+
+            if (screenPos.x >= min.x && screenPos.x <= max.x && screenPos.y >= min.y && screenPos.y <= max.y)
+                results.Add(entityId);
+        });
     }
 
     private void PerformPointTargetOrMove()
@@ -361,29 +406,21 @@ public class SelectionManager : Singleton<SelectionManager>
 
     private void PerformRectTargetOrMove()
     {
-        if (!TileSpaceMouse.TryGetPosition(out float tx, out float ty)) return;
-
-        float minX = Mathf.Min(_rightDragStartTileX, tx);
-        float maxX = Mathf.Max(_rightDragStartTileX, tx);
-        float minY = Mathf.Min(_rightDragStartTileY, ty);
-        float maxY = Mathf.Max(_rightDragStartTileY, ty);
-
         _queryBuffer.Clear();
-        _chunkTracker.GetEntitiesInRect(minX, minY, maxX, maxY, _queryBuffer);
+        GetEntitiesInScreenRect(_rightDragStartScreen, Input.mousePosition, IsTargetable, _queryBuffer);
 
-        List<ulong> targets = new List<ulong>();
-        foreach (ulong entityId in _queryBuffer)
-            if (IsTargetable(entityId)) targets.Add(entityId);
-
-        if (targets.Count > 0)
-            SendSetTargets(targets);
+        // SendSetTargets stores this list by reference in a queued SetTargetsInput that
+        // can outlive this call by several frames — must not hand it the reused scratch
+        // buffer, which gets cleared again on the next click.
+        if (_queryBuffer.Count > 0)
+            SendSetTargets(new List<ulong>(_queryBuffer));
     }
 
     private void SendSetTargets(List<ulong> targetIds)
     {
         if (_selectedEntityIds.Count == 0) return;
 
-        bool additionalSelect = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        bool additionalSelect = IsAdditiveModifierHeld();
 
         InputBuffer.EnqueueInput(new SetTargetsInput
         {
@@ -431,11 +468,35 @@ public class SelectionManager : Singleton<SelectionManager>
     private void UpdateDragBox(Vector2 startScreen)
     {
         if (_dragSelectionBox == null) return;
-        Vector2 current = Input.mousePosition;
-        Vector2 min = Vector2.Min(startScreen, current);
-        Vector2 max = Vector2.Max(startScreen, current);
-        // Force anchor and pivot to bottom-left so offsetMin/offsetMax map
-        // directly to screen-pixel corners regardless of inspector settings.
+
+        // Input.mousePosition is always in real screen pixels, but anchoredPosition/
+        // sizeDelta are in the parent's local UI units — those only match 1:1 when the
+        // Canvas's scale factor happens to be 1. With a CanvasScaler in "Scale With
+        // Screen Size" mode (as this scene uses) that's only true at the reference
+        // resolution, so writing raw screen pixels straight into anchoredPosition drifts
+        // the box away from the cursor at any other resolution. Go through
+        // ScreenPointToLocalPointInRectangle so this holds for any scaler/render mode.
+        RectTransform parent = _dragSelectionBox.parent as RectTransform;
+        if (parent == null) return;
+
+        Canvas canvas = _dragSelectionBox.GetComponentInParent<Canvas>();
+        Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay) ? canvas.worldCamera : null;
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, startScreen, cam, out Vector2 startLocal) ||
+            !RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, Input.mousePosition, cam, out Vector2 currentLocal))
+            return;
+
+        // ScreenPointToLocalPointInRectangle returns points relative to the parent's own
+        // pivot; shift by its min corner so they land in the same space as the box's
+        // anchoredPosition below, which is measured from the parent's bottom-left corner
+        // (anchorMin/anchorMax/pivot are forced to (0,0) here regardless of inspector
+        // settings).
+        Vector2 offset = parent.rect.min;
+        Vector2 a = startLocal - offset;
+        Vector2 b = currentLocal - offset;
+        Vector2 min = Vector2.Min(a, b);
+        Vector2 max = Vector2.Max(a, b);
+
         _dragSelectionBox.anchorMin = Vector2.zero;
         _dragSelectionBox.anchorMax = Vector2.zero;
         _dragSelectionBox.pivot = Vector2.zero;
