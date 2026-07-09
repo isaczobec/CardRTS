@@ -90,7 +90,7 @@ public class ECS
 
     public EntityHandle CreateEntity()
     {
-        ulong id = (ulong)UnityEngine.Random.Range(0, 9999999999);
+        ulong id = NextEntityId();
 
         var addRes = _entities.Add(new EntityData(id));
         _entityIdsToIndicies[id] = (int) addRes.addedIndex;
@@ -98,6 +98,24 @@ public class ECS
         FlagEvents.Add(new EntityCreatedEvent { EntityId = id });
         Delta.MarkEntityCreated(id);
         return new EntityHandle(id);
+    }
+
+    // Combines two full-range int draws into a ulong for real ~64-bit spread. A single
+    // UnityEngine.Random.Range(0, 9999999999) call resolves to the float overload (the
+    // upper bound doesn't fit int), and float's ~24-bit mantissa can't represent values
+    // near 1e10 precisely — collisions become plausible once many entities have been
+    // created, silently clobbering _entityIdsToIndicies for two still-alive entities.
+    private static ulong NextEntityId()
+    {
+        ulong id;
+        do
+        {
+            uint hi = unchecked((uint)UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+            uint lo = unchecked((uint)UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+            id = ((ulong)hi << 32) | lo;
+        } while (id == 0); // 0 is used elsewhere as an EntityId "none" sentinel
+
+        return id;
     }
 
     public bool HasEntity(ulong entityId) => _entityIdsToIndicies.ContainsKey(entityId);

@@ -22,7 +22,7 @@ public class BasicMeleeAISystem : ISystem
     public Type[] ComponentTypes => Array.Empty<Type>();
 
     private const int DefaultRange = 5;
-    private const float DefaultAttackSpeedMilliseconds = 1000f;
+    private const float DefaultAttackSpeedMilliseconds = 333f;
     private const int DefaultDamage = 10;
     private const float HomeRadius = 0.1f;
 
@@ -134,7 +134,7 @@ public class BasicMeleeAISystem : ISystem
             _ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = id });
 
             int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
-            ai.CooldownTicksRemaining = attackSpeedTicks / 2;
+            ai.CooldownTicksRemaining = attackSpeedTicks * 2;
         }
 
         ai.AttackTargetId = 0;

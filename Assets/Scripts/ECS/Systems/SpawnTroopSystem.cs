@@ -15,7 +15,7 @@ public static class SpawnTroopSystem
     private const int DefaultRange = 5;
     private const int DefaultArmor = 0;
     private const int DefaultDamage = 10;
-    private const float DefaultAttackSpeedMilliseconds = 1000f;
+    private const float DefaultAttackSpeedMilliseconds = 333f;
     private const float DefaultActivationDelaySeconds = 2f;
 
     private const float DefaultDetectionRangeMultiplier = 3f;

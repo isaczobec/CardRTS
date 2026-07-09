@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Utilities;
 
 public class NetworkClient
 {
@@ -26,9 +27,11 @@ public class NetworkClient
 
         var settings = new NetworkSettings();
         settings.WithNetworkConfigParameters(receiveQueueCapacity: 1024, sendQueueCapacity: 1024);
+        // Must match the server's pipeline stages/config — see NetworkServer.Start.
+        settings.WithFragmentationStageParameters(payloadCapacity: 64 * 1024);
 
         _driver = NetworkDriver.Create(settings);
-        _reliable = _driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+        _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         _connection = _driver.Connect(endpoint);
         return true;
     }
@@ -64,11 +67,20 @@ public class NetworkClient
     public void Send(byte[] data)
     {
         if (!_connection.IsCreated) return;
-        _driver.BeginSend(_reliable, _connection, out var writer);
+
+        int beginResult = _driver.BeginSend(_reliable, _connection, out var writer);
+        if (beginResult != 0)
+        {
+            DebugLogger.LogError($"[Net] BeginSend failed ({(Unity.Networking.Transport.Error.StatusCode)beginResult}) sending {data.Length} bytes.");
+            return;
+        }
+
         var native = new NativeArray<byte>(data, Allocator.Temp);
         writer.WriteBytes(native);
         native.Dispose();
-        _driver.EndSend(writer);
+        int endResult = _driver.EndSend(writer);
+        if (endResult < 0)
+            DebugLogger.LogError($"[Net] EndSend failed ({(Unity.Networking.Transport.Error.StatusCode)endResult}) sending {data.Length} bytes.");
     }
 
     public void Dispose()

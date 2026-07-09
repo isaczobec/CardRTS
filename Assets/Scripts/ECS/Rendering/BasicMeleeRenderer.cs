@@ -40,9 +40,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
         {
             int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, e.EntityId, TickManager.MillisecondsToTicks(1000f));
             float windupSeconds = TickManager.TicksToSeconds(attackSpeedTicks);
-            float ratio = _attackAnimationTimeUntilImpact / windupSeconds;
-            float duration = ratio / _attackAnimationDuration;
-            float multiplier = duration / _attackAnimationDuration;
+            float multiplier = _attackAnimationTimeUntilImpact / windupSeconds;
             go.Animator.SetFloat(AttackSpeedMultiplierFloat, multiplier);
             go.Animator.SetTrigger(AttackTrigger);
         }

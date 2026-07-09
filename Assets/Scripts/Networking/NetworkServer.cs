@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Utilities;
 
 public class NetworkServer
 {
@@ -27,9 +28,15 @@ public class NetworkServer
         // connected client each server tick, so give it more headroom than the client.
         var settings = new NetworkSettings();
         settings.WithNetworkConfigParameters(receiveQueueCapacity: 2048, sendQueueCapacity: 2048);
+        // SimulationDelta messages grow with entity/component count and have no fixed
+        // upper bound — without fragmentation, BeginSend/EndSend silently fail (dropped,
+        // no exception, no log) the moment a message exceeds the ~1400-byte UDP MTU, which
+        // is exactly what starts happening once enough troops exist. Must match on the
+        // client (pipeline stage order/config has to agree on both ends of a connection).
+        settings.WithFragmentationStageParameters(payloadCapacity: 64 * 1024);
 
         _driver = NetworkDriver.Create(settings);
-        _reliable = _driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+        _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
         _connections = new NativeList<NetworkConnection>(16, Allocator.Persistent);
 
         var endpoint = NetworkEndpoint.AnyIpv4.WithPort(port);
@@ -91,9 +98,17 @@ public class NetworkServer
     void SendTo(NetworkConnection conn, byte[] data)
     {
         var native = new NativeArray<byte>(data, Allocator.Temp);
-        _driver.BeginSend(_reliable, conn, out var writer);
+        int beginResult = _driver.BeginSend(_reliable, conn, out var writer);
+        if (beginResult != 0)
+        {
+            DebugLogger.LogError($"[Net] BeginSend failed ({(Unity.Networking.Transport.Error.StatusCode)beginResult}) sending {data.Length} bytes.");
+            native.Dispose();
+            return;
+        }
         writer.WriteBytes(native);
-        _driver.EndSend(writer);
+        int endResult = _driver.EndSend(writer);
+        if (endResult < 0)
+            DebugLogger.LogError($"[Net] EndSend failed ({(Unity.Networking.Transport.Error.StatusCode)endResult}) sending {data.Length} bytes.");
         native.Dispose();
     }
 
@@ -113,9 +128,17 @@ public class NetworkServer
         for (int i = 0; i < _connections.Length; i++)
         {
             if (!_connections[i].IsCreated) continue;
-            _driver.BeginSend(_reliable, _connections[i], out var writer);
+
+            int beginResult = _driver.BeginSend(_reliable, _connections[i], out var writer);
+            if (beginResult != 0)
+            {
+                DebugLogger.LogError($"[Net] BeginSend failed ({(Unity.Networking.Transport.Error.StatusCode)beginResult}) sending {data.Length} bytes.");
+                continue;
+            }
             writer.WriteBytes(native);
-            _driver.EndSend(writer);
+            int endResult = _driver.EndSend(writer);
+            if (endResult < 0)
+                DebugLogger.LogError($"[Net] EndSend failed ({(Unity.Networking.Transport.Error.StatusCode)endResult}) sending {data.Length} bytes.");
         }
         native.Dispose();
     }
