@@ -117,7 +117,17 @@ public class ECS
             return;
         }
         int index = _entityIdsToIndicies[entityId];
-        _entities.Remove((uint)index);
+        var result = _entities.Remove((uint)index);
+        _entityIdsToIndicies.Remove(entityId);
+
+        // The removal swap-moved the entity that used to be at the last slot into this one;
+        // its recorded index must be updated or it goes stale and points out of range later.
+        if (result.movedValid)
+        {
+            ulong movedEntityId = _entities[(int)result.removedIndex].Id;
+            _entityIdsToIndicies[movedEntityId] = (int)result.removedIndex;
+        }
+
         Delta.MarkEntityDeleted(entityId);
         FlagEvents.Add(new EntityDeletedEvent { EntityId = entityId });
     }
