@@ -311,6 +311,9 @@ public class NetworkManager : Singleton<NetworkManager>
         EntityHandle entity = ecs.CreateEntity();
         ecs.AddComponent(entity.Id, new PositionComponent());
         ecs.AddComponent(entity.Id, new PlayerComponent { PlayerId = playerId });
+        // Empty deck (DeckSystem/DeckHelper) — actually populating it with starting
+        // cards isn't wired up yet.
+        ecs.AddComponent(entity.Id, new PlayerDeckComponent());
     }
 
     // ── Message builders ──────────────────────────────────────────────────────

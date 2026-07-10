@@ -46,6 +46,44 @@ public static class ProjectilePool
         return projectileId;
     }
 
+    // Pre-allocates a ring of `count` pooled projectile entities for a troop, each linked
+    // to the next (last wraps back to the first) via ProjectileBaseComponent.NextProjectileId.
+    // Returns the id of the first one — pass it as ProjectileOwnerComponent.NextProjectileId
+    // when adding that component to the owner (the caller's job, since only it knows
+    // whether the owner already has one).
+    public static ulong CreatePool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond)
+    {
+        ComponentStore<ProjectileBaseComponent> projectileStore = ecs.GetComponentStore<ProjectileBaseComponent>();
+
+        ulong firstId = 0;
+        ulong previousId = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            EntityHandle projectile = ecs.CreateEntity();
+            ulong id = projectile.Id;
+            if (i == 0) firstId = id;
+
+            ecs.AddComponent(id, new PositionComponent(0f, 0f));
+            ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.SeekingProjectile });
+            ecs.AddComponent(id, new SeekingProjectileComponent { Speed = speedMilliTilesPerSecond });
+            ecs.AddComponent(id, new ProjectileBaseComponent { OwnerEntityId = ownerId, IsActive = false });
+
+            if (previousId != 0)
+            {
+                ref ProjectileBaseComponent previous = ref projectileStore.GetComponent(previousId);
+                previous.NextProjectileId = id;
+            }
+
+            previousId = id;
+        }
+
+        ref ProjectileBaseComponent last = ref projectileStore.GetComponent(previousId);
+        last.NextProjectileId = firstId;
+
+        return firstId;
+    }
+
     private static ulong FindAvailable(ComponentStore<ProjectileBaseComponent> projectileStore, ulong startId, int maxProjectiles)
     {
         ulong currentId = startId;

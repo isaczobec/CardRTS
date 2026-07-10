@@ -137,12 +137,15 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BasicRangedAIComponent>(12);
         _componentTypeRegistry.Register<SeekingProjectileComponent>(13);
         _componentTypeRegistry.Register<BuildingComponent>(14);
+        _componentTypeRegistry.Register<CardComponent>(15);
+        _componentTypeRegistry.Register<PlayerDeckComponent>(16);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
         _inputTypeRegistry.Register<SpawnTroopInput>(2);
         _inputTypeRegistry.Register<MoveTroopInput>(3);
         _inputTypeRegistry.Register<SetTargetsInput>(4);
+        _inputTypeRegistry.Register<CardPlayedInput>(5);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -183,6 +186,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ProjectileDeactivatedEvent>(36);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<BuildingComponent>>(37);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BuildingComponent>>(38);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<CardComponent>>(39);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<CardComponent>>(40);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerDeckComponent>>(41);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerDeckComponent>>(42);
 
         ECS = CreateSimulationECS();
     }
@@ -352,6 +359,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BasicRangedAIComponent>());
         ecs.AddComponentStore(new ComponentStore<SeekingProjectileComponent>());
         ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
+        ecs.AddComponentStore(new ComponentStore<CardComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(TroopActivationSystem.Instance);
@@ -363,6 +372,8 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new PathfindingSystem());
         ecs.RegisterSystem(new BuildingBlockingSystem());
         ecs.RegisterSystem(SeekingProjectileSystem.Instance);
+        ecs.RegisterSystem(CardPlaySystem.Instance);
+        ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
@@ -387,6 +398,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BasicRangedAIComponent>());
         ecs.AddComponentStore(new ComponentStore<SeekingProjectileComponent>());
         ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
+        ecs.AddComponentStore(new ComponentStore<CardComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
 
         return ecs;
     }
