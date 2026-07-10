@@ -139,6 +139,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BuildingComponent>(14);
         _componentTypeRegistry.Register<CardComponent>(15);
         _componentTypeRegistry.Register<PlayerDeckComponent>(16);
+        _componentTypeRegistry.Register<PlayerResourcesComponent>(17);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -192,6 +193,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerDeckComponent>>(42);
         _flagEventTypeRegistry.Register<CardDrawnEvent>(43);
         _flagEventTypeRegistry.Register<CardPlayedEvent>(44);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerResourcesComponent>>(45);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerResourcesComponent>>(46);
 
         ECS = CreateSimulationECS();
     }
@@ -363,6 +366,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(TroopActivationSystem.Instance);
@@ -379,6 +383,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
+        ecs.RegisterSystem(ResourceGenerationSystem.Instance);
         return ecs;
     }
 
@@ -402,6 +407,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
 
         return ecs;
     }

@@ -312,6 +312,11 @@ public class NetworkManager : Singleton<NetworkManager>
         ecs.AddComponent(entity.Id, new PositionComponent());
         ecs.AddComponent(entity.Id, new PlayerComponent { PlayerId = playerId });
         ecs.AddComponent(entity.Id, new PlayerDeckComponent());
+        ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
+            WoodPerSecond = 0.5f,
+            StonePerSecond = 0.5f,
+            GoldPerSecond = 0.5f,
+            });
 
         DeckHelper.SeedStartingDeck(ecs, playerId);
     }
