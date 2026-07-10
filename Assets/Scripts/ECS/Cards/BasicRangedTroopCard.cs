@@ -18,18 +18,24 @@ public class BasicRangedTroopCard : Card
     private const int ProjectileSpeedMilliTilesPerSecond = 15000; // 15 tiles/sec
 
     public override CardType Type => CardType.BasicRangedTroop;
+    public override string Title => "Ranged Troop";
+    public override string ImageName => "BasicRangedTroop";
+    public override string Description => "A ranged troop that peppers enemies with arrows from a distance.";
+    public override StatsComponent? DisplayStats => BuildStats();
+
+    private static StatsComponent BuildStats() => new StatsComponent
+    {
+        MaxHealth   = MaxHealth,
+        Speed       = Speed,
+        Range       = Range,
+        Armor       = Armor,
+        Damage      = Damage,
+        AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
+    };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
-        StatsComponent stats = new StatsComponent
-        {
-            MaxHealth   = MaxHealth,
-            Speed       = Speed,
-            Range       = Range,
-            Armor       = Armor,
-            Damage      = Damage,
-            AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
-        };
+        StatsComponent stats = BuildStats();
 
         TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.BasicRanged, stats, new List<Action<ECS, ulong>>
         {

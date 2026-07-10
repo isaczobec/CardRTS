@@ -68,6 +68,7 @@ public class DeckSystem : ISystem
             ref CardComponent drawn = ref cardStore.GetComponent(drawnId);
             drawn.Location = CardLocation.Hand;
             ecs.Delta.MarkComponentDirty(drawnId, typeof(CardComponent));
+            ecs.FlagEvents.Add(new CardDrawnEvent { EntityId = drawnId });
         }
     }
 

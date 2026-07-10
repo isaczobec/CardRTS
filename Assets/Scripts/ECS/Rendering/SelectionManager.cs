@@ -157,8 +157,12 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // Held Space is reserved for camera pan/rotate (see CameraController) — while it's
     // down, no selection box may appear and no selection (drag or point) can be made.
+    // Same for while a card is selected/being dragged (CardHandRenderer) — a click in the
+    // world in that state means "play the card here," not "select/target troops."
     private void HandleSelectionInput()
     {
+        if (CardHandRenderer.instance != null && CardHandRenderer.instance.IsCardSelectedOrDragging) return;
+
         if (Input.GetKey(KeyCode.Space))
         {
             // Cancel any drag that was already in progress before Space was pressed,

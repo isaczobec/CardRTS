@@ -9,6 +9,17 @@ public class BuildingCard : Card
     private const float ActivationDelaySeconds = 2f;
 
     public override CardType Type => CardType.Building;
+    public override string Title => "Building";
+    public override string ImageName => "Building";
+    public override string Description => "A stationary structure that blocks nearby idle troops from standing on it.";
+    public override StatsComponent? DisplayStats => BuildStats();
+
+    private static StatsComponent BuildStats() => new StatsComponent
+    {
+        MaxHealth = MaxHealth,
+        Armor     = Armor,
+        // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
+    };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
@@ -26,13 +37,7 @@ public class BuildingCard : Card
         ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.BasicBuilding });
         ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = ownerPlayerId });
 
-        ecs.AddComponent(id, new StatsComponent
-        {
-            MaxHealth = MaxHealth,
-            Armor     = Armor,
-            // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
-        });
-
+        ecs.AddComponent(id, BuildStats());
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = MaxHealth });
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = BlockRadius });
     }

@@ -37,6 +37,7 @@ public static class CardPlaySystem
         if (!CardRegistry.TryGet(card.Type, out Card definition)) return;
 
         definition.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.X, input.Y);
+        ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });
 
         // Recycle the card back into its owner's deck (at the back) rather than
         // deleting it.

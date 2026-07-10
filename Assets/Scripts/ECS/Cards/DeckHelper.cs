@@ -5,6 +5,30 @@
 // cooldown finishes.
 public static class DeckHelper
 {
+    const int StartingCopiesPerCardType = 3;
+
+    // Creates copiesPerType card entities of every CardType, all starting in the deck, and
+    // enqueues them onto ownerPlayerId's deck. Called once per player at game start, after
+    // that player's PlayerDeckComponent already exists (see NetworkManager.SpawnPlayerEntity).
+    public static void SeedStartingDeck(ECS ecs, ushort ownerPlayerId, int copiesPerType = StartingCopiesPerCardType)
+    {
+        foreach (CardType type in System.Enum.GetValues(typeof(CardType)))
+        {
+            for (int i = 0; i < copiesPerType; i++)
+            {
+                EntityHandle entity = ecs.CreateEntity();
+                ecs.AddComponent(entity.Id, new CardComponent
+                {
+                    Type          = type,
+                    Location      = CardLocation.Deck,
+                    OwnerPlayerId = ownerPlayerId,
+                });
+
+                EnqueueToDeck(ecs, ownerPlayerId, entity.Id);
+            }
+        }
+    }
+
     // Finds the entity carrying ownerPlayerId's PlayerDeckComponent, or 0 if none exists
     // (e.g. that player's entity hasn't been set up yet).
     public static ulong FindPlayerDeckEntity(ECS ecs, ushort ownerPlayerId)

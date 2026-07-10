@@ -15,18 +15,24 @@ public class BasicMeleeTroopCard : Card
     private const float AttackRangeMultiplier = 1.5f;
 
     public override CardType Type => CardType.BasicMeleeTroop;
+    public override string Title => "Melee Troop";
+    public override string ImageName => "BasicMeleeTroop";
+    public override string Description => "A sturdy melee troop that charges the nearest enemy.";
+    public override StatsComponent? DisplayStats => BuildStats();
+
+    private static StatsComponent BuildStats() => new StatsComponent
+    {
+        MaxHealth   = MaxHealth,
+        Speed       = Speed,
+        Range       = Range,
+        Armor       = Armor,
+        Damage      = Damage,
+        AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
+    };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
-        StatsComponent stats = new StatsComponent
-        {
-            MaxHealth   = MaxHealth,
-            Speed       = Speed,
-            Range       = Range,
-            Armor       = Armor,
-            Damage      = Damage,
-            AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
-        };
+        StatsComponent stats = BuildStats();
 
         TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.BasicMelee, stats, new List<Action<ECS, ulong>>
         {
