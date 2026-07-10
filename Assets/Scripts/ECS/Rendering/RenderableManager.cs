@@ -7,6 +7,15 @@ using UnityEngine;
 /// </summary>
 public class RenderableManager : MonoBehaviour
 {
+    [System.Serializable]
+    public class ComponentRendererRecordEntry
+    {
+        [SerializeField] public RenderableType type;
+        [SerializeField] public MonoBehaviour renderer;
+    }
+
+    [SerializeField] private List<ComponentRendererRecordEntry> _rendererEntries;
+
     private ECS _ecs;
 
     private readonly Dictionary<RenderableType, IComponentRenderer> _renderers  = new();
@@ -22,6 +31,10 @@ public class RenderableManager : MonoBehaviour
     {
         _ecs = ecs;
         TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+
+        foreach (var entry in _rendererEntries) {
+            Register(entry.type, (IComponentRenderer) entry.renderer);
+        }
     }
 
     private void OnTroopActivated(TroopActivatedEvent e)
