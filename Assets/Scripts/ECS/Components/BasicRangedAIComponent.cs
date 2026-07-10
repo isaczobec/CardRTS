@@ -1,0 +1,35 @@
+public struct BasicRangedAIComponent : IComponent
+{
+    // "Leash" point the troop returns to once it has no targets left.
+    public float OriginalX;
+    public float OriginalY;
+
+    // How far (as a multiple of the troop's Range stat) it will notice and
+    // automatically target nearby enemies.
+    public float DetectionRangeMultiplier;
+
+    // How far (as a multiple of Range, larger than DetectionRangeMultiplier) it will
+    // keep chasing an automatically-acquired target before giving up on it.
+    public float ChaseRangeMultiplier;
+
+    // Leeway (as a multiple of Range) allowed when re-checking a target is still close
+    // enough once the windup finishes, before actually firing a projectile at it.
+    public float AttackRangeMultiplier;
+
+    // 0 = not currently winding up. Otherwise the entity being wound up against.
+    public ulong AttackTargetId;
+    public int AttackTicksRemaining;
+
+    // Post-shot wind-down: set (to the same length as the windup) after a projectile is
+    // actually fired, counted down before this troop will act again (move, target, or
+    // attack) — see BasicRangedAISystem.Tick.
+    public int WindDownTicksRemaining;
+
+    // Target + position the last chase path was computed for. A moving target's
+    // position changes almost every tick; repathing on every single one of those
+    // changes is wasteful, so we only do it once the target has drifted more than the
+    // troop's attack range from where it was the last time we computed a path to it.
+    public ulong LastPathTargetId;
+    public float LastPathTargetX;
+    public float LastPathTargetY;
+}

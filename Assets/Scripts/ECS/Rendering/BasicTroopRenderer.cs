@@ -7,9 +7,9 @@ using UnityEngine;
 /// positions, and fires animator triggers off server-authoritative flag events.
 /// Register an instance with RenderableManager for RenderableType.BasicMelee.
 /// </summary>
-public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
+public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
 {
-    [SerializeField] private BasicMeleeGameObject _prefab;
+    [SerializeField] private BasicTroopGameObject _prefab;
     [SerializeField] private float _rotationDegreesPerSecond = 540f;
 
     // Capsule primitive (used by the prefab's placeholder mesh, if any) is 2 units tall;
@@ -24,7 +24,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
     private static readonly int AttackSpeedMultiplierFloat = Animator.StringToHash("AttackSpeedMultiplier");
 
     private ECS _ecs;
-    private readonly Dictionary<ulong, BasicMeleeGameObject> _objects = new();
+    private readonly Dictionary<ulong, BasicTroopGameObject> _objects = new();
     private readonly TickPositionInterpolator _interpolator = new();
 
     public void Initialize(ECS ecs)
@@ -36,7 +36,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
 
     private void OnTroopBeginAttack(TroopBeginAttackEvent e)
     {
-        if (_objects.TryGetValue(e.EntityId, out BasicMeleeGameObject go) && go.Animator != null)
+        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go) && go.Animator != null)
         {
             int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, e.EntityId, TickManager.MillisecondsToTicks(1000f));
             float windupSeconds = TickManager.TicksToSeconds(attackSpeedTicks);
@@ -55,7 +55,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
     private void FaceTarget(ulong entityId, ulong targetEntityId)
     {
         if (targetEntityId == 0) return;
-        if (!_objects.TryGetValue(entityId, out BasicMeleeGameObject go)) return;
+        if (!_objects.TryGetValue(entityId, out BasicTroopGameObject go)) return;
 
         var posStore = _ecs?.GetComponentStore<PositionComponent>();
         if (posStore == null || !posStore.HasComponent(targetEntityId)) return;
@@ -70,7 +70,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
 
     private void OnTroopDied(TroopDiedEvent e)
     {
-        if (_objects.TryGetValue(e.EntityId, out BasicMeleeGameObject go) && go.Animator != null)
+        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go) && go.Animator != null)
             go.Animator.SetTrigger(DieTrigger);
     }
 
@@ -82,7 +82,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
 
     public void OnEntityRemoved(ulong entityId)
     {
-        if (_objects.TryGetValue(entityId, out BasicMeleeGameObject go))
+        if (_objects.TryGetValue(entityId, out BasicTroopGameObject go))
             Destroy(go.gameObject);
         _objects.Remove(entityId);
         _interpolator.Remove(entityId);
@@ -92,7 +92,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
     {
         if (_objects.ContainsKey(entityId) || _prefab == null) return;
 
-        BasicMeleeGameObject go = Instantiate(_prefab);
+        BasicTroopGameObject go = Instantiate(_prefab);
         go.name = $"Troop_{entityId}";
         _objects[entityId] = go;
     }
@@ -105,7 +105,7 @@ public class BasicMeleeRenderer : MonoBehaviour, IComponentRenderer
 
         foreach (ulong id in entityIds)
         {
-            if (!_objects.TryGetValue(id, out BasicMeleeGameObject go)) continue;
+            if (!_objects.TryGetValue(id, out BasicTroopGameObject go)) continue;
             if (!posStore.HasComponent(id)) continue;
 
             bool isMoving = movStore != null && movStore.HasComponent(id)
