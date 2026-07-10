@@ -8,7 +8,10 @@ public class TestInput : MonoBehaviour
             InputBuffer.EnqueueInput(new SpawnEntityInput());
 
         if (Input.GetKeyDown(KeyCode.X) && TileSpaceMouse.TryGetPosition(out float tx, out float ty))
-            InputBuffer.EnqueueInput(new SpawnTroopInput { X = tx, Y = ty });
+            InputBuffer.EnqueueInput(new SpawnTroopInput { X = tx, Y = ty, TroopType = TroopType.BasicMelee });
+
+        if (Input.GetKeyDown(KeyCode.C) && TileSpaceMouse.TryGetPosition(out float cx, out float cy))
+            InputBuffer.EnqueueInput(new SpawnTroopInput { X = cx, Y = cy, TroopType = TroopType.BasicRanged });
 
         // Right-click (move / set targets) is handled by SelectionManager.
 

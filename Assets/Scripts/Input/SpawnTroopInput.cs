@@ -4,6 +4,7 @@ public class SpawnTroopInput : InputBase
 {
     public float X;
     public float Y;
+    public TroopType TroopType;
 
     public override byte[] Serialize()
     {
@@ -11,6 +12,7 @@ public class SpawnTroopInput : InputBase
         using var w  = new BinaryWriter(ms);
         w.Write(X);
         w.Write(Y);
+        w.Write((byte)TroopType);
         return ms.ToArray();
     }
 
@@ -20,5 +22,6 @@ public class SpawnTroopInput : InputBase
         using var r  = new BinaryReader(ms);
         X = r.ReadSingle();
         Y = r.ReadSingle();
+        TroopType = (TroopType)r.ReadByte();
     }
 }

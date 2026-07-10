@@ -24,6 +24,8 @@ public class DevConsole : Singleton<DevConsole>
     [SerializeField] private int maxConsoleMessages = 200; // Maximum number of messages to keep in the console
 
     private bool _isOpen = false;
+    public static bool IsOpen => instance != null && instance._isOpen;
+
     private List<string> _logMessages = new List<string>();
 
     private bool showUnityInfo = true;

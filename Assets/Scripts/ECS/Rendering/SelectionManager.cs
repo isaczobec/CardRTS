@@ -3,10 +3,10 @@ using UnityEngine;
 
 public class SelectionManager : Singleton<SelectionManager>
 {
-    private const float SingleSelectRadius = 4f;
+    private const float SingleSelectRadius = 5f;
     // Deliberately generous: a plain click that twitches a few pixels while releasing
     // the mouse button should never be misread as the start of a drag-select.
-    private const float DragThresholdPixels = 60f;
+    private const float DragThresholdPixels = 180f;
 
     [SerializeField] private GameObject _selectionPrefab;
     [SerializeField] private GameObject _targetingPrefab;

@@ -20,10 +20,24 @@ public static class InputBuffer
 
     public static void EnqueueInput<T>(T input) where T : InputBase
     {
+        if (!ShouldAcceptLocalInput()) return;
+
         input.ClientId = NetworkManager.instance?.LocalPlayerId ?? 0;
         // Inputs are batched and sent to the server once per prediction tick
         // by TickManager, not immediately here.
         EnqueueRaw(input);
+    }
+
+    // Gates local player input only — EnqueueForTick/EnqueueRaw's direct callers apply
+    // already-sent remote clients' inputs and must not be affected by our own local UI
+    // state. Ignored while the game hasn't started (there's no tick to attach it to yet)
+    // or while the dev console is open (typing a command shouldn't also move troops/spawn
+    // things underneath it).
+    private static bool ShouldAcceptLocalInput()
+    {
+        if (TickManager.instance == null || !TickManager.instance.IsGameStarted) return false;
+        if (DevConsole.IsOpen) return false;
+        return true;
     }
 
     // Enqueues a pre-constructed input at the current tick.

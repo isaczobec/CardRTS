@@ -22,6 +22,18 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
     public void Initialize(ECS ecs)
     {
         _ecs = ecs;
+
+        // ecs here is the active (prediction) ECS on clients/host — its own FlagEvents
+        // fire the instant BasicRangedAISystem/SeekingProjectileSystem run locally, ahead
+        // of any server round-trip, for responsiveness. ServerFlagEvents is the later,
+        // authoritative confirmation. The two can disagree if a shot was mispredicted, so
+        // UpdateRenderable additionally re-syncs visibility to the live (reconciled)
+        // ProjectileBaseComponent.IsActive every frame — that always reflects the latest
+        // server-confirmed truth after reconciliation, so it wins within one frame even
+        // if a local prediction guessed wrong.
+        ecs.FlagEvents.Subscribe<ProjectileActivatedEvent>(OnProjectileActivated);
+        ecs.FlagEvents.Subscribe<ProjectileDeactivatedEvent>(OnProjectileDeactivated);
+
         TickManager.instance.ServerFlagEvents.Subscribe<ProjectileActivatedEvent>(OnProjectileActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<ProjectileDeactivatedEvent>(OnProjectileDeactivated);
     }
@@ -74,6 +86,14 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
 
             bool isActive = projectileStore != null && projectileStore.HasComponent(id)
                 && projectileStore.GetComponent(id).IsActive;
+
+            // Belt-and-suspenders for a mispredicted activation/deactivation: this reads
+            // the live (reconciled) component state every frame, which always ends up
+            // matching the server, so it corrects any event-driven toggle that guessed
+            // wrong instead of leaving a "ghost" projectile visible (or an active one
+            // hidden).
+            if (go.activeSelf != isActive)
+                go.SetActive(isActive);
 
             Vector3 worldPos = ToWorldPosition(posStore.GetComponent(id));
             go.transform.position = _interpolator.Update(id, worldPos, isActive);

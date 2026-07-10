@@ -1155,9 +1155,9 @@ MonoBehaviour:
   _rendererEntries:
   - type: 2
     renderer: {fileID: 1914037912}
-  - type: 2
+  - type: 3
     renderer: {fileID: 1671680054}
-  - type: 2
+  - type: 4
     renderer: {fileID: 982359451}
 --- !u!1 &705507993
 GameObject:
@@ -2830,10 +2830,10 @@ Transform:
   - {fileID: 1311735491}
   - {fileID: 677668851}
   - {fileID: 1537083955}
-  - {fileID: 695582577}
   - {fileID: 379280427}
   - {fileID: 648465013}
   - {fileID: 1292187812}
+  - {fileID: 695582577}
   - {fileID: 1428959134}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
