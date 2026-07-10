@@ -49,7 +49,9 @@ public class BuildingBlockingSystem : ISystem
         {
             if (troopId == buildingId) continue;
             if (!posStore.HasComponent(troopId) || !movStore.HasComponent(troopId)) continue;
-            if (movStore.GetComponent(troopId).currentMovementMode != MovementMode.NotMoving) continue;
+
+            ref MovableComponent mov = ref movStore.GetComponent(troopId);
+            if (mov.currentMovementMode != MovementMode.NotMoving) continue;
 
             ref PositionComponent troopPos = ref posStore.GetComponent(troopId);
 
@@ -61,7 +63,26 @@ public class BuildingBlockingSystem : ISystem
             troopPos.Y = newY;
             ecs.Delta.MarkComponentDirty(troopId, typeof(PositionComponent));
             ecs.FlagEvents.Add(new PositionUpdatedEvent());
+
+            // If the troop's "go home when idle" leash point is itself inside the
+            // building's radius, re-home it to the spot we just relocated it to —
+            // otherwise GoHome would walk it right back in the moment it has no target,
+            // and we'd push it out again next tick, forever. Leash lives on
+            // MovableComponent (shared by every movable troop), so this needs no
+            // per-AI-type code path.
+            if (IsInsideRadius(mov.LeashX, mov.LeashY, buildingPos, building.BlockRadius))
+            {
+                mov.LeashX = newX;
+                mov.LeashY = newY;
+                ecs.Delta.MarkComponentDirty(troopId, typeof(MovableComponent));
+            }
         }
+    }
+
+    private static bool IsInsideRadius(float x, float y, PositionComponent center, float radius)
+    {
+        float dx = x - center.X, dy = y - center.Y;
+        return dx * dx + dy * dy <= radius * radius;
     }
 
     // Searches outward ring by ring (starting just past blockRadius) for a walkable tile,

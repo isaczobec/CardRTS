@@ -96,7 +96,7 @@ public class BasicMeleeAISystem : ISystem
         if (activeTarget == 0)
         {
             if (!mov.playerDestinationSet)
-                GoHome(id, ref ai, ref mov, myPos);
+                GoHome(id, ref mov, myPos);
             return;
         }
 
@@ -203,9 +203,9 @@ public class BasicMeleeAISystem : ISystem
         return Vector2.Distance(from, new Vector2(p.X, p.Y));
     }
 
-    private void GoHome(ulong id, ref BasicMeleeAIComponent ai, ref MovableComponent mov, Vector2 myPos)
+    private void GoHome(ulong id, ref MovableComponent mov, Vector2 myPos)
     {
-        float hdx = myPos.x - ai.OriginalX, hdy = myPos.y - ai.OriginalY;
+        float hdx = myPos.x - mov.LeashX, hdy = myPos.y - mov.LeashY;
         bool atHome = (hdx * hdx + hdy * hdy) < HomeRadius * HomeRadius;
 
         if (atHome)
@@ -216,10 +216,10 @@ public class BasicMeleeAISystem : ISystem
         else
         {
             if (mov.currentMovementMode == MovementMode.MoveToDestination
-                && mov.destinationX == ai.OriginalX && mov.destinationY == ai.OriginalY) return;
+                && mov.destinationX == mov.LeashX && mov.destinationY == mov.LeashY) return;
 
-            mov.destinationX = ai.OriginalX;
-            mov.destinationY = ai.OriginalY;
+            mov.destinationX = mov.LeashX;
+            mov.destinationY = mov.LeashY;
             mov.currentMovementMode = MovementMode.MoveToDestination;
         }
 

@@ -1,9 +1,5 @@
 public struct BasicRangedAIComponent : IComponent
 {
-    // "Leash" point the troop returns to once it has no targets left.
-    public float OriginalX;
-    public float OriginalY;
-
     // How far (as a multiple of the troop's Range stat) it will notice and
     // automatically target nearby enemies.
     public float DetectionRangeMultiplier;

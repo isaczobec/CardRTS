@@ -31,12 +31,11 @@ public class PathfindingSystem : ISystem
         ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
         ComponentStore<MovableComponent> movStore = ecs.GetComponentStore<MovableComponent>();
         ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
-        ComponentStore<BasicMeleeAIComponent> aiStore = ecs.GetComponentStore<BasicMeleeAIComponent>();
 
         if (inputs != null)
         {
             foreach (MoveTroopInput input in inputs)
-                ApplyInput(ecs, input, posStore, movStore, troopStore, aiStore);
+                ApplyInput(ecs, input, posStore, movStore, troopStore);
         }
 
         movStore.ForEach((ulong id) => {
@@ -105,8 +104,7 @@ public class PathfindingSystem : ISystem
         MoveTroopInput input,
         ComponentStore<PositionComponent> posStore,
         ComponentStore<MovableComponent> movStore,
-        ComponentStore<TroopComponent> troopStore,
-        ComponentStore<BasicMeleeAIComponent> aiStore)
+        ComponentStore<TroopComponent> troopStore)
     {
         foreach (MoveTroopInput.EntityDestination move in input.Moves)
         {
@@ -124,17 +122,14 @@ public class PathfindingSystem : ISystem
             mov.playerSetDestinationY = move.DestinationY;
             mov.playerDestinationSet  = true;
             mov.currentMovementMode   = MovementMode.MoveToPlayerSetDestination;
-            ecs.Delta.MarkComponentDirty(entityId, typeof(MovableComponent));
 
-            // A player move order re-homes the troop's AI leash point, so it returns
-            // here (rather than its spawn point) once it's done chasing/fighting.
-            if (aiStore.HasComponent(entityId))
-            {
-                ref BasicMeleeAIComponent ai = ref aiStore.GetComponent(entityId);
-                ai.OriginalX = move.DestinationX;
-                ai.OriginalY = move.DestinationY;
-                ecs.Delta.MarkComponentDirty(entityId, typeof(BasicMeleeAIComponent));
-            }
+            // A player move order re-homes the troop's leash point too, so it returns
+            // here (rather than wherever it last leashed to) once it's done
+            // chasing/fighting, regardless of which AI component (if any) it has.
+            mov.LeashX = move.DestinationX;
+            mov.LeashY = move.DestinationY;
+
+            ecs.Delta.MarkComponentDirty(entityId, typeof(MovableComponent));
         }
     }
 }

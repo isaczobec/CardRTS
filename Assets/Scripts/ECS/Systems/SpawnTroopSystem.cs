@@ -82,6 +82,8 @@ public static class SpawnTroopSystem
         {
             destinationX = input.X,
             destinationY = input.Y,
+            LeashX = input.X,
+            LeashY = input.Y,
         });
 
         ecs.AddComponent(entity.Id, new StatsComponent
@@ -103,8 +105,6 @@ public static class SpawnTroopSystem
         {
             ecs.AddComponent(entity.Id, new BasicRangedAIComponent
             {
-                OriginalX                 = input.X,
-                OriginalY                 = input.Y,
                 DetectionRangeMultiplier   = DefaultDetectionRangeMultiplier,
                 ChaseRangeMultiplier       = DefaultChaseRangeMultiplier,
                 AttackRangeMultiplier      = DefaultAttackRangeMultiplier,
@@ -116,8 +116,6 @@ public static class SpawnTroopSystem
         {
             ecs.AddComponent(entity.Id, new BasicMeleeAIComponent
             {
-                OriginalX                 = input.X,
-                OriginalY                 = input.Y,
                 DetectionRangeMultiplier   = DefaultDetectionRangeMultiplier,
                 ChaseRangeMultiplier       = DefaultChaseRangeMultiplier,
                 AttackRangeMultiplier      = DefaultAttackRangeMultiplier,
