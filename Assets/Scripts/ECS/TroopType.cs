@@ -3,4 +3,5 @@ public enum TroopType : byte
 {
     BasicMelee = 0,
     BasicRanged = 1,
+    Building = 2,
 }

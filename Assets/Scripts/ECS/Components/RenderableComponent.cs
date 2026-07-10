@@ -7,6 +7,7 @@ public enum RenderableType : byte
     // can be pointed at this to render ranged troops without any renderer code changes.
     BasicRanged = 3,
     SeekingProjectile = 4,
+    BasicBuilding = 5,
 }
 
 public struct RenderableComponent : IComponent

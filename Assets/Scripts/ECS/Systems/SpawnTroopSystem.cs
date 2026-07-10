@@ -30,6 +30,10 @@ public static class SpawnTroopSystem
     private const int RangedProjectilePoolSize = 64;
     private const int RangedProjectileSpeedMilliTilesPerSecond = 15000; // 15 tiles/sec
 
+    private const int BuildingDefaultMaxHealth = 300;
+    private const int BuildingDefaultArmor = 5;
+    private const float BuildingDefaultBlockRadius = 3f;
+
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
         List<SpawnTroopInput> inputs = ecs.GetInputsForTick<SpawnTroopInput>();
@@ -44,6 +48,12 @@ public static class SpawnTroopSystem
 
     private static void SpawnTroop(ECS ecs, SpawnTroopInput input)
     {
+        if (input.TroopType == TroopType.Building)
+        {
+            SpawnBuilding(ecs, input);
+            return;
+        }
+
         bool isRanged = input.TroopType == TroopType.BasicRanged;
 
         EntityHandle entity = ecs.CreateEntity();
@@ -113,6 +123,52 @@ public static class SpawnTroopSystem
                 AttackRangeMultiplier      = DefaultAttackRangeMultiplier,
             });
         }
+    }
+
+    // Buildings are stationary, non-AI entities: no MovableComponent (they never move)
+    // and no AI component (they don't act) — just enough to be selectable, damageable,
+    // and visible, plus BuildingComponent so BuildingBlockingSystem keeps idle troops
+    // from standing inside it.
+    private static void SpawnBuilding(ECS ecs, SpawnTroopInput input)
+    {
+        EntityHandle entity = ecs.CreateEntity();
+
+        ecs.AddComponent(entity.Id, new PositionComponent(input.X, input.Y));
+
+        ecs.AddComponent(entity.Id, new TroopComponent
+        {
+            OwnerPlayerId      = input.ClientId,
+            _ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds),
+        });
+
+        DebugLogger.Log($"Spawned Building troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");
+
+        ecs.AddComponent(entity.Id, new RenderableComponent
+        {
+            Type = RenderableType.BasicBuilding,
+        });
+
+        ecs.AddComponent(entity.Id, new SelectableComponent
+        {
+            OwnerPlayerId = input.ClientId,
+        });
+
+        ecs.AddComponent(entity.Id, new StatsComponent
+        {
+            MaxHealth = BuildingDefaultMaxHealth,
+            Armor     = BuildingDefaultArmor,
+            // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
+        });
+
+        ecs.AddComponent(entity.Id, new HealthComponent
+        {
+            CurrentHealth = BuildingDefaultMaxHealth,
+        });
+
+        ecs.AddComponent(entity.Id, new BuildingComponent
+        {
+            BlockRadius = BuildingDefaultBlockRadius,
+        });
     }
 
     // Pre-allocates a ring of `count` pooled projectile entities for a ranged troop, each

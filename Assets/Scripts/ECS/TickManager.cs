@@ -136,6 +136,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ProjectileBaseComponent>(11);
         _componentTypeRegistry.Register<BasicRangedAIComponent>(12);
         _componentTypeRegistry.Register<SeekingProjectileComponent>(13);
+        _componentTypeRegistry.Register<BuildingComponent>(14);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -180,6 +181,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SeekingProjectileComponent>>(34);
         _flagEventTypeRegistry.Register<ProjectileActivatedEvent>(35);
         _flagEventTypeRegistry.Register<ProjectileDeactivatedEvent>(36);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BuildingComponent>>(37);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BuildingComponent>>(38);
 
         ECS = CreateSimulationECS();
     }
@@ -348,6 +351,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ProjectileBaseComponent>());
         ecs.AddComponentStore(new ComponentStore<BasicRangedAIComponent>());
         ecs.AddComponentStore(new ComponentStore<SeekingProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(TroopActivationSystem.Instance);
@@ -357,6 +361,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new BasicMeleeAISystem());
         ecs.RegisterSystem(new BasicRangedAISystem());
         ecs.RegisterSystem(new PathfindingSystem());
+        ecs.RegisterSystem(new BuildingBlockingSystem());
         ecs.RegisterSystem(SeekingProjectileSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
@@ -381,6 +386,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ProjectileBaseComponent>());
         ecs.AddComponentStore(new ComponentStore<BasicRangedAIComponent>());
         ecs.AddComponentStore(new ComponentStore<SeekingProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
 
         return ecs;
     }

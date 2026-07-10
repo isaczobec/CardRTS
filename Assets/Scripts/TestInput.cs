@@ -13,6 +13,9 @@ public class TestInput : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.C) && TileSpaceMouse.TryGetPosition(out float cx, out float cy))
             InputBuffer.EnqueueInput(new SpawnTroopInput { X = cx, Y = cy, TroopType = TroopType.BasicRanged });
 
+        if (Input.GetKeyDown(KeyCode.V) && TileSpaceMouse.TryGetPosition(out float vx, out float vy))
+            InputBuffer.EnqueueInput(new SpawnTroopInput { X = vx, Y = vy, TroopType = TroopType.Building });
+
         // Right-click (move / set targets) is handled by SelectionManager.
 
         float dirX = Input.GetAxisRaw("Horizontal");
