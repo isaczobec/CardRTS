@@ -107,11 +107,32 @@ public class CardGameObject : MonoBehaviour,
         SetPanelsVisible(false);
     }
 
-    // Called by CardHandRenderer whenever this card's hover/selection state changes.
+    // Called by CardHandRenderer whenever this card's hover/selection state changes
+    // (every frame, whether or not it actually changed).
     public void SetPanelsVisible(bool visible)
     {
-        if (_statsPanel != null) _statsPanel.SetActive(visible);
-        if (_costPanel != null) _costPanel.SetActive(visible);
+        SetPanelActive(_statsPanel, visible);
+        SetPanelActive(_costPanel, visible);
+    }
+
+    // Reactivating a GameObject with a VerticalLayoutGroup/ContentSizeFitter after it's
+    // been inactive doesn't reliably produce a correct layout on the very first frame —
+    // Unity's automatic layout rebuild is deferred (CanvasUpdateRegistry) and can lag an
+    // extra pass behind an active-state change, so the panel briefly renders at its stale
+    // pre-hide size/position (observed as the stats panel rendering oversized, on top of
+    // the resource panel, on the very first hover). Forcing an immediate rebuild right on
+    // the inactive->active transition fixes this the first time a panel is shown, not just
+    // from the second time on. Only done on an actual transition (activeSelf check), both
+    // to avoid the cost of a full rebuild every frame and because ForceRebuildLayoutImmediate
+    // requires the object to already be active.
+    private static void SetPanelActive(GameObject panel, bool visible)
+    {
+        if (panel == null || panel.activeSelf == visible) return;
+
+        panel.SetActive(visible);
+
+        if (visible)
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)panel.transform);
     }
 
     // Called by CardHandRenderer with the local player's current resources (on draw, and
