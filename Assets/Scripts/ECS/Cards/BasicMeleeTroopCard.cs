@@ -14,11 +14,14 @@ public class BasicMeleeTroopCard : Card
     private const float ChaseRangeMultiplier = 5f;
     private const float AttackRangeMultiplier = 1.5f;
 
+    private const int GoldCost = 3;
+
     public override CardType Type => CardType.BasicMeleeTroop;
     public override string Title => "Melee Troop";
     public override string ImageName => "BasicMeleeTroop";
     public override string Description => "A sturdy melee troop that charges the nearest enemy.";
-    public override StatsComponent? DisplayStats => BuildStats();
+    public override StatsComponent DefaultStats => BuildStats();
+    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

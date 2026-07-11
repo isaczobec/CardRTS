@@ -37,5 +37,6 @@ public class ResourcesAdded : Request
         }
 
         ecs.Delta.MarkComponentDirty(PlayerEntityId, typeof(PlayerResourcesComponent));
+        ecs.FlagEvents.Add(new ResourcesChangedEvent { EntityId = PlayerEntityId });
     }
 }

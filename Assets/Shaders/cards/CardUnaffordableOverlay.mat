@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: CostBoxMaterial 1
-  m_Shader: {fileID: -6465566751694194690, guid: 6bc95d0a89a1dca48a43b25e2be4ed39, type: 3}
+  m_Name: CardUnaffordableOverlay
+  m_Shader: {fileID: -6465566751694194690, guid: 11900ca0f7d2491468e863d1e92c984e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -23,12 +23,8 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _EdgeMask:
-        m_Texture: {fileID: 2800000, guid: 07962cba9715da046a6d6fdb6038217d, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 318f7c76a6155784ebfa6b6ca68cf044, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -55,7 +51,6 @@ Material:
     - _UIMaskSoftnessY: 1
     m_Colors:
     - _ClipRect: {r: 0, g: 0, b: 0, a: 0}
-    - _EdgeColor: {r: 0.6226415, g: 0.6226415, b: 0.6226415, a: 1}
-    - _MiddleColor: {r: 0.7735849, g: 0.7735849, b: 0.7735849, a: 1}
+    - _Color: {r: 1, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

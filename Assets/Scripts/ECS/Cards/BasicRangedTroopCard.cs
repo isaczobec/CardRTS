@@ -17,11 +17,14 @@ public class BasicRangedTroopCard : Card
     private const int ProjectilePoolSize = 64;
     private const int ProjectileSpeedMilliTilesPerSecond = 15000; // 15 tiles/sec
 
+    private const int GoldCost = 4;
+
     public override CardType Type => CardType.BasicRangedTroop;
     public override string Title => "Ranged Troop";
     public override string ImageName => "BasicRangedTroop";
     public override string Description => "A ranged troop that peppers enemies with arrows from a distance.";
-    public override StatsComponent? DisplayStats => BuildStats();
+    public override StatsComponent DefaultStats => BuildStats();
+    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

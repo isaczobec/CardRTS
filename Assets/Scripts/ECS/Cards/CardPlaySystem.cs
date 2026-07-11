@@ -36,6 +36,13 @@ public static class CardPlaySystem
 
         if (!CardRegistry.TryGet(card.Type, out Card definition)) return;
 
+        ulong resourceEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, card.OwnerPlayerId);
+        ComponentStore<PlayerResourcesComponent> resourceStore = ecs.GetComponentStore<PlayerResourcesComponent>();
+        if (resourceStore == null || resourceEntityId == 0 || !resourceStore.HasComponent(resourceEntityId)) return;
+        if (!definition.Cost.CanAfford(resourceStore.GetComponent(resourceEntityId))) return;
+
+        ResourceHelper.Spend(ecs, resourceEntityId, definition.Cost);
+
         definition.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.X, input.Y);
         ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });
 

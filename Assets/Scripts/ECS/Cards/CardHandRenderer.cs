@@ -55,6 +55,8 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     private ulong _selectedCardId;
     private ulong _draggingCardId;
 
+    private ulong _localPlayerResourceEntityId;
+
     // True while a card is selected or being dragged — SelectionManager checks this to
     // suppress normal troop selection/targeting input, the same way it already checks
     // Space (see SelectionManager.HandleSelectionInput).
@@ -64,12 +66,72 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     {
         TickManager.instance.ServerFlagEvents.Subscribe<CardDrawnEvent>(OnCardDrawn);
         TickManager.instance.ServerFlagEvents.Subscribe<CardPlayedEvent>(OnCardPlayed);
+        TickManager.instance.ServerFlagEvents.Subscribe<ResourcesChangedEvent>(OnResourcesChanged);
 
         _ecs = TickManager.instance.ActiveECS;
     }
 
     private ushort LocalPlayerId()
         => NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
+
+    // ── Resources ────────────────────────────────────────────────────────────
+
+    // Re-resolved lazily (mirroring ResourceCounterUI.FindLocalPlayerEntity) rather than
+    // cached forever, in case the local player's entity doesn't exist yet the first time
+    // this is queried.
+    private ulong ResolveLocalPlayerResourceEntity()
+    {
+        if (_ecs == null) return 0;
+
+        ComponentStore<PlayerResourcesComponent> resourceStore = _ecs.GetComponentStore<PlayerResourcesComponent>();
+        if (resourceStore != null && _localPlayerResourceEntityId != 0 && resourceStore.HasComponent(_localPlayerResourceEntityId))
+            return _localPlayerResourceEntityId;
+
+        _localPlayerResourceEntityId = ResourceHelper.FindPlayerResourcesEntity(_ecs, LocalPlayerId());
+        return _localPlayerResourceEntityId;
+    }
+
+    private bool TryGetLocalPlayerResources(out PlayerResourcesComponent resources)
+    {
+        resources = default;
+
+        ulong resourceEntityId = ResolveLocalPlayerResourceEntity();
+        if (resourceEntityId == 0) return false;
+
+        ComponentStore<PlayerResourcesComponent> resourceStore = _ecs.GetComponentStore<PlayerResourcesComponent>();
+        if (resourceStore == null || !resourceStore.HasComponent(resourceEntityId)) return false;
+
+        resources = resourceStore.GetComponent(resourceEntityId);
+        return true;
+    }
+
+    private bool CanAfford(ulong cardEntityId)
+    {
+        if (_ecs == null) return false;
+
+        ComponentStore<CardComponent> cardStore = _ecs.GetComponentStore<CardComponent>();
+        if (cardStore == null || !cardStore.HasComponent(cardEntityId)) return false;
+
+        CardComponent card = cardStore.GetComponent(cardEntityId);
+        if (!CardRegistry.TryGet(card.Type, out Card definition)) return false;
+
+        if (!TryGetLocalPlayerResources(out PlayerResourcesComponent resources)) return false;
+
+        return definition.Cost.CanAfford(resources);
+    }
+
+    private void OnResourcesChanged(ResourcesChangedEvent e)
+    {
+        if (e.EntityId != ResolveLocalPlayerResourceEntity()) return;
+
+        if (_selectedCardId != 0 && !CanAfford(_selectedCardId))
+            _selectedCardId = 0;
+
+        if (!TryGetLocalPlayerResources(out PlayerResourcesComponent resources)) return;
+
+        foreach (CardGameObject go in _handCards.Values)
+            go.RefreshAffordability(resources);
+    }
 
     // ── Card lifecycle ──────────────────────────────────────────────────────
 
@@ -93,7 +155,9 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         if (ImageRegistry.instance != null)
             ImageRegistry.instance.TryGet(definition.ImageName, out artwork);
 
-        go.BuildCard(definition.Title, definition.Description, artwork, definition.DisplayStats);
+        go.BuildCard(definition.Title, definition.Description, artwork, definition.DefaultStats, definition.Cost);
+        if (TryGetLocalPlayerResources(out PlayerResourcesComponent resources))
+            go.RefreshAffordability(resources);
 
         go.Clicked      += OnCardClicked;
         go.DragStarted  += OnCardDragStarted;
@@ -168,6 +232,7 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     private void SelectCard(ulong cardEntityId)
     {
         if (_draggingCardId != 0) return; // don't fight an active drag
+        if (!CanAfford(cardEntityId)) return; // can't select a card the player can't play
         _selectedCardId = cardEntityId;
     }
 
@@ -222,6 +287,9 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         {
             ulong id = _handOrder[i];
             if (!_handCards.TryGetValue(id, out CardGameObject go)) continue;
+
+            go.SetPanelsVisible(id == _hoveredCardId || id == _selectedCardId);
+
             if (id == _draggingCardId) continue; // handled by UpdateDraggingCardPosition
 
             if (id == _selectedCardId && _selectedAnchor != null)

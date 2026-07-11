@@ -195,6 +195,7 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<CardPlayedEvent>(44);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerResourcesComponent>>(45);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerResourcesComponent>>(46);
+        _flagEventTypeRegistry.Register<ResourcesChangedEvent>(47);
 
         ECS = CreateSimulationECS();
     }

@@ -14,9 +14,15 @@ public abstract class Card
 
     public abstract string Description { get; }
 
-    // Stats to show on the card face (CardGameObject.BuildCard), or null for a card with
-    // nothing stat-like to display (e.g. a card that isn't a troop).
-    public abstract StatsComponent? DisplayStats { get; }
+    // Stats to show on the card face (CardGameObject.BuildCard). Fields that don't apply
+    // to this card (e.g. Speed on a building) should be set to StatsComponent.STAT_NA so
+    // the UI hides that row instead of showing "0".
+    public abstract StatsComponent DefaultStats { get; }
+
+    // Resource price to play this card, checked by CardPlaySystem before OnPlayed runs and
+    // deducted via ResourceHelper.Spend. A field of 0 means the card doesn't cost that
+    // resource at all (and its row is hidden on the card face).
+    public abstract ResourceCost Cost { get; }
 
     // Called by CardPlaySystem when a player plays this card at (x, y). cardEntityId is
     // the card entity that was played (recycled back into the deck afterwards, not
