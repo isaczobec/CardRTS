@@ -74,3 +74,10 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 .fake
+
+# Asset Store packages imported into Assets/ThirdParty: keep the folder
+# and its README tracked, never the imported content or its .meta files.
+# See Assets/ThirdParty/README.md for the re-import convention.
+/Assets/ThirdParty/*
+!/Assets/ThirdParty/.gitkeep
+!/Assets/ThirdParty/README.md
