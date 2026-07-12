@@ -18,6 +18,7 @@ public class WorldGenHandler
 
     public List<WorldGenResource> resources = new List<WorldGenResource>();
     public List<WorldGenFeature> features = new List<WorldGenFeature>();
+    private readonly List<IWorldGenAction> _pendingActions = new();
     private int _currentFeatureIndex = 0;
     private WorldGenFeature _currentFeature => features[_currentFeatureIndex];
     private int _currentFeatureLastChildIndex = 0;
@@ -53,6 +54,15 @@ public class WorldGenHandler
     {
         features.Insert(_currentFeatureLastChildIndex+1, feature);
         _currentFeatureLastChildIndex++;
+    }
+
+    public void EnqueueAction(IWorldGenAction action) => _pendingActions.Add(action);
+
+    public void ExecuteActions(ECS ecs)
+    {
+        foreach (IWorldGenAction action in _pendingActions)
+            action.Execute(ecs);
+        _pendingActions.Clear();
     }
 
     public void Generate()

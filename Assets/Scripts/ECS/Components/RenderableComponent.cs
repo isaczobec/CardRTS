@@ -9,6 +9,7 @@ public enum RenderableType : byte
     SeekingProjectile = 4,
     BasicBuilding = 5,
     RespawnableBuilding = 6,
+    Tree = 7,
 }
 
 public struct RenderableComponent : IComponent

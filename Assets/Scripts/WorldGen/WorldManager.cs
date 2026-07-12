@@ -56,6 +56,12 @@ public class WorldManager : Singleton<WorldManager>
         Handler.Generate();
         NavMeshHandler.instance.CreateNavMesh(this);
         Renderer.Render(Handler);
+
+        // Actions are server-only: entities spawned here are included in the initial
+        // ECS snapshot sent to clients, so they propagate automatically.
+        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+        if (isServer)
+            Handler.ExecuteActions(TickManager.instance.ECS);
     }
 
     void BuildTileSettingsLookup()
@@ -131,7 +137,16 @@ public class WorldManager : Singleton<WorldManager>
                     {
                         new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
                     },
-                }
+                },
+                new EntityClusterFeature
+                {
+                    Spawner            = EntitySpawnAction.SpawnTree,
+                    ClusterCount       = 6,
+                    EntitiesPerCluster = 8,
+                    ClusterRadius      = 5f,
+                    AllowedTileTypes   = new[] { TileType.Grass },
+                    Seed               = 42,
+                },
             }
         });
     }
