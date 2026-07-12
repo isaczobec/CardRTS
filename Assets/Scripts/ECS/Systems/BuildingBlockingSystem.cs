@@ -23,6 +23,8 @@ public class BuildingBlockingSystem : ISystem
 
     private readonly List<ulong> _queryBuffer = new List<ulong>();
 
+    public void Setup(ECS ecs) { }
+
     public void Execute(ECS ecs)
     {
         ComponentStore<BuildingComponent> buildingStore = ecs.GetComponentStore<BuildingComponent>();

@@ -13,6 +13,8 @@ public class MultipleComponentSystem : ISystem
         _function = function;
     }
 
+    public void Setup(ECS ecs) { }
+
     public void Execute(ECS ecs)
     {
         IComponentStore[] stores = new IComponentStore[_componentTypes.Length];

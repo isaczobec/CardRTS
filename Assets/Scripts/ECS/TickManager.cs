@@ -140,6 +140,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<CardComponent>(15);
         _componentTypeRegistry.Register<PlayerDeckComponent>(16);
         _componentTypeRegistry.Register<PlayerResourcesComponent>(17);
+        _componentTypeRegistry.Register<RespawnableInPlaceComponent>(18);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -196,6 +197,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerResourcesComponent>>(45);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerResourcesComponent>>(46);
         _flagEventTypeRegistry.Register<ResourcesChangedEvent>(47);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RespawnableInPlaceComponent>>(48);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RespawnableInPlaceComponent>>(49);
+        _flagEventTypeRegistry.Register<RespawnableEntityDiedEvent>(50);
+        _flagEventTypeRegistry.Register<RespawnableEntityRespawnedEvent>(51);
 
         ECS = CreateSimulationECS();
     }
@@ -368,6 +373,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
+        ecs.AddComponentStore(new ComponentStore<RespawnableInPlaceComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(TroopActivationSystem.Instance);
@@ -383,8 +389,10 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
+        ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
+        ecs.SetupSystems();
         return ecs;
     }
 
@@ -409,6 +417,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
+        ecs.AddComponentStore(new ComponentStore<RespawnableInPlaceComponent>());
 
         return ecs;
     }

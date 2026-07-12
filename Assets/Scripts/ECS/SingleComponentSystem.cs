@@ -11,8 +11,6 @@ public class SingleComponentSystem<T> : ISystem where T : struct, IComponent
         _function = function;
     }
 
-    public void Execute(ECS ecs)
-    {
-        ecs.GetComponentStore<T>().ForEach(_function);
-    }
+    public void Setup(ECS ecs) { }
+    public void Execute(ECS ecs) => ecs.GetComponentStore<T>().ForEach(_function);
 }

@@ -170,6 +170,12 @@ public class ECS
         _systems.Add(system);
     }
 
+    public void SetupSystems()
+    {
+        foreach (var system in _systems)
+            system.Setup(this);
+    }
+
     public void ExecuteSystems()
     {
         foreach (var system in _systems)

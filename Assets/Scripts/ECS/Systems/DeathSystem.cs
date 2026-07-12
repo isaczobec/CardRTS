@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 
-// Runs at the end of the tick: any troop whose health has dropped to zero or below is
-// marked dead, and — if this is the authoritative server ECS — removed from the world.
+// Runs at the end of the tick: any troop whose health has dropped to zero or below has a
+// DeathRequest enqueued and then flushed. Subscribers can cancel and redirect the request
+// (e.g. RespawnSystem intercepts it for respawnable entities).
 public static class DeathSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
@@ -21,19 +22,9 @@ public static class DeathSystem
             _dead.Add(id);
         });
 
-        if (_dead.Count == 0) return;
-
-        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
-
         foreach (ulong id in _dead)
-        {
-            ref TroopComponent troop = ref troopStore.GetComponent(id);
-            troop.IsDead = true;
-            ecs.Delta.MarkComponentDirty(id, typeof(TroopComponent));
-            flagEvents.Add(new TroopDiedEvent { EntityId = id });
+            ecs.Requests.CreateRequest(new DeathRequest(id));
 
-            if (isServer)
-                ecs.DeleteEntity(id);
-        }
+        ecs.Requests.Flush<DeathRequest>(ecs);
     }
 }

@@ -35,6 +35,8 @@ public class BasicMeleeAISystem : ISystem
     private ComponentStore<HealthComponent> _healthStore;
     private TargetingSystem _targeting;
 
+    public void Setup(ECS ecs) { }
+
     public void Execute(ECS ecs)
     {
         _ecs = ecs;

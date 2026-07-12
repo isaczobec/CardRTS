@@ -22,6 +22,8 @@ public class TargetingSystem : ISystem
     private readonly Dictionary<ulong, Dictionary<ulong, TargetKind>> _targets = new Dictionary<ulong, Dictionary<ulong, TargetKind>>();
     private readonly List<ulong> _removalScratch = new List<ulong>();
 
+    public void Setup(ECS ecs) { }
+
     public void Execute(ECS ecs)
     {
         List<SetTargetsInput> inputs = ecs.GetInputsForTick<SetTargetsInput>();

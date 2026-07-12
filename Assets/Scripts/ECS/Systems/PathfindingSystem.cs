@@ -25,6 +25,8 @@ public class PathfindingSystem : ISystem
     private const float ArrivalRadius = 0.05f;
     private const int DefaultSpeed = 10;
 
+    public void Setup(ECS ecs) { }
+
     public void Execute(ECS ecs)
     {
         List<MoveTroopInput> inputs = ecs.GetInputsForTick<MoveTroopInput>();

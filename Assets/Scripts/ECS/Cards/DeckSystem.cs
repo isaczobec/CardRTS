@@ -16,6 +16,8 @@ public class DeckSystem : ISystem
     private const int MaxHandSize = 6;
     private const float DrawCooldownSeconds = 3f;
 
+    public void Setup(ECS ecs) { }
+
     public void Execute(ECS ecs)
     {
         ComponentStore<PlayerComponent> playerStore = ecs.GetComponentStore<PlayerComponent>();

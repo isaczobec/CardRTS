@@ -8,4 +8,5 @@ public interface ISystem
 {
     Type[] ComponentTypes { get; }
     void Execute(ECS ecs);
+    void Setup(ECS ecs);
 }

@@ -8,6 +8,7 @@ public enum RenderableType : byte
     BasicRanged = 3,
     SeekingProjectile = 4,
     BasicBuilding = 5,
+    RespawnableBuilding = 6,
 }
 
 public struct RenderableComponent : IComponent
