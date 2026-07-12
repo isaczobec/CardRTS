@@ -9,6 +9,16 @@ public static class RespawnSystem
 
     private static void Setup(ECS ecs)
     {
+        ecs.Requests.Subscribe<IsSelectableRequest>((req, innerEcs) =>
+        {
+            var respawnStore = innerEcs.GetComponentStore<RespawnableInPlaceComponent>();
+            if (respawnStore == null || !respawnStore.HasComponent(req.EntityId)) return;
+
+            var troopStore = innerEcs.GetComponentStore<TroopComponent>();
+            if (troopStore != null && troopStore.HasComponent(req.EntityId) && troopStore.GetComponent(req.EntityId).IsDead)
+                req.IsSelectable = false;
+        });
+
         ecs.Requests.Subscribe<DeathRequest>((req, innerEcs) =>
         {
             var respawnStore = innerEcs.GetComponentStore<RespawnableInPlaceComponent>();

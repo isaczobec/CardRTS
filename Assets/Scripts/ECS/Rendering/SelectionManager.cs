@@ -22,6 +22,7 @@ public class SelectionManager : Singleton<SelectionManager>
     [SerializeField] private string _selectionColorProperty = "_SelectionColor";
 
 
+    private ECS _ecs;
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<SelectableComponent> _selectableStore;
     private ComponentStore<TroopComponent> _troopStore;
@@ -61,14 +62,25 @@ public class SelectionManager : Singleton<SelectionManager>
         TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(SetupSelection);
         TickManager.instance.ServerFlagEvents.Subscribe<ComponentRemovedEvent<SelectableComponent>>(RemoveSelectionObject);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(DeleteSelectionObject);
+        TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnRespawnableEntityDied);
+        TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityRespawnedEvent>(OnRespawnableEntityRespawned);
 
-        ECS ecs = TickManager.instance.ActiveECS;
-        _positionStore = ecs.GetComponentStore<PositionComponent>();
-        _selectableStore = ecs.GetComponentStore<SelectableComponent>();
-        _troopStore = ecs.GetComponentStore<TroopComponent>();
-        _healthStore = ecs.GetComponentStore<HealthComponent>();
-        _movableStore = ecs.GetComponentStore<MovableComponent>();
-        _chunkTracker = ecs.ChunkTracker;
+        _ecs = TickManager.instance.ActiveECS;
+        _positionStore = _ecs.GetComponentStore<PositionComponent>();
+        _selectableStore = _ecs.GetComponentStore<SelectableComponent>();
+        _troopStore = _ecs.GetComponentStore<TroopComponent>();
+        _healthStore = _ecs.GetComponentStore<HealthComponent>();
+        _movableStore = _ecs.GetComponentStore<MovableComponent>();
+        _chunkTracker = _ecs.ChunkTracker;
+
+        // Veto selectability for any entity that cannot currently take actions
+        // (not yet activated, or dead). Complements the RespawnSystem subscriber
+        // which also vetoes entities currently on a respawn cooldown.
+        _ecs.Requests.Subscribe<IsSelectableRequest>((req, ecs) =>
+        {
+            if (_troopStore.HasComponent(req.EntityId) && !_troopStore.GetComponent(req.EntityId).CanTakeActions)
+                req.IsSelectable = false;
+        });
 
         if (_dragSelectionBox != null)
             _dragSelectionBox.gameObject.SetActive(false);
@@ -125,6 +137,7 @@ public class SelectionManager : Singleton<SelectionManager>
             if (_troopStore.GetComponent(friendlyId).OwnerPlayerId != localId) return;
             foreach (ulong targetId in targeting.GetTargets(friendlyId))
             {
+                if (!IsEntitySelectable(targetId)) continue;
                 TargetKind kind = targeting.GetTargetKind(friendlyId, targetId) ?? TargetKind.Automatic;
                 if (_currentlyTargetedIds.TryGetValue(targetId, out TargetKind existing) && existing == TargetKind.PlayerAssigned)
                     continue;
@@ -269,10 +282,13 @@ public class SelectionManager : Singleton<SelectionManager>
     private static bool IsAdditiveModifierHeld()
         => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
+    private bool IsEntitySelectable(ulong entityId)
+        => _ecs != null && _ecs.Requests.Process(new IsSelectableRequest(entityId), _ecs, executeIfNotCancelled: false).IsSelectable;
+
     private bool IsFriendly(ulong entityId)
     {
         if (!_selectableStore.HasComponent(entityId)) return false;
-        if (_troopStore.HasComponent(entityId) && !_troopStore.GetComponent(entityId).CanTakeActions) return false;
+        if (!IsEntitySelectable(entityId)) return false;
         return _selectableStore.GetComponent(entityId).OwnerPlayerId == LocalPlayerId();
     }
 
@@ -282,6 +298,7 @@ public class SelectionManager : Singleton<SelectionManager>
     {
         if (!_selectableStore.HasComponent(entityId)) return false;
         if (_healthStore == null || !_healthStore.HasComponent(entityId)) return false;
+        if (!IsEntitySelectable(entityId)) return false;
         return _selectableStore.GetComponent(entityId).OwnerPlayerId != LocalPlayerId();
     }
 
@@ -509,6 +526,19 @@ public class SelectionManager : Singleton<SelectionManager>
     }
 
     // ── Selection object lifecycle ────────────────────────────────────────────
+
+    private void OnRespawnableEntityDied(RespawnableEntityDiedEvent e)
+    {
+        _selectedEntityIds.Remove(e.EntityId);
+        if (_selectionObjects.TryGetValue(e.EntityId, out SelectionPrefab prefab))
+            prefab.gameObject.SetActive(false);
+    }
+
+    private void OnRespawnableEntityRespawned(RespawnableEntityRespawnedEvent e)
+    {
+        if (_selectionObjects.TryGetValue(e.EntityId, out SelectionPrefab prefab))
+            prefab.gameObject.SetActive(true);
+    }
 
     public void SetupSelection(TroopActivatedEvent e)
     {

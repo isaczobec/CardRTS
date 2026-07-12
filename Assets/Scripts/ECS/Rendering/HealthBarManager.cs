@@ -22,6 +22,8 @@ public class HealthBarManager : Singleton<HealthBarManager>
         TickManager.instance.ServerFlagEvents.Subscribe<TroopDiedEvent>(OnTroopRemoved);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
         TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
+        TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnRespawnableEntityDied);
+        TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityRespawnedEvent>(OnRespawnableEntityRespawned);
 
         _ecs = TickManager.instance.ActiveECS;
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
@@ -84,6 +86,19 @@ public class HealthBarManager : Singleton<HealthBarManager>
             && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
 
         bar.transform.position = _interpolator.Update(entityId, worldPos, isMoving) + bar.WorldOffset;
+    }
+
+    private void OnRespawnableEntityDied(RespawnableEntityDiedEvent e)
+    {
+        if (_healthBars.TryGetValue(e.EntityId, out HealthBarPrefab bar))
+            bar.gameObject.SetActive(false);
+    }
+
+    private void OnRespawnableEntityRespawned(RespawnableEntityRespawnedEvent e)
+    {
+        if (!_healthBars.TryGetValue(e.EntityId, out HealthBarPrefab bar)) return;
+        bar.gameObject.SetActive(true);
+        ApplyHealth(e.EntityId, bar);
     }
 
     private void DestroyHealthBar(ulong entityId)

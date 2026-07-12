@@ -64,4 +64,25 @@ public class RequestManager
                 request.Execute(ecs);
         }
     }
+
+    // Runs all subscribed callbacks on a single request synchronously without
+    // enqueueing it. Returns the request so the caller can inspect its final state
+    // (e.g. read back a result field that callbacks may have set). If
+    // executeIfNotCancelled is true and no callback cancelled the request,
+    // Execute is also called.
+    public T Process<T>(T request, ECS ecs, bool executeIfNotCancelled = true) where T : Request
+    {
+        RequestQueue<T> queue = GetOrCreateQueue<T>();
+
+        foreach (Action<T, ECS> callback in queue.Callbacks)
+        {
+            if (request.IsCancelled) break;
+            callback(request, ecs);
+        }
+
+        if (executeIfNotCancelled && !request.IsCancelled)
+            request.Execute(ecs);
+
+        return request;
+    }
 }
