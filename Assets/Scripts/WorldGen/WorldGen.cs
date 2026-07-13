@@ -19,6 +19,21 @@ public class WorldGenHandler
     public List<WorldGenResource> resources = new List<WorldGenResource>();
     public List<WorldGenFeature> features = new List<WorldGenFeature>();
     private readonly List<IWorldGenAction> _pendingActions = new();
+
+    // Populated externally (see WorldManager.GenerateAndRender) before Generate() runs, so
+    // a feature can spawn/position things per connected player (e.g. SpawnPlayerBasesFeature).
+    public List<ushort> ConnectedClientIds = new();
+
+    // Set externally before Generate() runs (see WorldManager.GenerateAndRender) — must be
+    // identical on every machine generating this world, like ConnectedClientIds, since it
+    // seeds Random below. Every feature that needs deterministic randomness should draw
+    // from Random rather than seeding its own RNG, so a given Seed always reproduces the
+    // exact same world regardless of how many features consume random values or in what
+    // order (as long as that order itself is deterministic, which it is — SetupWorldGen
+    // always builds the same feature list).
+    public int Seed;
+    public Random Random { get; private set; }
+
     private int _currentFeatureIndex = 0;
     private WorldGenFeature _currentFeature => features[_currentFeatureIndex];
     private int _currentFeatureLastChildIndex = 0;
@@ -58,6 +73,23 @@ public class WorldGenHandler
 
     public void EnqueueAction(IWorldGenAction action) => _pendingActions.Add(action);
 
+    // Returns every currently-pending action of type T for which predicate (if given)
+    // returns true. Mirrors GetPreviousFeature's shape, but actions — unlike features —
+    // have no execution order to search "backward" through (they all run together at the
+    // end, via ExecuteActions), so this just scans every pending action.
+    public List<T> GetActions<T>(Func<T, bool> predicate = null) where T : class, IWorldGenAction
+    {
+        List<T> result = new List<T>();
+        foreach (IWorldGenAction action in _pendingActions)
+            if (action is T typed && (predicate == null || predicate(typed)))
+                result.Add(typed);
+        return result;
+    }
+
+    // Removes a single previously-enqueued action (e.g. one returned by GetActions) so it
+    // never runs. Returns false if it wasn't pending.
+    public bool RemoveAction(IWorldGenAction action) => _pendingActions.Remove(action);
+
     public void ExecuteActions(ECS ecs)
     {
         foreach (IWorldGenAction action in _pendingActions)
@@ -67,6 +99,7 @@ public class WorldGenHandler
 
     public void Generate()
     {
+        Random = new Random(Seed);
         _tiles = new TileType[CHUNK_SIZE_TILES * CHUNK_SIZE_TILES * WorldSizeChunks * WorldSizeChunks];
         _heightMap = new float[CHUNK_SIZE_TILES * CHUNK_SIZE_TILES * WorldSizeChunks * WorldSizeChunks];
         for (_currentFeatureIndex = 0; _currentFeatureIndex < features.Count; _currentFeatureIndex++)

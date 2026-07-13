@@ -77,6 +77,18 @@ public class NetworkManager : Singleton<NetworkManager>
             DevConsole.LogWarning("[Net] Client already connected or connecting.");
             return;
         }
+        if (IsServer)
+        {
+            // A host never needs a real connection to its own server: its prediction ECS,
+            // per-tick readiness, and player id (0, the default) are already wired up
+            // directly — see NotifyClientReady/SetupClientECS/SetPendingServerStateDirectly.
+            // A real loopback connection would get counted as a second, separate player by
+            // NetworkServer's sequential id assignment (on top of the hardcoded id 0 for
+            // host), and its PlayerIdAssigned reply would overwrite LocalPlayerId away from
+            // the correct 0 — so just skip it.
+            DevConsole.LogWarning("[Net] Already running as server — the host doesn't need to connect to itself.");
+            return;
+        }
         _client = new NetworkClient(InboundQueue);
         if (_client.Connect(host, port))
         {
@@ -215,16 +227,18 @@ public class NetworkManager : Singleton<NetworkManager>
 
     public void OnGameStart(byte[] data)
     {
+        (List<ushort> playerIds, int seed) = ReadGameStartHeader(data, 1, out int deltaOffset);
+
         if (!IsServer)
         {
             TickManager.instance.SetupClientECS();
 
-            var (created, deleted, deletedComp, compDelta) = ReadDeltaStreams(data, 1);
+            var (created, deleted, deletedComp, compDelta) = ReadDeltaStreams(data, deltaOffset);
             TickManager.instance.SetPendingServerDelta(0, Array.Empty<byte>(), created, deleted, deletedComp, compDelta);
 
-            WorldManager.instance?.GenerateAndRender();
+            WorldManager.instance?.GenerateAndRender(playerIds, seed);
 
-            DevConsole.LogInfo("[Net] GameStart received. Local and server mirror ECS ready.");
+            DevConsole.LogInfo($"[Net] GameStart received (seed {seed}). Local and server mirror ECS ready.");
         }
 
         SendToServer(new byte[] { (byte)MessageType.ClientReady });
@@ -307,13 +321,24 @@ public class NetworkManager : Singleton<NetworkManager>
 
     // ── Entity spawning ───────────────────────────────────────────────────────
 
-    void SpawnPlayerEntities()
+    // 0 (host/standalone) plus every currently connected remote client. Computed once per
+    // game start and threaded through SpawnPlayerEntities, WorldManager.GenerateAndRender,
+    // and the GameStart message itself, so server and every client agree on exactly the
+    // same list — world gen (base placement, tile clearing) depends on it and must be
+    // deterministic across machines.
+    List<ushort> GetAllPlayerIds()
+    {
+        var ids = new List<ushort> { 0 };
+        if (_server != null)
+            ids.AddRange(_server.ConnectedPlayerIds);
+        return ids;
+    }
+
+    void SpawnPlayerEntities(List<ushort> playerIds)
     {
         ECS ecs = TickManager.instance.ECS;
-        SpawnPlayerEntity(ecs, 0); // host / standalone is always player 0
-        if (_server != null)
-            foreach (ushort playerId in _server.ConnectedPlayerIds)
-                SpawnPlayerEntity(ecs, playerId);
+        foreach (ushort playerId in playerIds)
+            SpawnPlayerEntity(ecs, playerId);
     }
 
     static void SpawnPlayerEntity(ECS ecs, ushort playerId)
@@ -342,11 +367,19 @@ public class NetworkManager : Singleton<NetworkManager>
         return message;
     }
 
-    static byte[] BuildGameStartMessage(ECS ecs)
+    // Wire layout: [type:byte][playerIdCount:int][playerId:ushort]*count][seed:int][4x delta streams]
+    // The player id list and world-gen seed travel explicitly (not derived from the delta
+    // streams) because a client has no player entities to read them back from yet at the
+    // point it needs them — see OnGameStart.
+    static byte[] BuildGameStartMessage(ECS ecs, List<ushort> playerIds, int seed)
     {
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
         writer.Write((byte)MessageType.GameStart);
+        writer.Write(playerIds.Count);
+        foreach (ushort id in playerIds)
+            writer.Write(id);
+        writer.Write(seed);
         WriteDeltaStreams(writer, ecs);
         return ms.ToArray();
     }
@@ -375,6 +408,21 @@ public class NetworkManager : Singleton<NetworkManager>
     {
         writer.Write(data.Length);
         writer.Write(data);
+    }
+
+    // Reads the [playerIdCount:int][playerId:ushort]*count][seed:int] prefix
+    // BuildGameStartMessage writes, and reports where the following delta streams start.
+    static (List<ushort> playerIds, int seed) ReadGameStartHeader(byte[] data, int offset, out int nextOffset)
+    {
+        using var ms = new MemoryStream(data, offset, data.Length - offset);
+        using var reader = new BinaryReader(ms);
+        int count = reader.ReadInt32();
+        var ids = new List<ushort>(count);
+        for (int i = 0; i < count; i++)
+            ids.Add(reader.ReadUInt16());
+        int seed = reader.ReadInt32();
+        nextOffset = offset + 4 + count * 2 + 4;
+        return (ids, seed);
     }
 
     static (byte[] created, byte[] deleted, byte[] deletedComp, byte[] compDelta) ReadDeltaStreams(byte[] data, int offset)
@@ -446,21 +494,33 @@ public class NetworkManager : Singleton<NetworkManager>
 
         DevConsole.RegisterCommand(
             "net-start-game",
-            "Server spawns entities, sends GameStart to all clients, waits for ready.",
-            _ =>
+            "Server spawns entities, sends GameStart to all clients, waits for ready. Usage: net-start-game [seed]",
+            info =>
             {
                 if (!IsServer)
                     return DevCommandResult.Error("Only the server can start the game.");
                 if (GameStarted)
                     return DevCommandResult.Error("Game already started.");
 
+                int seed;
+                if (info.positionalArgs.Length > 0)
+                {
+                    if (!int.TryParse(info.positionalArgs[0], out seed))
+                        return DevCommandResult.Error("Invalid seed — must be an integer.");
+                }
+                else
+                {
+                    seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+                }
+
                 _readyClientCount = 0;
-                SpawnPlayerEntities();
-                WorldManager.instance?.GenerateAndRender();
-                SendToAll(BuildGameStartMessage(TickManager.instance.ECS));
+                List<ushort> playerIds = GetAllPlayerIds();
+                SpawnPlayerEntities(playerIds);
+                WorldManager.instance?.GenerateAndRender(playerIds, seed);
+                SendToAll(BuildGameStartMessage(TickManager.instance.ECS, playerIds, seed));
 
                 int clientCount = _server.ConnectionCount;
-                DevConsole.LogInfo($"[Net] GameStart sent to {clientCount} client(s). Waiting for ready...");
+                DevConsole.LogInfo($"[Net] GameStart sent to {clientCount} client(s) with seed {seed}. Waiting for ready...");
 
                 if (clientCount == 0)
                 {

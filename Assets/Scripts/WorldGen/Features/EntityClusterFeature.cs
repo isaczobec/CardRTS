@@ -20,12 +20,11 @@ public class EntityClusterFeature : WorldGenFeature
     public int ClusterCount = 5;
     public int EntitiesPerCluster = 8;
     public float ClusterRadius = 5f;
-    public int Seed = 1234;
     public TileType[] AllowedTileTypes = { TileType.Grass };
 
     public override void Generate(WorldGenHandler handler)
     {
-        var rng = new System.Random(Seed);
+        var rng = handler.Random;
         var biome = handler.GetPreviousFeature<BiomeFeature>();
 
         List<(ushort x, ushort y)> validTiles = GatherValidTiles(handler, biome);

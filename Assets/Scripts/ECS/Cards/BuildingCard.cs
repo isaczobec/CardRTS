@@ -4,14 +4,10 @@
 public class BuildingCard : Card
 {
     private const int MaxHealth = 300;
-    private const int Armor = 5;
-    private const float BlockRadius = 3f;
     private const float ActivationDelaySeconds = 2f;
 
     private const int WoodCost = 5;
     private const int StoneCost = 3;
-
-    private const float SelectionScale = 3f;
 
     public override CardType Type => CardType.Building;
     public override string Title => "Building";
@@ -25,21 +21,12 @@ public class BuildingCard : Card
         MaxHealth   = MaxHealth,
         Speed       = StatsComponent.STAT_NA,
         Range       = StatsComponent.STAT_NA,
-        Armor       = Armor,
+        Armor       = BuildingSpawnHelper.Armor,
         Damage      = StatsComponent.STAT_NA,
         AttackSpeed = StatsComponent.STAT_NA,
     };
 
     public override ResourceCost Cost => new ResourceCost { Wood = WoodCost, Stone = StoneCost };
-
-    private static StatsComponent BuildStats() => new StatsComponent
-    {
-        MaxHealth = MaxHealth,
-        Armor     = Armor,
-        // Speed/Range/Damage/AttackSpeed left at 0 (not STAT_NA) — this is the actual
-        // gameplay component added to the spawned entity below, where 0 correctly means
-        // "stationary"/"never attacks", unlike DefaultStats which is UI-display-only.
-    };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
@@ -47,18 +34,7 @@ public class BuildingCard : Card
         ulong id = entity.Id;
 
         ecs.AddComponent(id, new PositionComponent(x, y));
-
-        ecs.AddComponent(id, new TroopComponent
-        {
-            OwnerPlayerId     = ownerPlayerId,
-            _ticksUntilActive = (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds),
-        });
-
-        ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.BasicBuilding });
-        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = ownerPlayerId, Scale = SelectionScale });
-
-        ecs.AddComponent(id, BuildStats());
-        ecs.AddComponent(id, new HealthComponent { CurrentHealth = MaxHealth });
-        ecs.AddComponent(id, new BuildingComponent { BlockRadius = BlockRadius });
+        BuildingSpawnHelper.AddBuildingComponents(ecs, id, ownerPlayerId, RenderableType.BasicBuilding, MaxHealth,
+            (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds));
     }
 }

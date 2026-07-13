@@ -2257,6 +2257,8 @@ MonoBehaviour:
     renderer: {fileID: 920356595}
   - type: 7
     renderer: {fileID: 1449116596}
+  - type: 8
+    renderer: {fileID: 251304930}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
