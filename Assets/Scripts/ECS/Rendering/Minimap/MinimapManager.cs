@@ -10,6 +10,8 @@ using UnityEngine.UI;
 // ownership. Also keeps a viewport-indicator rectangle moved/rotated to
 // track the main camera's current look-at point and yaw. Left-click (or click-drag) on the
 // minimap jumps the main camera there, updating continuously every frame while held.
+// Right-click issues the same target/move command right-clicking the 3D world would (see
+// SelectionManager.PerformPointTargetOrMove).
 //
 // Mirrors SelectionManager's entity lifecycle (TroopActivatedEvent /
 // ComponentRemovedEvent<SelectableComponent> / EntityDeletedEvent /
@@ -249,10 +251,17 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
         _viewportIndicatorRect.localEulerAngles = new Vector3(0f, 0f, -_cameraController.Yaw);
     }
 
-    // ── Click/drag-to-move-camera ───────────────────────────────────────────
+    // ── Left-click/drag: move camera ────────────────────────────────────────
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            IssueMoveOrTargetCommand(eventData);
+            return;
+        }
+        if (eventData.button != PointerEventData.InputButton.Left) return;
+
         _isDraggingCamera = true;
         _dragEventCamera = eventData.pressEventCamera;
         JumpCameraToScreenPoint(eventData.position);
@@ -260,6 +269,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (eventData.button != PointerEventData.InputButton.Left) return;
         _isDraggingCamera = false;
     }
 
@@ -267,17 +277,40 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
 
     private void JumpCameraToScreenPoint(Vector2 screenPoint)
     {
-        if (_mapRect == null || _cameraController == null || _worldSizeTiles == 0) return;
+        if (_cameraController == null) return;
+        if (!TryScreenPointToWorld(screenPoint, _dragEventCamera, out float worldX, out float worldZ)) return;
 
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_mapRect, screenPoint, _dragEventCamera, out Vector2 local))
-            return;
+        _cameraController.JumpTo(new Vector3(worldX, 0f, worldZ));
+    }
+
+    // ── Right-click: target/move the current selection ─────────────────────
+
+    // Works exactly like right-clicking the 3D world (see SelectionManager.
+    // HandleRightClickInput) — targets whatever's under the point if anything is, else
+    // issues a move command — just resolving its world position from a minimap click
+    // instead of a ground raycast.
+    private void IssueMoveOrTargetCommand(PointerEventData eventData)
+    {
+        if (SelectionManager.instance == null) return;
+        if (!TryScreenPointToWorld(eventData.position, eventData.pressEventCamera, out float worldX, out float worldZ)) return;
+
+        SelectionManager.instance.PerformPointTargetOrMove(worldX, worldZ);
+    }
+
+    private bool TryScreenPointToWorld(Vector2 screenPoint, Camera eventCamera, out float worldX, out float worldZ)
+    {
+        worldX = worldZ = 0f;
+        if (_mapRect == null || _worldSizeTiles == 0) return false;
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_mapRect, screenPoint, eventCamera, out Vector2 local))
+            return false;
 
         Rect r = _mapRect.rect;
         float u = Mathf.InverseLerp(r.xMin, r.xMax, local.x);
         float v = Mathf.InverseLerp(r.yMin, r.yMax, local.y);
 
-        float worldX = u * _worldSizeTiles;
-        float worldZ = v * _worldSizeTiles;
-        _cameraController.JumpTo(new Vector3(worldX, 0f, worldZ));
+        worldX = u * _worldSizeTiles;
+        worldZ = v * _worldSizeTiles;
+        return true;
     }
 }

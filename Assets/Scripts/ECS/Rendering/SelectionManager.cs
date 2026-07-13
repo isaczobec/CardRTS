@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class SelectionManager : Singleton<SelectionManager>
 {
@@ -49,10 +50,18 @@ public class SelectionManager : Singleton<SelectionManager>
     // Left-drag (select) state
     private Vector2 _dragStartScreen;
     private bool _isDragging;
+    // Set on left-mouse-down, from whether the pointer was over a UI element (e.g. the
+    // minimap) at that moment — a click/drag that started on UI should never fall through
+    // to world point/rect select (which would otherwise deselect the current selection).
+    private bool _leftDownOverUI;
 
     // Right-drag (target/move) state
     private Vector2 _rightDragStartScreen;
     private bool _isRightDragging;
+    // Same idea as _leftDownOverUI — a right-click that started on UI (e.g. the minimap,
+    // which issues its own target/move command directly) shouldn't also resolve a ground
+    // raycast from wherever the cursor happens to be.
+    private bool _rightDownOverUI;
 
     private readonly List<ulong> _queryBuffer = new();
 
@@ -189,9 +198,10 @@ public class SelectionManager : Singleton<SelectionManager>
             {
                 _dragStartScreen = Input.mousePosition;
                 _isDragging = false;
+                _leftDownOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             }
 
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButton(0) && !_leftDownOverUI)
             {
                 Vector2 delta = (Vector2)Input.mousePosition - _dragStartScreen;
                 if (!_isDragging && delta.magnitude > DragThresholdPixels)
@@ -210,10 +220,16 @@ public class SelectionManager : Singleton<SelectionManager>
                 if (_dragSelectionBox != null)
                     _dragSelectionBox.gameObject.SetActive(false);
 
-                if (_isDragging)
-                    PerformRectSelect();
-                else
-                    PerformPointSelect();
+                // A click/drag that started over UI (e.g. the minimap) never reaches world
+                // point/rect select — otherwise clicking the minimap to jump the camera
+                // would also deselect whatever was currently selected.
+                if (!_leftDownOverUI)
+                {
+                    if (_isDragging)
+                        PerformRectSelect();
+                    else
+                        PerformPointSelect();
+                }
 
                 _isDragging = false;
             }
@@ -243,9 +259,10 @@ public class SelectionManager : Singleton<SelectionManager>
         {
             _rightDragStartScreen = Input.mousePosition;
             _isRightDragging = false;
+            _rightDownOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         }
 
-        if (Input.GetMouseButton(1))
+        if (Input.GetMouseButton(1) && !_rightDownOverUI)
         {
             Vector2 delta = (Vector2)Input.mousePosition - _rightDragStartScreen;
             if (!_isRightDragging && delta.magnitude > DragThresholdPixels)
@@ -264,10 +281,15 @@ public class SelectionManager : Singleton<SelectionManager>
             if (_dragSelectionBox != null)
                 _dragSelectionBox.gameObject.SetActive(false);
 
-            if (_isRightDragging)
-                PerformRectTargetOrMove();
-            else
-                PerformPointTargetOrMove();
+            // A right-click that started over UI (e.g. the minimap, which issues its own
+            // target/move command) never also resolves a ground raycast from here.
+            if (!_rightDownOverUI)
+            {
+                if (_isRightDragging)
+                    PerformRectTargetOrMove();
+                else
+                    PerformPointTargetOrMove();
+            }
 
             _isRightDragging = false;
         }
@@ -386,7 +408,14 @@ public class SelectionManager : Singleton<SelectionManager>
     private void PerformPointTargetOrMove()
     {
         if (!TileSpaceMouse.TryGetPosition(out float tx, out float ty)) return;
+        PerformPointTargetOrMove(tx, ty);
+    }
 
+    // Exposed so other input sources — e.g. MinimapManager's right-click, which resolves
+    // its own world position from a click on the minimap instead of a ground raycast — can
+    // issue the exact same "target if something's there, else move" command.
+    public void PerformPointTargetOrMove(float tx, float ty)
+    {
         ulong targetId = FindPointTarget(tx, ty);
         if (targetId != 0)
         {
@@ -394,8 +423,8 @@ public class SelectionManager : Singleton<SelectionManager>
             return;
         }
 
-        // Nothing targetable under the cursor — clear the selection's current targets
-        // (an empty, non-additive SetTargetsInput) before issuing the move.
+        // Nothing targetable at the point — clear the selection's current targets (an
+        // empty, non-additive SetTargetsInput) before issuing the move.
         SendSetTargets(new List<ulong>());
         SendMoveCommand(tx, ty);
     }
