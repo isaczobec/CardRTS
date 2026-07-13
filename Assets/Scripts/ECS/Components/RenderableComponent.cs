@@ -10,6 +10,7 @@ public enum RenderableType : byte
     BasicBuilding = 5,
     RespawnableBuilding = 6,
     Tree = 7,
+    PlayerBaseCore = 8,
 }
 
 public struct RenderableComponent : IComponent

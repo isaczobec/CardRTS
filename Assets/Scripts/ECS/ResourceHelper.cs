@@ -20,6 +20,16 @@ public static class ResourceHelper
         return found;
     }
 
+    // Reads PlayerComponent.PlayerId directly off resourceEntityId — the inverse of
+    // FindPlayerResourcesEntity, and O(1) since PlayerComponent and PlayerResourcesComponent
+    // live on the same entity (see NetworkManager.SpawnPlayerEntity).
+    public static ushort GetOwnerPlayerId(ECS ecs, ulong resourceEntityId)
+    {
+        ComponentStore<PlayerComponent> playerStore = ecs.GetComponentStore<PlayerComponent>();
+        if (playerStore == null || !playerStore.HasComponent(resourceEntityId)) return 0;
+        return playerStore.GetComponent(resourceEntityId).PlayerId;
+    }
+
     // Subtracts cost from resourceEntityId's PlayerResourcesComponent — the caller is
     // expected to have already checked ResourceCost.CanAfford — and raises
     // ResourcesChangedEvent so clients can re-evaluate affordability (e.g. auto-deselecting
@@ -38,6 +48,17 @@ public static class ResourceHelper
         resources.Gold       -= cost.Gold;
 
         ecs.Delta.MarkComponentDirty(resourceEntityId, typeof(PlayerResourcesComponent));
-        ecs.FlagEvents.Add(new ResourcesChangedEvent { EntityId = resourceEntityId });
+        ecs.FlagEvents.Add(new ResourcesChangedEvent
+        {
+            EntityId = resourceEntityId,
+            ClientId = GetOwnerPlayerId(ecs, resourceEntityId),
+            WoodDelta       = -cost.Wood,
+            StoneDelta      = -cost.Stone,
+            MetalDelta      = -cost.Metal,
+            GemsDelta       = -cost.Gems,
+            SoulstonesDelta = -cost.Soulstones,
+            GoldDelta       = -cost.Gold,
+            // X/Y left at NO_WORLD_LOCATION — spending isn't tied to a spot in the world.
+        });
     }
 }

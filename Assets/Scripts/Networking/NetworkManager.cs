@@ -267,6 +267,16 @@ public class NetworkManager : Singleton<NetworkManager>
     // Wire layout: [type:byte][tick:ulong][serverTime:double][flagEventsLen:int][flagEvents][4x delta streams]
     public void OnSimulationDelta(byte[] data)
     {
+        // The host's own broadcast loops back to it if it also connected to itself as a
+        // client (the normal way to run as host: net-start-server + net-connect
+        // 127.0.0.1). The server never needs to reconcile against its own broadcast — it's
+        // already the authoritative source, and its own prediction ECS is fed directly by
+        // TickManager.SetPendingServerStateDirectly right after each authoritative tick.
+        // Without this guard, the same tick's delta (and every flag event in it, e.g.
+        // DamageDealtEvent) gets enqueued twice: once directly, once via this handler —
+        // RunReconciliation then dispatches each flag event from both copies.
+        if (IsServer) return;
+
         if (TickManager.instance.ClientServerMirrorECS == null) return;
 
         using var ms = new MemoryStream(data, 1, data.Length - 1);

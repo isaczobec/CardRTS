@@ -9,6 +9,13 @@ public class EventDispatcher<TBase>
 
     public void Subscribe<T>(Action<T> callback) where T : TBase
     {
+        // Delegate equality is by (target, method) — re-subscribing the exact same
+        // handler (e.g. a Manager's Initialize() accidentally running twice) is a no-op
+        // rather than adding a second wrapper that would fire the handler twice per event,
+        // with no way to remove just the duplicate afterwards (Unsubscribe only ever
+        // drops the most recently registered wrapper for a given callback).
+        if (_wrapperMap.ContainsKey(callback)) return;
+
         var type = typeof(T);
         if (!_subscribers.ContainsKey(type))
             _subscribers[type] = new();

@@ -27,19 +27,48 @@ public static class CardPlaySystem
 
     private static void PlayCard(ECS ecs, CardPlayedInput input, ComponentStore<CardComponent> cardStore)
     {
-        if (!ecs.HasEntity(input.CardEntityId)) return;
-        if (!cardStore.HasComponent(input.CardEntityId)) return;
+        if (!ecs.HasEntity(input.CardEntityId))
+        {
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: entity {input.CardEntityId} does not exist (client {input.ClientId}).", "cards");
+            return;
+        }
+        if (!cardStore.HasComponent(input.CardEntityId))
+        {
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: entity {input.CardEntityId} has no CardComponent (client {input.ClientId}).", "cards");
+            return;
+        }
 
         CardComponent card = cardStore.GetComponent(input.CardEntityId);
-        if (card.OwnerPlayerId != input.ClientId) return;
-        if (card.Location != CardLocation.Hand) return;
+        if (card.OwnerPlayerId != input.ClientId)
+        {
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: card {input.CardEntityId} owner {card.OwnerPlayerId} != requesting client {input.ClientId}.", "cards");
+            return;
+        }
+        if (card.Location != CardLocation.Hand)
+        {
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: card {input.CardEntityId} is in {card.Location}, not Hand (client {input.ClientId}).", "cards");
+            return;
+        }
 
-        if (!CardRegistry.TryGet(card.Type, out Card definition)) return;
+        if (!CardRegistry.TryGet(card.Type, out Card definition))
+        {
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: card type {card.Type} not found in CardRegistry (client {input.ClientId}).", "cards");
+            return;
+        }
 
         ulong resourceEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, card.OwnerPlayerId);
         ComponentStore<PlayerResourcesComponent> resourceStore = ecs.GetComponentStore<PlayerResourcesComponent>();
-        if (resourceStore == null || resourceEntityId == 0 || !resourceStore.HasComponent(resourceEntityId)) return;
-        if (!definition.Cost.CanAfford(resourceStore.GetComponent(resourceEntityId))) return;
+        if (resourceStore == null || resourceEntityId == 0 || !resourceStore.HasComponent(resourceEntityId))
+        {
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: no PlayerResourcesComponent found for player {card.OwnerPlayerId} (resourceEntityId={resourceEntityId}, client {input.ClientId}).", "cards");
+            return;
+        }
+        if (!definition.Cost.CanAfford(resourceStore.GetComponent(resourceEntityId)))
+        {
+            PlayerResourcesComponent res = resourceStore.GetComponent(resourceEntityId);
+            DebugLogger.LogWarning($"[CardPlaySystem] Rejected: player {card.OwnerPlayerId} can't afford {card.Type} (cost W{definition.Cost.Wood}/S{definition.Cost.Stone}/M{definition.Cost.Metal}/G{definition.Cost.Gems}/So{definition.Cost.Soulstones}/Au{definition.Cost.Gold} vs have W{res.WoodFloor}/S{res.StoneFloor}/M{res.MetalFloor}/G{res.GemsFloor}/So{res.SoulstonesFloor}/Au{res.GoldFloor}).", "cards");
+            return;
+        }
 
         ResourceHelper.Spend(ecs, resourceEntityId, definition.Cost);
 

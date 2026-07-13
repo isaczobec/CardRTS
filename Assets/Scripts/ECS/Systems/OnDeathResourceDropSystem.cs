@@ -35,21 +35,34 @@ public static class OnDeathResourceDropSystem
         ulong resourceEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, ownerPlayerId);
         if (resourceEntityId == 0) return;
 
+        // Tag the grant with where the entity died, if known, so FloatingTextManager can
+        // show the "+N" callout at that spot instead of skipping it (see
+        // ResourcesAdded.NO_WORLD_LOCATION).
+        float dropX = ResourcesAdded.NO_WORLD_LOCATION;
+        float dropY = ResourcesAdded.NO_WORLD_LOCATION;
+        ComponentStore<PositionComponent> positionStore = ecs.GetComponentStore<PositionComponent>();
+        if (positionStore != null && positionStore.HasComponent(request.EntityId))
+        {
+            PositionComponent pos = positionStore.GetComponent(request.EntityId);
+            dropX = pos.X;
+            dropY = pos.Y;
+        }
+
         ResourceCost drop = dropStore.GetComponent(request.EntityId).Drop;
-        GrantResource(ecs, resourceEntityId, ResourceType.Wood, drop.Wood);
-        GrantResource(ecs, resourceEntityId, ResourceType.Stone, drop.Stone);
-        GrantResource(ecs, resourceEntityId, ResourceType.Metal, drop.Metal);
-        GrantResource(ecs, resourceEntityId, ResourceType.Gems, drop.Gems);
-        GrantResource(ecs, resourceEntityId, ResourceType.Soulstones, drop.Soulstones);
-        GrantResource(ecs, resourceEntityId, ResourceType.Gold, drop.Gold);
+        GrantResource(ecs, resourceEntityId, ResourceType.Wood, drop.Wood, dropX, dropY);
+        GrantResource(ecs, resourceEntityId, ResourceType.Stone, drop.Stone, dropX, dropY);
+        GrantResource(ecs, resourceEntityId, ResourceType.Metal, drop.Metal, dropX, dropY);
+        GrantResource(ecs, resourceEntityId, ResourceType.Gems, drop.Gems, dropX, dropY);
+        GrantResource(ecs, resourceEntityId, ResourceType.Soulstones, drop.Soulstones, dropX, dropY);
+        GrantResource(ecs, resourceEntityId, ResourceType.Gold, drop.Gold, dropX, dropY);
     }
 
     // Queues onto this ECS's own RequestManager — ResourceGenerationSystem (registered
     // last in the tick) flushes all pending ResourcesAdded requests, so this doesn't need
     // to flush them itself.
-    private static void GrantResource(ECS ecs, ulong resourceEntityId, ResourceType type, int amount)
+    private static void GrantResource(ECS ecs, ulong resourceEntityId, ResourceType type, int amount, float x, float y)
     {
         if (amount == 0) return;
-        ecs.Requests.CreateRequest(new ResourcesAdded(resourceEntityId, type, amount));
+        ecs.Requests.CreateRequest(new ResourcesAdded(resourceEntityId, type, amount) { X = x, Y = y });
     }
 }
