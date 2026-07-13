@@ -157,6 +157,12 @@ public class ECS
         FlagEvents.Add(new EntityDeletedEvent { EntityId = entityId });
     }
 
+    // Convenience passthrough for Requests.NotifyExecuted — lets a request's own Execute
+    // call ecs.NotifyRequestExecuted(this) before doing cleanup that would remove state its
+    // "executed" subscribers need to read. See RequestManager's class doc comment.
+    public void NotifyRequestExecuted<T>(T request) where T : Request
+        => Requests.NotifyExecuted(request, this);
+
     public void RegisterSystem(ISystem system)
     {
         foreach (Type type in system.ComponentTypes)

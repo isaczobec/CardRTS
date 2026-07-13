@@ -1,6 +1,10 @@
-// In Setup, subscribes to DeathRequest to intercept death for respawnable entities:
-// cancels normal death, marks IsDead so the entity is skipped next tick, starts the
-// cooldown countdown, and fires RespawnableEntityDiedEvent.
+// In Setup:
+//  - Pre-execute, subscribes to DeathRequest for respawnable entities and sets
+//    ShouldDelete = false, so DeathRequest.Execute still runs its normal IsDead/
+//    TroopDiedEvent/"executed"-notification logic, but leaves the entity alive to be
+//    revived in place instead of deleting it.
+//  - Once that death has actually executed, starts the cooldown countdown and fires
+//    RespawnableEntityDiedEvent.
 // In Execute, counts down the cooldown each tick. On expiry, clears IsDead, restores
 // health to MaxHealth, and fires RespawnableEntityRespawnedEvent.
 public static class RespawnSystem
@@ -24,15 +28,13 @@ public static class RespawnSystem
             var respawnStore = innerEcs.GetComponentStore<RespawnableInPlaceComponent>();
             if (respawnStore == null || !respawnStore.HasComponent(req.EntityId)) return;
 
-            req.Cancel();
+            req.ShouldDelete = false;
+        });
 
-            var troopStore = innerEcs.GetComponentStore<TroopComponent>();
-            if (troopStore != null && troopStore.HasComponent(req.EntityId))
-            {
-                ref TroopComponent troop = ref troopStore.GetComponent(req.EntityId);
-                troop.IsDead = true;
-                innerEcs.Delta.MarkComponentDirty(req.EntityId, typeof(TroopComponent));
-            }
+        ecs.Requests.SubscribeExecuted<DeathRequest>((req, innerEcs) =>
+        {
+            var respawnStore = innerEcs.GetComponentStore<RespawnableInPlaceComponent>();
+            if (respawnStore == null || !respawnStore.HasComponent(req.EntityId)) return;
 
             ref RespawnableInPlaceComponent respawn = ref respawnStore.GetComponent(req.EntityId);
             respawn.TicksUntilRespawn = respawn.CooldownTicks;

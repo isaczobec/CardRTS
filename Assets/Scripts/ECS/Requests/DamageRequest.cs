@@ -23,6 +23,7 @@ public class DamageRequest : Request
 
         ref HealthComponent health = ref healthStore.GetComponent(EntityId);
         health.CurrentHealth -= Amount;
+        health.LastDamageDealer = DealerEntityId;
         ecs.Delta.MarkComponentDirty(EntityId, typeof(HealthComponent));
 
         ecs.FlagEvents.Add(new DamageDealtEvent

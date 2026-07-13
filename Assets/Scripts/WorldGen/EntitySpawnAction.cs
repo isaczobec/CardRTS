@@ -31,6 +31,10 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new StatsComponent { MaxHealth = TreeMaxHealth });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = TreeMaxHealth });
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius });
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Wood = 20
+        } } );
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(TreeRespawnSeconds),
