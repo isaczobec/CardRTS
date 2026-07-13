@@ -62,6 +62,11 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // Space (see SelectionManager.HandleSelectionInput).
     public bool IsCardSelectedOrDragging => _selectedCardId != 0 || _draggingCardId != 0;
 
+    // The card currently selected or being dragged (0 if neither) — the one about to be
+    // played. Used by things like CardRangeIndicatorManager that need to know WHICH card's
+    // rules currently apply, not just whether one is active.
+    public ulong ActiveCardEntityId => _selectedCardId != 0 ? _selectedCardId : _draggingCardId;
+
     public void Initialize()
     {
         TickManager.instance.ServerFlagEvents.Subscribe<CardDrawnEvent>(OnCardDrawn);

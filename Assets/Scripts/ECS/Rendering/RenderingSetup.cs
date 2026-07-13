@@ -18,5 +18,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
         ResourceCounterUI.instance.Initialize();
         MinimapManager.instance.Initialize();
         FloatingTextManager.instance.Initialize();
+        CardRangeIndicatorManager.instance.Initialize();
     }
 }

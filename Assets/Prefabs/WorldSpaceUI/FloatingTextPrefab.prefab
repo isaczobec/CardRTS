@@ -306,7 +306,7 @@ MonoBehaviour:
   _text: {fileID: 33262188897385422}
   _icon: {fileID: 6388026376462429147}
   _riseSpeed: 1.5
-  _fadeDuration: 3
+  _fadeDuration: 1.4
   _fadeCurve:
     serializedVersion: 2
     m_Curve:
