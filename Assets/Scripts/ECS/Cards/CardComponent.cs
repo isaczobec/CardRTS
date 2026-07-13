@@ -16,8 +16,8 @@ public struct CardComponent : IComponent
     public CardType Type;
     public CardLocation Location;
 
-    // Whose deck/hand this card belongs to — see CardPlaySystem, which rejects a
-    // CardPlayedInput for a card the requesting client doesn't own.
+    // Whose deck/hand this card belongs to — see e.g. SpawnAtPointCardPlaySystem, which
+    // rejects a play input for a card the requesting client doesn't own.
     public ushort OwnerPlayerId;
 
     // Entity ID of the next card behind this one in its owner's deck queue, or 0 if this

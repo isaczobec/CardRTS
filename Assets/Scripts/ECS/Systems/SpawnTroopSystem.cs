@@ -170,7 +170,8 @@ public static class SpawnTroopSystem
 
         ecs.AddComponent(entity.Id, new BuildingComponent
         {
-            BlockRadius = BuildingDefaultBlockRadius,
+            BlockRadius             = BuildingDefaultBlockRadius,
+            CardPlayRangeMultiplier = 1f,
         });
     }
 

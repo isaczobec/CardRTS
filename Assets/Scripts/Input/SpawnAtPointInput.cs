@@ -1,6 +1,9 @@
 using System.IO;
 
-public class CardPlayedInput : InputBase
+// Input for SpawnAtPointCard-kind cards (see Card.cs) — plays a card at a single world
+// point. Other card kinds (multi-point, entity-targeted) get their own InputBase subtypes
+// alongside this one rather than overloading this shape; see SpawnAtPointCardPlaySystem.
+public class SpawnAtPointInput : InputBase
 {
     public ulong CardEntityId;
     public float X;

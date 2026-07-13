@@ -1,8 +1,21 @@
 // One instance per distinct card definition in the game — not one per card entity. Cards
 // are stateless: all per-instance state (whose deck/hand it's in, etc.) lives on the ECS
-// side in CardComponent, and whatever OnPlayed creates. See CardRegistry for the
-// CardType -> Card lookup CardPlaySystem uses to dispatch a played card.
-// Will grow fields/methods for displaying the card in hand (name, description, icon...).
+// side in CardComponent, and whatever the card's OnPlayed creates. See CardRegistry for
+// the CardType -> Card lookup a card-kind's play system uses to dispatch a played card.
+//
+// Card itself only holds what every card kind needs regardless of how it's played
+// (metadata, cost, whether/how far it's restricted to friendly-building range). How a
+// card is actually played — one ground point, several points, an existing entity, etc. —
+// is a per-kind concern: each kind gets its own Card subclass (see SpawnAtPointCard for
+// the current "spawn one entity at one point" kind) with its own OnPlayed-equivalent
+// signature, its own InputBase subtype, and its own play system (see
+// SpawnAtPointCardPlaySystem), all funneling through the same InputBuffer/lockstep
+// pipeline. A new kind needs: a new InputBase subtype (registered in
+// TickManager._inputTypeRegistry), a new Card subclass declaring that kind's OnPlayed
+// signature, a new play system mirroring SpawnAtPointCardPlaySystem's validation chain
+// (ownership/location/cost/range) but dispatching through the new signature, and
+// (client-side) new CardHandRenderer input-capture logic — today it only knows how to
+// resolve a single ground point per click/drag.
 public abstract class Card
 {
     public abstract CardType Type { get; }
@@ -19,14 +32,22 @@ public abstract class Card
     // the UI hides that row instead of showing "0".
     public abstract StatsComponent DefaultStats { get; }
 
-    // Resource price to play this card, checked by CardPlaySystem before OnPlayed runs and
-    // deducted via ResourceHelper.Spend. A field of 0 means the card doesn't cost that
-    // resource at all (and its row is hidden on the card face).
+    // Resource price to play this card, checked before OnPlayed runs and deducted via
+    // ResourceHelper.Spend. A field of 0 means the card doesn't cost that resource at all
+    // (and its row is hidden on the card face).
     public abstract ResourceCost Cost { get; }
 
-    // Called by CardPlaySystem when a player plays this card at (x, y). cardEntityId is
-    // the card entity that was played (recycled back into the deck afterwards, not
-    // deleted), in case an implementation ever needs to read more off it than
-    // CardPlaySystem already validated.
-    public abstract void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y);
+    // Base max distance (world/tile units) from a friendly building this card may be
+    // played at — only consulted when RequiresFriendlyBuildingRange() is true. Each
+    // candidate building can modify its own effective range via
+    // BuildingComponent.CardPlayRangeMultiplier (applied first) and CardPlayRangeBonus —
+    // the card is playable if it's within range of at least one friendly building.
+    public abstract float MaxDistanceFromFriendlyBuilding { get; }
+
+    // Whether this card is restricted to playing within MaxDistanceFromFriendlyBuilding of
+    // a friendly building at all (see BuildingRangeHelper.IsWithinRangeOfFriendlyBuilding).
+    // Defaults to true (today's behavior for every existing card); override to return
+    // false for cards with unlimited range — e.g. Clash-Royale-style spells playable
+    // anywhere on the map.
+    public virtual bool RequiresFriendlyBuildingRange() => true;
 }

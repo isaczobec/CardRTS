@@ -148,7 +148,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<SpawnTroopInput>(2);
         _inputTypeRegistry.Register<MoveTroopInput>(3);
         _inputTypeRegistry.Register<SetTargetsInput>(4);
-        _inputTypeRegistry.Register<CardPlayedInput>(5);
+        _inputTypeRegistry.Register<SpawnAtPointInput>(5);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -395,7 +395,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new PathfindingSystem());
         ecs.RegisterSystem(new BuildingBlockingSystem());
         ecs.RegisterSystem(SeekingProjectileSystem.Instance);
-        ecs.RegisterSystem(CardPlaySystem.Instance);
+        ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);

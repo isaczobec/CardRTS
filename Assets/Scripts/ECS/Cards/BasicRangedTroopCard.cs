@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public class BasicRangedTroopCard : Card
+public class BasicRangedTroopCard : SpawnAtPointCard
 {
     private const int MaxHealth = 100;
     private const int Speed = 10;
@@ -19,12 +19,15 @@ public class BasicRangedTroopCard : Card
 
     private const int GoldCost = 4;
 
+    private const float MaxDistanceFromBuilding = 20f;
+
     public override CardType Type => CardType.BasicRangedTroop;
     public override string Title => "Ranged Troop";
     public override string ImageName => "BasicRangedTroop";
     public override string Description => "A ranged troop that peppers enemies with arrows from a distance.";
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

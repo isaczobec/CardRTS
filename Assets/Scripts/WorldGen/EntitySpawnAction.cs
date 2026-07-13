@@ -30,7 +30,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = TreeSelectionScale });
         ecs.AddComponent(id, new StatsComponent { MaxHealth = TreeMaxHealth });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = TreeMaxHealth });
-        ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius });
+        ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
             Wood = 20

@@ -1,8 +1,8 @@
 // Shared per-player deck queue operations. A player's deck is a FIFO queue of card
 // entities (see PlayerDeckComponent for the head/tail pointers and
-// CardComponent.NextInDeckId for the links between them). CardPlaySystem enqueues onto
-// the tail when a card is played; DeckSystem dequeues the head into hand once its draw
-// cooldown finishes.
+// CardComponent.NextInDeckId for the links between them). A card-kind's play system (e.g.
+// SpawnAtPointCardPlaySystem) enqueues onto the tail when a card is played; DeckSystem
+// dequeues the head into hand once its draw cooldown finishes.
 public static class DeckHelper
 {
     const int StartingCopiesPerCardType = 3;

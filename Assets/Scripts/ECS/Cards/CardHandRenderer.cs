@@ -256,7 +256,7 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     }
 
     private void PlayCard(ulong cardEntityId, float x, float y)
-        => InputBuffer.EnqueueInput(new CardPlayedInput { CardEntityId = cardEntityId, X = x, Y = y });
+        => InputBuffer.EnqueueInput(new SpawnAtPointInput { CardEntityId = cardEntityId, X = x, Y = y });
 
     // While below the lift threshold the dragged card sticks exactly to the cursor
     // (direct-manipulation feel); past it, it eases toward _selectedAnchor instead of

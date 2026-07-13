@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public class BasicMeleeTroopCard : Card
+public class BasicMeleeTroopCard : SpawnAtPointCard
 {
     private const int MaxHealth = 100;
     private const int Speed = 10;
@@ -16,12 +16,15 @@ public class BasicMeleeTroopCard : Card
 
     private const int GoldCost = 3;
 
+    private const float MaxDistanceFromBuilding = 20f;
+
     public override CardType Type => CardType.BasicMeleeTroop;
     public override string Title => "Melee Troop";
     public override string ImageName => "BasicMeleeTroop";
     public override string Description => "A sturdy melee troop that charges the nearest enemy.";
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

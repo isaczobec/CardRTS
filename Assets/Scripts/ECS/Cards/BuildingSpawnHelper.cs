@@ -10,7 +10,8 @@ public static class BuildingSpawnHelper
     public const float BlockRadius = 3f;
     public const float SelectionScale = 3f;
 
-    public static void AddBuildingComponents(ECS ecs, ulong id, ushort ownerPlayerId, RenderableType renderableType, int maxHealth, ulong ticksUntilActive)
+    public static void AddBuildingComponents(ECS ecs, ulong id, ushort ownerPlayerId, RenderableType renderableType, int maxHealth, ulong ticksUntilActive,
+        float cardPlayRangeMultiplier = 1f, float cardPlayRangeBonus = 0f)
     {
         ecs.AddComponent(id, new TroopComponent
         {
@@ -28,6 +29,11 @@ public static class BuildingSpawnHelper
             // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
         });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = maxHealth });
-        ecs.AddComponent(id, new BuildingComponent { BlockRadius = BlockRadius });
+        ecs.AddComponent(id, new BuildingComponent
+        {
+            BlockRadius             = BlockRadius,
+            CardPlayRangeMultiplier = cardPlayRangeMultiplier,
+            CardPlayRangeBonus      = cardPlayRangeBonus,
+        });
     }
 }
