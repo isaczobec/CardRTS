@@ -10,6 +10,7 @@ public class EntitySpawnAction : IWorldGenAction
     private const int   TreeMaxHealth     = 100;
     private const float TreeBlockRadius   = 1f;
     private const float TreeRespawnSeconds = 30f;
+    private const float TreeSelectionScale = 2f;
 
     public float X;
     public float Y;
@@ -26,7 +27,7 @@ public class EntitySpawnAction : IWorldGenAction
             _ticksUntilActive = 1,   // activates on the first tick so the renderer fires OnEntityActivated
         });
         ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.Tree });
-        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = TreeSelectionScale });
         ecs.AddComponent(id, new StatsComponent { MaxHealth = TreeMaxHealth });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = TreeMaxHealth });
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius });

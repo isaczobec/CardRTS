@@ -1677,15 +1677,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 261f31396dc13284e9ed52f07f65afb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SelectionManager
-  _selectionPrefab: {fileID: 8077043507155612275, guid: 94a09ca5a92901d47b0334c4fa30a584, type: 3}
-  _targetingPrefab: {fileID: 8077043507155612275, guid: 1921721a99e90ce44ae36d080b5672b9, type: 3}
+  _selectionPrefab: {fileID: 8085468842011575487, guid: 98bf5c18ea13969458141b9b28d3c4aa, type: 3}
+  _targetingPrefab: {fileID: 8085468842011575487, guid: 31c69963279d63c4184ac1a0be7bc222, type: 3}
   _dragSelectionBox: {fileID: 809644850}
   _friendlyColor: {r: 0.59685385, g: 0.8726415, b: 0.59685385, a: 1}
   _friendlySelectedColor: {r: 0, g: 1, b: 0.06529057, a: 1}
   _friendlySingleSelectedColor: {r: 0, g: 0.8595506, b: 1, a: 1}
   _neutralColor: {r: 0.6509434, g: 0.6509434, b: 0.6509434, a: 1}
   _enemyColor: {r: 0.9339623, g: 0.5323907, b: 0.502225, a: 1}
-  _selectionColorProperty: _SelectionColor
 --- !u!1 &649030905
 GameObject:
   m_ObjectHideFlags: 0
@@ -4281,7 +4280,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26d0909a1d996654ab75789cd4e32d3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
-  _prefab: {fileID: 9082625173468486924, guid: 5e19c257e7d7515438efa3458bc5ecaf, type: 3}
+  _prefab: {fileID: 9082625173468486924, guid: 3ed22e2c4cbcfa14582110c357d666aa, type: 3}
   _rotationDegreesPerSecond: 540
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61

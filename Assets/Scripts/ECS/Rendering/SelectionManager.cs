@@ -19,7 +19,6 @@ public class SelectionManager : Singleton<SelectionManager>
     [SerializeField] private Color _friendlySingleSelectedColor = Color.green;
     [SerializeField] private Color _neutralColor = Color.green;
     [SerializeField] private Color _enemyColor = Color.green;
-    [SerializeField] private string _selectionColorProperty = "_SelectionColor";
 
 
     private ECS _ecs;
@@ -151,7 +150,7 @@ public class SelectionManager : Singleton<SelectionManager>
             TargetKind kind = kvp.Value;
             if (_previouslyTargetedIds.TryGetValue(entityId, out TargetKind prevKind) && prevKind == kind) continue;
             if (_targetingObjects.TryGetValue(entityId, out TargetingPrefab prefab))
-                prefab.SetTargeted(kind, _selectionColorProperty);
+                prefab.SetTargeted(kind);
         }
 
         foreach (ulong entityId in _previouslyTargetedIds.Keys)
@@ -473,14 +472,14 @@ public class SelectionManager : Singleton<SelectionManager>
     {
         if (!_selectedEntityIds.Add(entityId)) return;
         if (_selectionObjects.TryGetValue(entityId, out var prefab))
-            prefab.SetSelected(color, _selectionColorProperty);
+            prefab.SetSelected(color);
     }
 
     private void DeselectAll()
     {
         foreach (ulong entityId in _selectedEntityIds)
             if (_selectionObjects.TryGetValue(entityId, out var prefab))
-                prefab.SetUnselected(GetUnselectedColor(entityId), _selectionColorProperty);
+                prefab.SetUnselected(GetUnselectedColor(entityId));
         _selectedEntityIds.Clear();
     }
 
@@ -547,12 +546,18 @@ public class SelectionManager : Singleton<SelectionManager>
         if (!_positionStore.HasComponent(e.EntityId)) return;
 
         PositionComponent pos = _positionStore.GetComponent(e.EntityId);
+        // 0 means the spawning code never set SelectableComponent.Scale — fall back to 1
+        // rather than shrinking the ring to nothing.
+        float scale = _selectableStore.GetComponent(e.EntityId).Scale;
+        if (scale <= 0f) scale = 1f;
+
         GameObject go = Instantiate(_selectionPrefab, transform);
         go.name = $"Selection_{e.EntityId}";
         SelectionPrefab prefab = go.GetComponent<SelectionPrefab>();
         _selectionObjects[e.EntityId] = prefab;
+        prefab.SetScale(scale);
         ApplySelectionPosition(e.EntityId, ref pos, prefab);
-        prefab.SetUnselected(GetUnselectedColor(e.EntityId), _selectionColorProperty);
+        prefab.SetUnselected(GetUnselectedColor(e.EntityId));
 
         if (_targetingPrefab != null)
         {
@@ -560,6 +565,7 @@ public class SelectionManager : Singleton<SelectionManager>
             targetingGo.name = $"Targeting_{e.EntityId}";
             TargetingPrefab targetingObj = targetingGo.GetComponent<TargetingPrefab>();
             _targetingObjects[e.EntityId] = targetingObj;
+            targetingObj.SetScale(scale);
             ApplyTargetingPosition(e.EntityId, ref pos, targetingObj);
         }
     }
@@ -568,7 +574,7 @@ public class SelectionManager : Singleton<SelectionManager>
     {
         if (_selectedEntityIds.Remove(e.EntityId))
             if (_selectionObjects.TryGetValue(e.EntityId, out var prefab))
-                prefab.SetUnselected(_friendlyColor, _selectionColorProperty);
+                prefab.SetUnselected(_friendlyColor);
 
         DestroySelectionObject(e.EntityId);
         DestroyTargetingObject(e.EntityId);
@@ -612,7 +618,7 @@ public class SelectionManager : Singleton<SelectionManager>
     private static Vector3 WorldPositionFor(PositionComponent pos)
     {
         float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
-        return new Vector3(pos.X, height + 1f, pos.Y);
+        return new Vector3(pos.X, height + 0.01f, pos.Y);
     }
 
     private bool IsMoving(ulong entityId)

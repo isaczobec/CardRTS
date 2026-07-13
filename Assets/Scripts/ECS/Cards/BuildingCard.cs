@@ -11,6 +11,8 @@ public class BuildingCard : Card
     private const int WoodCost = 5;
     private const int StoneCost = 3;
 
+    private const float SelectionScale = 3f;
+
     public override CardType Type => CardType.Building;
     public override string Title => "Building";
     public override string ImageName => "Building";
@@ -53,7 +55,7 @@ public class BuildingCard : Card
         });
 
         ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.BasicBuilding });
-        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = ownerPlayerId });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = ownerPlayerId, Scale = SelectionScale });
 
         ecs.AddComponent(id, BuildStats());
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = MaxHealth });

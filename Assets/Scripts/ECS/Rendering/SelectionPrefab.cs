@@ -1,32 +1,44 @@
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
+// Flat world-space selection ring, rendered as a plain SpriteRenderer lying on the ground
+// plane. The world is completely flat, so there's no need to project a decal onto uneven
+// terrain (see the old DecalProjector-based version this replaced).
 public class SelectionPrefab : MonoBehaviour
 {
-    [SerializeField] private DecalProjector _decalProjector;
+    [SerializeField] private Image _image;
+
+    // Transform to scale via SetScale — separate from this GameObject's own root transform
+    // since SelectionManager drives the root's position every frame (see
+    // SelectionManager.ApplySelectionPosition), and a uniform scale set here should
+    // persist independently of that.
+    [SerializeField] private Transform _scalableTransform;
 
     public bool IsSelected { get; private set; }
 
     void Awake()
     {
-        if (_decalProjector == null)
-            _decalProjector = GetComponentInChildren<DecalProjector>();
-
-        _decalProjector.renderingLayerMask = WorldManager.instance.Renderer.TerrainRenderingLayerMask;
-
-        // Instance the material so setting color properties doesn't affect other decals.
-        _decalProjector.material = new Material(_decalProjector.material);
+        if (_image == null)
+            _image = GetComponentInChildren<Image>();
     }
 
-    public void SetSelected(Color color, string colorProperty)
+    // Called once by SelectionManager right after instantiation (see SetupSelection), using
+    // SelectableComponent.Scale.
+    public void SetScale(float scale)
+    {
+        if (_scalableTransform != null)
+            _scalableTransform.localScale = Vector3.one * scale;
+    }
+
+    public void SetSelected(Color color)
     {
         IsSelected = true;
-        _decalProjector.material.SetColor(colorProperty, color);
+        _image.color = color;
     }
 
-    public void SetUnselected(Color color, string colorProperty)
+    public void SetUnselected(Color color)
     {
         IsSelected = false;
-        _decalProjector.material.SetColor(colorProperty, color);
+        _image.color = color;
     }
 }

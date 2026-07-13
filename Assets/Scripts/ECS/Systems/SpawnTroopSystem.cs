@@ -34,6 +34,9 @@ public static class SpawnTroopSystem
     private const int BuildingDefaultArmor = 5;
     private const float BuildingDefaultBlockRadius = 3f;
 
+    private const float TroopSelectionScale = 1f;
+    private const float BuildingSelectionScale = 3f;
+
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
         List<SpawnTroopInput> inputs = ecs.GetInputsForTick<SpawnTroopInput>();
@@ -76,6 +79,7 @@ public static class SpawnTroopSystem
         ecs.AddComponent(entity.Id, new SelectableComponent
         {
             OwnerPlayerId = input.ClientId,
+            Scale         = TroopSelectionScale,
         });
 
         ecs.AddComponent(entity.Id, new MovableComponent
@@ -149,6 +153,7 @@ public static class SpawnTroopSystem
         ecs.AddComponent(entity.Id, new SelectableComponent
         {
             OwnerPlayerId = input.ClientId,
+            Scale         = BuildingSelectionScale,
         });
 
         ecs.AddComponent(entity.Id, new StatsComponent

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 public static class TroopCardHelper
 {
     private const float DefaultActivationDelaySeconds = 2f;
+    private const float SelectionScale = 1f;
 
     public static ulong SpawnTroop(
         ECS ecs,
@@ -32,7 +33,7 @@ public static class TroopCardHelper
         });
 
         ecs.AddComponent(id, new RenderableComponent { Type = renderableType });
-        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = ownerPlayerId });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = ownerPlayerId, Scale = SelectionScale });
 
         ecs.AddComponent(id, new MovableComponent
         {
