@@ -216,6 +216,12 @@ public class TickManager : Singleton<TickManager>
 
     public void StartGame()
     {
+        // On a host, this is reachable from two places (NetworkManager.NotifyClientReady's
+        // server-side path and OnGameReady's client-side path, since a host runs both) —
+        // guard so SetupRendering/FireGameStarting only ever run once regardless of how
+        // many of those fire.
+        if (_gameStarted) return;
+
         _gameStarted = true;
         RenderingSetup.instance.SetupRendering();
         GameEvents.FireGameStarting();

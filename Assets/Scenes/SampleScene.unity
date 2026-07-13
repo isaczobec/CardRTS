@@ -622,6 +622,7 @@ GameObject:
   - component: {fileID: 172921460}
   - component: {fileID: 172921459}
   - component: {fileID: 172921458}
+  - component: {fileID: 172921461}
   m_Layer: 5
   m_Name: Image
   m_TagString: Untagged
@@ -667,6 +668,7 @@ MonoBehaviour:
   _neutralColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _enemyColor: {r: 1, g: 0, b: 0, a: 1}
   _cameraController: {fileID: 963194230}
+  _viewportIndicatorPrefab: {fileID: 5582895434968408410, guid: 2b38632422bbcd54bbb27562be58c19d, type: 3}
 --- !u!114 &172921459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -702,6 +704,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 172921456}
   m_CullTransparentMesh: 1
+--- !u!114 &172921461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172921456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
+  m_ShowMaskGraphic: 1
 --- !u!1 &206962675
 GameObject:
   m_ObjectHideFlags: 0
@@ -5159,7 +5174,7 @@ GameObject:
   - component: {fileID: 2036311167}
   - component: {fileID: 2036311166}
   m_Layer: 5
-  m_Name: Border
+  m_Name: BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5234,7 +5249,7 @@ GameObject:
   - component: {fileID: 2098962889}
   - component: {fileID: 2098962888}
   m_Layer: 5
-  m_Name: Border (1)
+  m_Name: Border
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

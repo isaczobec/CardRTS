@@ -28,6 +28,10 @@ public class CameraController : MonoBehaviour
     Vector3 _pivot;
     float _yaw;
 
+    // Read-only access for MinimapManager's viewport indicator (position + rotation).
+    public Vector3 Pivot => _pivot;
+    public float Yaw => _yaw;
+
     void Start()
     {
         _yaw = transform.eulerAngles.y;

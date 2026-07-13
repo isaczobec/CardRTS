@@ -5,9 +5,11 @@ using UnityEngine.UI;
 
 // Builds a one-pixel-per-tile minimap texture from each tile's TileTextureEntry.MapColor
 // (via WorldManager.Renderer.TextureRegistry) once world gen finishes, then keeps a small
-// screen-space dot positioned over the minimap for
-// every entity with both SelectableComponent and PositionComponent (troops, buildings,
-// trees), colored by ownership. Clicking the minimap jumps the main camera there.
+// screen-space dot positioned over the minimap for every entity with both
+// SelectableComponent and PositionComponent (troops, buildings, trees), colored by
+// ownership. Also keeps a viewport-indicator rectangle moved/rotated to
+// track the main camera's current look-at point and yaw. Left-click (or click-drag) on the
+// minimap jumps the main camera there, updating continuously every frame while held.
 //
 // Mirrors SelectionManager's entity lifecycle (TroopActivatedEvent /
 // ComponentRemovedEvent<SelectableComponent> / EntityDeletedEvent /
@@ -16,10 +18,11 @@ using UnityEngine.UI;
 // position each tick; no need for the smooth between-tick interpolation the 3D world
 // visuals use.
 //
-// Must sit on the same GameObject as the RawImage assigned to _mapImage — IPointerClickHandler
-// only receives events when this component shares a GameObject with a raycastable Graphic.
+// Must sit on the same GameObject as the RawImage assigned to _mapImage — IPointerDownHandler/
+// IPointerUpHandler only receive events when this component shares a GameObject with a
+// raycastable Graphic.
 [RequireComponent(typeof(RawImage))]
-public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
+public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IPointerUpHandler
 {
     [Header("Map")]
     [SerializeField] private RawImage _mapImage;
@@ -35,8 +38,12 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
 
     [Header("Camera")]
     [SerializeField] private CameraController _cameraController;
+    // Simple prefab (a bordered rectangle, texture/masking handled outside this script) —
+    // just repositioned/rotated each frame to track the camera, never resized.
+    [SerializeField] private GameObject _viewportIndicatorPrefab;
 
     private RectTransform _mapRect;
+    private RectTransform _viewportIndicatorRect;
     private ECS _ecs;
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<SelectableComponent> _selectableStore;
@@ -45,6 +52,12 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
     private ushort _worldSizeTiles;
 
     private readonly Dictionary<ulong, RectTransform> _dots = new();
+
+    // True from OnPointerDown until OnPointerUp — Update() re-jumps the camera to the
+    // pointer's current position on the minimap every frame while this is set, giving the
+    // "hold left-click and drag" continuous-follow behavior.
+    private bool _isDraggingCamera;
+    private Camera _dragEventCamera;
 
     protected override void Awake()
     {
@@ -68,6 +81,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
         _selectableStore = _ecs.GetComponentStore<SelectableComponent>();
 
         BuildMapTexture();
+        SpawnViewportIndicator();
     }
 
     void Update()
@@ -80,6 +94,15 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
             if (!_positionStore.HasComponent(entityId)) continue;
             ApplyDotPosition(_positionStore.GetComponent(entityId), kvp.Value);
         }
+
+        UpdateViewportIndicator();
+
+        // Re-derive the jump target from the live cursor position every frame (rather than
+        // only reacting to pointer-move deltas via IDragHandler) so holding the button
+        // still down without moving keeps the camera locked to that spot, and so a single
+        // click-without-drag is already covered by OnPointerDown.
+        if (_isDraggingCamera)
+            DragCameraToPointer();
     }
 
     // ── Map texture ─────────────────────────────────────────────────────────
@@ -167,14 +190,20 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
     }
 
     private void ApplyDotPosition(PositionComponent pos, RectTransform rect)
-    {
-        if (_worldSizeTiles == 0) return;
+        => rect.anchoredPosition = WorldToMinimapAnchoredPosition(pos.X, pos.Y);
 
-        float u = Mathf.Clamp01(pos.X / _worldSizeTiles);
-        float v = Mathf.Clamp01(pos.Y / _worldSizeTiles);
+    // pos.X/Y are world/tile-space (see PositionComponent) — the same axes BuildMapTexture
+    // painted the map texture in, so a straight 0..worldSizeTiles -> 0..mapRect.size
+    // normalization lines dots (and the viewport indicator) up with the terrain under them.
+    private Vector2 WorldToMinimapAnchoredPosition(float worldX, float worldZ)
+    {
+        if (_worldSizeTiles == 0) return Vector2.zero;
+
+        float u = Mathf.Clamp01(worldX / _worldSizeTiles);
+        float v = Mathf.Clamp01(worldZ / _worldSizeTiles);
 
         Rect mapRect = _mapRect.rect;
-        rect.anchoredPosition = new Vector2(u * mapRect.width, v * mapRect.height);
+        return new Vector2(u * mapRect.width, v * mapRect.height);
     }
 
     // Mirrors SelectionManager.GetUnselectedColor's ownership check.
@@ -189,13 +218,58 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
     private static ushort LocalPlayerId()
         => NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
 
-    // ── Click-to-move-camera ────────────────────────────────────────────────
+    // ── Viewport indicator ──────────────────────────────────────────────────
 
-    public void OnPointerClick(PointerEventData eventData)
+    private void SpawnViewportIndicator()
+    {
+        if (_viewportIndicatorPrefab == null || _mapRect == null) return;
+
+        GameObject go = Instantiate(_viewportIndicatorPrefab, _mapRect);
+        go.name = "MinimapViewportIndicator";
+
+        _viewportIndicatorRect = go.GetComponent<RectTransform>();
+        _viewportIndicatorRect.anchorMin = _viewportIndicatorRect.anchorMax = Vector2.zero;
+        // Left at whatever size/rotation the prefab was authored with — this script only
+        // ever moves and rotates it, per the "simple prefab, I'll handle the texture and
+        // masking" ask.
+    }
+
+    private void UpdateViewportIndicator()
+    {
+        if (_viewportIndicatorRect == null || _cameraController == null) return;
+
+        Vector3 pivot = _cameraController.Pivot;
+        _viewportIndicatorRect.anchoredPosition = WorldToMinimapAnchoredPosition(pivot.x, pivot.z);
+
+        // World yaw rotates +Z (map "up") toward +X (map "right") as it increases — i.e.
+        // clockwise viewed from above, which matches the minimap's un-mirrored top-down
+        // orientation. UI Z+ rotation is counter-clockwise on screen, so negate to match.
+        // Assumes the prefab is authored facing "up" (0 rotation); flip the sign here if
+        // yours points the other way.
+        _viewportIndicatorRect.localEulerAngles = new Vector3(0f, 0f, -_cameraController.Yaw);
+    }
+
+    // ── Click/drag-to-move-camera ───────────────────────────────────────────
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        _isDraggingCamera = true;
+        _dragEventCamera = eventData.pressEventCamera;
+        JumpCameraToScreenPoint(eventData.position);
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        _isDraggingCamera = false;
+    }
+
+    private void DragCameraToPointer() => JumpCameraToScreenPoint(Input.mousePosition);
+
+    private void JumpCameraToScreenPoint(Vector2 screenPoint)
     {
         if (_mapRect == null || _cameraController == null || _worldSizeTiles == 0) return;
 
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_mapRect, eventData.position, eventData.pressEventCamera, out Vector2 local))
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_mapRect, screenPoint, _dragEventCamera, out Vector2 local))
             return;
 
         Rect r = _mapRect.rect;
@@ -203,7 +277,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerClickHandler
         float v = Mathf.InverseLerp(r.yMin, r.yMax, local.y);
 
         float worldX = u * _worldSizeTiles;
-        float worldY = v * _worldSizeTiles;
-        _cameraController.JumpTo(new Vector3(worldX, 0f, worldY));
+        float worldZ = v * _worldSizeTiles;
+        _cameraController.JumpTo(new Vector3(worldX, 0f, worldZ));
     }
 }
