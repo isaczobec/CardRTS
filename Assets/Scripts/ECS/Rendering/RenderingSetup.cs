@@ -16,5 +16,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
         HealthBarManager.instance.Initialize();
         CardHandRenderer.instance.Initialize();
         ResourceCounterUI.instance.Initialize();
+        MinimapManager.instance.Initialize();
     }
 }

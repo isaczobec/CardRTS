@@ -60,6 +60,14 @@ public class CameraController : MonoBehaviour
         _pivot = new Vector3(center.x, 0f, center.z);
     }
 
+    // Snaps the camera's look-at point to worldPos (e.g. from a minimap click) — same
+    // ground-plane-pivot approach as MoveToMapCenter, just with an arbitrary target instead
+    // of the map's center.
+    public void JumpTo(Vector3 worldPos)
+    {
+        _pivot = new Vector3(worldPos.x, 0f, worldPos.z);
+    }
+
     void LateUpdate()
     {
         if (!Application.isFocused) return;

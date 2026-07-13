@@ -6,6 +6,7 @@ public struct TileTextureEntry
 {
     public TileType Type;
     public Texture2D Texture;
+    public Color MapColor;
 }
 
 /// <summary>
@@ -17,6 +18,26 @@ public struct TileTextureEntry
 public class TileTextureRegistry : MonoBehaviour
 {
     public TileTextureEntry[] Entries;
+
+    // Indexed by (int)TileType for O(1) lookup, mirrors WorldManager's _settingsByType
+    // pattern. Built lazily on first GetMapColor call rather than in Awake/Render, since
+    // callers (e.g. MinimapManager) may look this up before Render() has run.
+    private TileTextureEntry[] _entriesByType;
+
+    public Color GetMapColor(TileType type)
+    {
+        if (_entriesByType == null) BuildEntryLookup();
+        return _entriesByType[(int)type].MapColor;
+    }
+
+    private void BuildEntryLookup()
+    {
+        int count = Enum.GetValues(typeof(TileType)).Length;
+        _entriesByType = new TileTextureEntry[count];
+        if (Entries != null)
+            foreach (var e in Entries)
+                _entriesByType[(int)e.Type] = e;
+    }
 
     public Texture2DArray BuildArray()
     {
