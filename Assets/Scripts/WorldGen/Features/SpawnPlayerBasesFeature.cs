@@ -19,7 +19,7 @@ public class SpawnPlayerBasesFeature : WorldGenFeature
 {
     public const int BaseMaxHealth = 1000; // BuildingCard's building has 300 — a base should outlast it by a wide margin.
 
-    public float EdgeOffset = 10f;
+    public float EdgeOffset = 5f;
 
     public readonly struct PlayerBase
     {

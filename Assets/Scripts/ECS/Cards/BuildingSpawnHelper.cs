@@ -15,8 +15,9 @@ public static class BuildingSpawnHelper
     {
         ecs.AddComponent(id, new TroopComponent
         {
-            OwnerPlayerId     = ownerPlayerId,
-            _ticksUntilActive = ticksUntilActive,
+            OwnerPlayerId           = ownerPlayerId,
+            _ticksUntilActive       = ticksUntilActive,
+            InitialTicksUntilActive = ticksUntilActive,
         });
 
         ecs.AddComponent(id, new RenderableComponent { Type = renderableType });

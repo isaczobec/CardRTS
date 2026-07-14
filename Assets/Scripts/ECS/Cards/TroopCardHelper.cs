@@ -26,10 +26,12 @@ public static class TroopCardHelper
 
         ecs.AddComponent(id, new PositionComponent(x, y));
 
+        ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds);
         ecs.AddComponent(id, new TroopComponent
         {
-            OwnerPlayerId     = ownerPlayerId,
-            _ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds),
+            OwnerPlayerId           = ownerPlayerId,
+            _ticksUntilActive       = ticksUntilActive,
+            InitialTicksUntilActive = ticksUntilActive,
         });
 
         ecs.AddComponent(id, new RenderableComponent { Type = renderableType });

@@ -27,6 +27,7 @@ public class BasicMeleeAISystem : ISystem
     private const float HomeRadius = 0.1f;
 
     private readonly List<ulong> _queryBuffer = new List<ulong>();
+    private readonly HashSet<ulong> _movedThisTick = new HashSet<ulong>();
 
     private ECS _ecs;
     private ComponentStore<PositionComponent> _posStore;
@@ -47,6 +48,18 @@ public class BasicMeleeAISystem : ISystem
         _targeting = ecs.GetSystem<TargetingSystem>();
         if (_targeting == null) return;
 
+        // Same tick's move orders, read ahead of PathfindingSystem (which applies them
+        // later in this same Execute pass) so a windup can be cancelled the instant a
+        // move order arrives for it, rather than one tick late.
+        _movedThisTick.Clear();
+        List<MoveTroopInput> moveInputs = ecs.GetInputsForTick<MoveTroopInput>();
+        if (moveInputs != null)
+        {
+            foreach (MoveTroopInput input in moveInputs)
+                foreach (MoveTroopInput.EntityDestination move in input.Moves)
+                    _movedThisTick.Add(move.EntityId);
+        }
+
         ComponentStore<BasicMeleeAIComponent> aiStore = ecs.GetComponentStore<BasicMeleeAIComponent>();
         aiStore.ForEach((ulong id) => Tick(id, aiStore));
     }
@@ -63,9 +76,17 @@ public class BasicMeleeAISystem : ISystem
         PositionComponent pos = _posStore.GetComponent(id);
         Vector2 myPos = new Vector2(pos.X, pos.Y);
 
-        // Committed to an attack windup — ignore everything else until it resolves.
+        // Committed to an attack windup — ignore everything else until it resolves,
+        // unless a fresh move order just came in for this troop: like an attack-move
+        // cancel in League of Legends, that interrupts the windup immediately (no damage,
+        // no cooldown) instead of finishing it out while sliding away.
         if (ai.AttackTargetId != 0)
         {
+            if (_movedThisTick.Contains(id))
+            {
+                CancelAttack(id, ref ai);
+                return;
+            }
             ResolveAttack(id, ref ai, myPos);
             return;
         }
@@ -139,6 +160,13 @@ public class BasicMeleeAISystem : ISystem
             ai.CooldownTicksRemaining = attackSpeedTicks * 2;
         }
 
+        ai.AttackTargetId = 0;
+        ai.AttackTicksRemaining = 0;
+        _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+    }
+
+    private void CancelAttack(ulong id, ref BasicMeleeAIComponent ai)
+    {
         ai.AttackTargetId = 0;
         ai.AttackTicksRemaining = 0;
         _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
