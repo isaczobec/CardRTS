@@ -6,9 +6,9 @@ using UnityEngine;
 // ActivatableComponent — see ActivationSystem) until its activation delay finishes
 // (EntityActivatedEvent) or it's removed early (EntityDeletedEvent). Visible only for the
 // client whose card spawned it — this is player-facing UI, not server-confirmed game state
-// other players need to see. Ownership is read off TroopComponent (troops/buildings only,
-// today); an activatable entity with no TroopComponent (e.g. a spell) has no indicator
-// shown until it has some other way to say whose it is.
+// other players need to see. Ownership is read off TroopComponent.OwnerPlayerId; every
+// SpawnAtPointCard-spawned entity carries one purely for this (see TroopCardHelper/
+// BuildingSpawnHelper/AoeSpellCard) even when it isn't a troop in any other sense.
 //
 // Separate from the ECS architecture, like CardRangeIndicatorManager — never registered as
 // an ISystem, just polls the live ECS each frame to update each indicator's fill. Deploying
@@ -98,10 +98,10 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
         _indicators.Remove(entityId);
     }
 
-    // Ownership isn't part of ActivatableComponent itself — today the only activatable
-    // entities that carry an owner are troops/buildings (TroopComponent.OwnerPlayerId).
-    // An activatable entity with no TroopComponent (e.g. a spell) can't be attributed to a
-    // client yet, so no indicator is shown for it until it has its own way to say whose it is.
+    // Ownership isn't part of ActivatableComponent itself — every SpawnAtPointCard-spawned
+    // entity carries a TroopComponent for OwnerPlayerId regardless of what kind of entity
+    // it actually is (see the class doc comment). One without a TroopComponent at all
+    // can't be attributed to a client, so no indicator is shown for it.
     private bool OwnedByLocalPlayer(ulong entityId)
     {
         if (_troopStore == null || !_troopStore.HasComponent(entityId)) return false;

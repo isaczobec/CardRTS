@@ -7,9 +7,9 @@ using UnityEngine;
 // predicted spell effect and the server's authoritative one come online in sync instead of
 // the effect starting the instant the card is played.
 //
-// The actual AOE effect (damage-over-time, whatever it ends up being) is a separate
-// component to be added later — for now this just spawns the entity shell every
-// activatable thing needs: ActivatableComponent, RenderableComponent, StatsComponent.
+// Deals its damage via DamageAuraComponent/DamageAuraSystem (pulses for as long as it's
+// active) and expires via LifetimeComponent/LifetimeSystem (deactivated, then deleted on
+// the server, once its duration runs out).
 public class AoeSpellCard : SpawnAtPointCard
 {
     private const int GoldCost = 4;
@@ -21,6 +21,14 @@ public class AoeSpellCard : SpawnAtPointCard
     // before committing to it.
     private const int Range = 5;
 
+    private const int Damage = 20;
+    // Pulse interval, once active — same units as every other card's AttackSpeed
+    // (milliseconds authored here, converted to ticks below).
+    private const float AttackSpeedMilliseconds = 1000f;
+
+    // How long the aura keeps pulsing after it activates, before LifetimeSystem expires it.
+    private const float DurationSeconds = 5f;
+
     public override CardType Type => CardType.AoeSpell;
     public override string Title => "AOE Spell";
     public override string ImageName => "AoeSpell";
@@ -31,17 +39,19 @@ public class AoeSpellCard : SpawnAtPointCard
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
-    // MaxHealth/Speed/Armor/Damage/AttackSpeed are STAT_NA for now — none of those apply
-    // until the actual spell-effect component exists to give them real values. Range
-    // already means something (the blast radius), so it's real from the start.
+    // MaxHealth/Speed/Armor are STAT_NA — this entity has no HealthComponent/
+    // MovableComponent, so nothing ever reads them. Range/Damage/AttackSpeed are real:
+    // DamageAuraSystem reads them straight off this StatsComponent via StatsQuery, which
+    // only falls back to a default when there's no StatsComponent at all — leaving these
+    // at STAT_NA (int.MinValue) would have it deal int.MinValue damage on every tick.
     private static StatsComponent BuildStats() => new StatsComponent
     {
         MaxHealth   = StatsComponent.STAT_NA,
         Speed       = StatsComponent.STAT_NA,
         Range       = Range,
         Armor       = StatsComponent.STAT_NA,
-        Damage      = StatsComponent.STAT_NA,
-        AttackSpeed = StatsComponent.STAT_NA,
+        Damage      = Damage,
+        AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
     };
 
     // The indicator prefab's mesh is assumed to be authored at 1-unit diameter (same
@@ -62,11 +72,32 @@ public class AoeSpellCard : SpawnAtPointCard
         ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.AoeSpell });
         ecs.AddComponent(id, BuildStats());
 
+        // Not a troop in any gameplay sense (no HealthComponent/SelectableComponent, so
+        // nothing that keys off those ever notices it) — added purely so OwnerPlayerId is
+        // available wherever ownership needs to be resolved, e.g.
+        // DeployProgressIndicatorManager showing the deploy-progress disc only to the
+        // client whose spell this is. Same reuse BuildingSpawnHelper already relies on for
+        // buildings.
+        ecs.AddComponent(id, new TroopComponent { OwnerPlayerId = ownerPlayerId });
+
         ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds);
         ecs.AddComponent(id, new ActivatableComponent
         {
             _ticksUntilActive       = ticksUntilActive,
             InitialTicksUntilActive = ticksUntilActive,
+        });
+
+        ecs.AddComponent(id, new DamageAuraComponent
+        {
+            RangeMultiplier       = 1f,
+            AttackSpeedMultiplier = 1f,
+        });
+
+        int lifetimeTicks = TickManager.SecondsToTicks(DurationSeconds);
+        ecs.AddComponent(id, new LifetimeComponent
+        {
+            TicksRemaining        = lifetimeTicks,
+            InitialTicksRemaining = lifetimeTicks,
         });
     }
 }

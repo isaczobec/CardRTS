@@ -6,7 +6,35 @@
 // regardless of what kind of entity it is.
 public static class ActivationSystem
 {
-    public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
+    public static readonly GlobalSystem Instance = new GlobalSystem(Execute, Setup);
+
+    // Owns the ActivatableComponent side of IsActiveRequest/CanTakeActionsRequest — other
+    // orthogonal veto reasons (TroopComponent.IsDead, an expired LifetimeComponent, ...)
+    // subscribe independently wherever they live (see DeathSystem, LifetimeSystem) rather
+    // than here.
+    private static void Setup(ECS ecs)
+    {
+        ecs.Requests.Subscribe<IsActiveRequest>((req, innerEcs) =>
+        {
+            if (!IsActiveByComponent(innerEcs, req.EntityId))
+                req.IsActive = false;
+        });
+
+        ecs.Requests.Subscribe<CanTakeActionsRequest>((req, innerEcs) =>
+        {
+            if (!IsActiveByComponent(innerEcs, req.EntityId))
+                req.CanTakeActions = false;
+        });
+    }
+
+    // An entity with no ActivatableComponent at all (e.g. a projectile) never had a
+    // deploy delay to begin with, so it's always considered active.
+    private static bool IsActiveByComponent(ECS ecs, ulong entityId)
+    {
+        ComponentStore<ActivatableComponent> store = ecs.GetComponentStore<ActivatableComponent>();
+        if (store == null || !store.HasComponent(entityId)) return true;
+        return store.GetComponent(entityId).IsActive;
+    }
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
