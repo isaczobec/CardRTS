@@ -4,8 +4,8 @@ using System.Collections.Generic;
 public class BasicRangedTroopCard : SpawnAtPointCard
 {
     private const int MaxHealth = 100;
-    private const int Speed = 10;
-    private const int Range = 60;
+    private const int Speed = 6;
+    private const int Range = 19;
     private const int Armor = 0;
     private const int Damage = 10;
     private const float AttackSpeedMilliseconds = 800f;
@@ -25,6 +25,8 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     public override string Title => "Ranged Troop";
     public override string ImageName => "BasicRangedTroop";
     public override string Description => "A ranged troop that peppers enemies with arrows from a distance.";
+    public override string IndicatorPrefabName => "BasicRangedTroop";
+
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;

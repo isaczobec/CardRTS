@@ -67,6 +67,22 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // rules currently apply, not just whether one is active.
     public ulong ActiveCardEntityId => _selectedCardId != 0 ? _selectedCardId : _draggingCardId;
 
+    // Resolves the Card definition for ActiveCardEntityId, or null if nothing is active /
+    // not resolvable. Shared convenience for other systems (CardRangeIndicatorManager,
+    // CardPlacementIndicatorManager, ...) that need to know which card's rules currently
+    // apply rather than duplicating the CardComponent -> CardRegistry lookup themselves.
+    public Card ResolveActiveCard()
+    {
+        ulong cardEntityId = ActiveCardEntityId;
+        if (cardEntityId == 0 || _ecs == null) return null;
+
+        ComponentStore<CardComponent> cardStore = _ecs.GetComponentStore<CardComponent>();
+        if (cardStore == null || !cardStore.HasComponent(cardEntityId)) return null;
+
+        CardComponent card = cardStore.GetComponent(cardEntityId);
+        return CardRegistry.TryGet(card.Type, out Card definition) ? definition : null;
+    }
+
     public void Initialize()
     {
         TickManager.instance.ServerFlagEvents.Subscribe<CardDrawnEvent>(OnCardDrawn);

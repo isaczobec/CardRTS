@@ -19,5 +19,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
         MinimapManager.instance.Initialize();
         FloatingTextManager.instance.Initialize();
         CardRangeIndicatorManager.instance.Initialize();
+        CardPlacementIndicatorManager.instance.Initialize();
     }
 }

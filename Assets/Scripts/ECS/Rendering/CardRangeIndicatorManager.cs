@@ -21,7 +21,6 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
     private ComponentStore<BuildingComponent> _buildingStore;
     private ComponentStore<SelectableComponent> _selectableStore;
     private ComponentStore<PositionComponent> _positionStore;
-    private ComponentStore<CardComponent> _cardStore;
 
     private readonly Dictionary<ulong, RangeIndicatorPrefab> _indicators = new();
 
@@ -35,14 +34,13 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
         _buildingStore = _ecs.GetComponentStore<BuildingComponent>();
         _selectableStore = _ecs.GetComponentStore<SelectableComponent>();
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
-        _cardStore = _ecs.GetComponentStore<CardComponent>();
     }
 
     void Update()
     {
         if (TickManager.instance == null || !TickManager.instance.IsGameStarted) return;
 
-        Card activeCard = ResolveActiveCard();
+        Card activeCard = CardHandRenderer.instance != null ? CardHandRenderer.instance.ResolveActiveCard() : null;
         bool show = activeCard != null && activeCard.RequiresFriendlyBuildingRange();
 
         foreach (KeyValuePair<ulong, RangeIndicatorPrefab> kvp in _indicators)
@@ -66,17 +64,6 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
             indicator.gameObject.SetActive(true);
             indicator.SetScale(effectiveRange * 2f); // radius -> diameter
         }
-    }
-
-    private Card ResolveActiveCard()
-    {
-        if (CardHandRenderer.instance == null || _cardStore == null) return null;
-
-        ulong cardEntityId = CardHandRenderer.instance.ActiveCardEntityId;
-        if (cardEntityId == 0 || !_cardStore.HasComponent(cardEntityId)) return null;
-
-        CardComponent card = _cardStore.GetComponent(cardEntityId);
-        return CardRegistry.TryGet(card.Type, out Card definition) ? definition : null;
     }
 
     // ── Indicator lifecycle — one per friendly building, mirroring SelectionManager's
