@@ -65,6 +65,23 @@ public class TickManager : Singleton<TickManager>
     public void SetTickRateScale(float scale) =>
         _tickRateScale = Mathf.Clamp(scale, 0.5f, 2f);
 
+    // Throttles the local prediction tick rate to track referenceTick (an authoritative
+    // server tick), the same way for any predictor: a pure client calls this with the
+    // serverTick it just received over the network (see NetworkManager.OnSimulationDelta);
+    // the host calls it with its own _serverTick directly each frame (see Update below) —
+    // no round trip needed, since the host already knows its authoritative tick locally.
+    // Without this, prediction just free-runs at the local frame rate and can drift
+    // arbitrarily far ahead of whatever the authoritative tick actually is (e.g. held back
+    // by a slower remote client's lockstep input), which is invisible for predicted-only
+    // visuals but shows up as a growing lag for anything gated on server confirmation
+    // (DamageDealtEvent-driven damage numbers/health bars, both ServerFlagEvents-only).
+    public void AdjustTickRateToServerTick(ulong referenceTick)
+    {
+        long tickError = (long)referenceTick - (long)_tick;
+        float scale = 1f + Mathf.Clamp(tickError * 0.1f, -0.5f, 0.5f);
+        SetTickRateScale(scale);
+    }
+
     private ComponentDeltaManager _clientDeltaManager;
 
     private struct PendingDelta
@@ -253,7 +270,19 @@ public class TickManager : Singleton<TickManager>
         // and MessageConsumer in Unity's Script Execution Order settings so that
         // incoming ClientTickInput messages are processed before TryRunServerTick.
         if (isServer)
+        {
             TryRunServerTick();
+
+            // Host: throttle local prediction to track its own authoritative _serverTick,
+            // the same way AdjustTickRateToServerTick does for a pure client using the
+            // network-received serverTick (see NetworkManager.OnSimulationDelta). The host
+            // never receives its own SimulationDelta (that path early-returns via IsServer),
+            // so without this call _tickRateScale stays pinned at 1 and prediction can race
+            // arbitrarily far ahead of the lockstep-gated server tick when a remote client
+            // is running behind.
+            if (ClientLocalECS != null)
+                AdjustTickRateToServerTick(_serverTick);
+        }
     }
 
     void DoPredictionTick(bool isServer, bool isClient)

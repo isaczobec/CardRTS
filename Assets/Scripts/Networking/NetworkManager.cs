@@ -296,7 +296,7 @@ public class NetworkManager : Singleton<NetworkManager>
         using var ms = new MemoryStream(data, 1, data.Length - 1);
         using var reader = new BinaryReader(ms);
         ulong serverTick   = reader.ReadUInt64();
-        double serverTime  = reader.ReadDouble();
+        _ = reader.ReadDouble(); // serverTime — part of the wire format, currently unused
         byte[] flagEvents  = reader.ReadBytes(reader.ReadInt32());
         byte[] created     = reader.ReadBytes(reader.ReadInt32());
         byte[] deleted     = reader.ReadBytes(reader.ReadInt32());
@@ -304,19 +304,11 @@ public class NetworkManager : Singleton<NetworkManager>
         byte[] compDelta   = reader.ReadBytes(reader.ReadInt32());
 
         TickManager.instance.SetPendingServerDelta(serverTick, flagEvents, created, deleted, deletedComp, compDelta);
-        AdjustClientTickRate(serverTick, serverTime);
-    }
-
-    // On the client (not host): keep prediction tick roughly in sync with server tick.
-    void AdjustClientTickRate(ulong serverTick, double serverTime)
-    {
-        // Compare server's next tick to client's current prediction tick.
-        // Time.timeAsDouble cannot be used across Unity instances (different app-start offsets).
-        long tickError = (long)serverTick - (long)TickManager.instance.Tick;
-
-        // Proportional control: 1 tick of error → 10% speed adjustment, capped at ±50%.
-        float scale = 1f + Mathf.Clamp(tickError * 0.1f, -0.5f, 0.5f);
-        TickManager.instance.SetTickRateScale(scale);
+        // Pure client: keep prediction tick roughly in sync with the server tick just
+        // received over the network. The host does the equivalent locally every frame
+        // in TickManager.Update (see AdjustTickRateToServerTick), since it never reaches
+        // this method (guarded above by IsServer).
+        TickManager.instance.AdjustTickRateToServerTick(serverTick);
     }
 
     // ── Entity spawning ───────────────────────────────────────────────────────

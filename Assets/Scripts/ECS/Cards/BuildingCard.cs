@@ -11,13 +11,13 @@ public class BuildingCard : SpawnAtPointCard
 
     // A bit more generous than troops — buildings are how you expand toward new
     // territory, so they shouldn't be stuck only ever hugging existing ones.
-    private const float MaxDistanceFromBuilding = 40f;
+    private const float MaxDistanceFromBuilding = 30f;
 
     public override CardType Type => CardType.Building;
     public override string Title => "Building";
     public override string ImageName => "Building";
     public override string Description => "A stationary structure that blocks nearby idle troops from standing on it.";
-    public override string IndicatorPrefabName => "BasicBuilding";
+    public override string IndicatorPrefabName => "Building";
 
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
