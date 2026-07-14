@@ -48,7 +48,7 @@ public class TargetingSystem : ISystem
 
             TroopComponent troop = troopStore.GetComponent(friendlyId);
             if (troop.OwnerPlayerId != input.ClientId) continue;
-            if (!troop.CanTakeActions) continue;
+            if (!ActivationQuery.CanTakeActions(ecs, friendlyId)) continue;
 
             Dictionary<ulong, TargetKind> targets = GetOrCreate(friendlyId);
 

@@ -159,6 +159,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<PlayerResourcesComponent>(17);
         _componentTypeRegistry.Register<RespawnableInPlaceComponent>(18);
         _componentTypeRegistry.Register<OnDeathResourceDropComponent>(19);
+        _componentTypeRegistry.Register<ActivatableComponent>(20);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -184,7 +185,7 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SelectableComponent>>(14);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<MovableComponent>>(15);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<MovableComponent>>(16);
-        _flagEventTypeRegistry.Register<TroopActivatedEvent>(17);
+        _flagEventTypeRegistry.Register<EntityActivatedEvent>(17);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<HealthComponent>>(18);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<HealthComponent>>(19);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<StatsComponent>>(20);
@@ -221,6 +222,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<RespawnableEntityRespawnedEvent>(51);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<OnDeathResourceDropComponent>>(52);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<OnDeathResourceDropComponent>>(53);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ActivatableComponent>>(54);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ActivatableComponent>>(55);
 
         ECS = CreateSimulationECS();
     }
@@ -413,9 +416,10 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnableInPlaceComponent>());
         ecs.AddComponentStore(new ComponentStore<OnDeathResourceDropComponent>());
+        ecs.AddComponentStore(new ComponentStore<ActivatableComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
-        ecs.RegisterSystem(TroopActivationSystem.Instance);
+        ecs.RegisterSystem(ActivationSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(new TargetingSystem());
@@ -459,6 +463,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnableInPlaceComponent>());
         ecs.AddComponentStore(new ComponentStore<OnDeathResourceDropComponent>());
+        ecs.AddComponentStore(new ComponentStore<ActivatableComponent>());
 
         return ecs;
     }

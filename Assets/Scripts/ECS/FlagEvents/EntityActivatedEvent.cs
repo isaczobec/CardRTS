@@ -1,4 +1,4 @@
-public class TroopActivatedEvent : FlagEvent
+public class EntityActivatedEvent : FlagEvent
 {
     public ulong EntityId { get; set; }
 

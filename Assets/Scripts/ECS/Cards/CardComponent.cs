@@ -3,6 +3,7 @@ public enum CardType : byte
     BasicMeleeTroop = 0,
     BasicRangedTroop = 1,
     Building = 2,
+    AoeSpell = 3,
 }
 
 public enum CardLocation : byte

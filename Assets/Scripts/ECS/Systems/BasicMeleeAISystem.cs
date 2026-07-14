@@ -69,7 +69,7 @@ public class BasicMeleeAISystem : ISystem
         if (!_posStore.HasComponent(id) || !_movStore.HasComponent(id) || !_troopStore.HasComponent(id)) return;
 
         TroopComponent troop = _troopStore.GetComponent(id);
-        if (!troop.CanTakeActions) return;
+        if (!ActivationQuery.CanTakeActions(_ecs, id)) return;
 
         ref BasicMeleeAIComponent ai = ref aiStore.GetComponent(id);
         ref MovableComponent mov = ref _movStore.GetComponent(id);
@@ -192,7 +192,7 @@ public class BasicMeleeAISystem : ISystem
 
         TroopComponent other = _troopStore.GetComponent(entityId);
         if (other.OwnerPlayerId == myOwnerId) return false;
-        return other.CanTakeActions;
+        return ActivationQuery.CanTakeActions(_ecs, entityId);
     }
 
     // A target is still worth chasing/attacking if it still exists, still has a

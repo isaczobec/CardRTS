@@ -117,7 +117,7 @@ public class PathfindingSystem : ISystem
 
             ref TroopComponent troop = ref troopStore.GetComponent(entityId);
             if (troop.OwnerPlayerId != input.ClientId) continue;
-            if (!troop.CanTakeActions) continue;
+            if (!ActivationQuery.CanTakeActions(ecs, entityId)) continue;
 
             ref MovableComponent mov = ref movStore.GetComponent(entityId);
             mov.playerSetDestinationX = move.DestinationX;

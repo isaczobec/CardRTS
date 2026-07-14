@@ -20,7 +20,8 @@ public class CardPlacementIndicatorManager : Singleton<CardPlacementIndicatorMan
     {
         if (TickManager.instance == null || !TickManager.instance.IsGameStarted) return;
 
-        string indicatorName = ResolveIndicatorName();
+        SpawnAtPointCard activeCard = ResolveActiveSpawnCard();
+        string indicatorName = activeCard?.IndicatorPrefabName;
         if (string.IsNullOrEmpty(indicatorName))
         {
             SetIndicatorActive(false);
@@ -28,7 +29,7 @@ public class CardPlacementIndicatorManager : Singleton<CardPlacementIndicatorMan
         }
 
         if (indicatorName != _currentIndicatorName)
-            SwapIndicator(indicatorName);
+            SwapIndicator(indicatorName, activeCard);
 
         if (_currentIndicator == null) return;
 
@@ -44,17 +45,16 @@ public class CardPlacementIndicatorManager : Singleton<CardPlacementIndicatorMan
         }
     }
 
-    private string ResolveIndicatorName()
+    private SpawnAtPointCard ResolveActiveSpawnCard()
     {
         if (CardHandRenderer.instance == null) return null;
-        Card active = CardHandRenderer.instance.ResolveActiveCard();
-        return active is SpawnAtPointCard spawnCard ? spawnCard.IndicatorPrefabName : null;
+        return CardHandRenderer.instance.ResolveActiveCard() as SpawnAtPointCard;
     }
 
     // Only re-instantiates when the resolved name actually changes (e.g. switching between
     // two selected cards with different indicators) — repeatedly reselecting the same card
     // just keeps reusing the existing instance.
-    private void SwapIndicator(string indicatorName)
+    private void SwapIndicator(string indicatorName, SpawnAtPointCard card)
     {
         if (_currentIndicator != null)
         {
@@ -69,6 +69,7 @@ public class CardPlacementIndicatorManager : Singleton<CardPlacementIndicatorMan
 
         _currentIndicator = Instantiate(prefab, transform);
         _currentIndicator.name = $"CardPlacementIndicator_{indicatorName}";
+        card?.OnIndicatorSpawned(_currentIndicator);
     }
 
     private void SetIndicatorActive(bool active)

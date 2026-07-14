@@ -65,8 +65,14 @@ public static class SpawnTroopSystem
 
         ecs.AddComponent(entity.Id, new TroopComponent
         {
-            OwnerPlayerId      = input.ClientId,
-            _ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds),
+            OwnerPlayerId = input.ClientId,
+        });
+
+        ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds);
+        ecs.AddComponent(entity.Id, new ActivatableComponent
+        {
+            _ticksUntilActive       = ticksUntilActive,
+            InitialTicksUntilActive = ticksUntilActive,
         });
 
         DebugLogger.Log($"Spawned {input.TroopType} troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");
@@ -139,8 +145,14 @@ public static class SpawnTroopSystem
 
         ecs.AddComponent(entity.Id, new TroopComponent
         {
-            OwnerPlayerId      = input.ClientId,
-            _ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds),
+            OwnerPlayerId = input.ClientId,
+        });
+
+        ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds);
+        ecs.AddComponent(entity.Id, new ActivatableComponent
+        {
+            _ticksUntilActive       = ticksUntilActive,
+            InitialTicksUntilActive = ticksUntilActive,
         });
 
         DebugLogger.Log($"Spawned Building troop entity {entity.Id} for player {input.ClientId} at ({input.X}, {input.Y})");

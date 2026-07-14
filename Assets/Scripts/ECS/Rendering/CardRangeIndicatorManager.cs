@@ -26,7 +26,7 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
 
     public void Initialize()
     {
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+        TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnTroopActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<ComponentRemovedEvent<BuildingComponent>>(OnBuildingRemoved);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
 
@@ -67,9 +67,9 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
     }
 
     // ── Indicator lifecycle — one per friendly building, mirroring SelectionManager's
-    // TroopActivatedEvent/ComponentRemovedEvent/EntityDeletedEvent pattern. ─────────────
+    // EntityActivatedEvent/ComponentRemovedEvent/EntityDeletedEvent pattern. ─────────────
 
-    private void OnTroopActivated(TroopActivatedEvent e)
+    private void OnTroopActivated(EntityActivatedEvent e)
     {
         if (_indicators.ContainsKey(e.EntityId)) return;
         if (_buildingStore == null || !_buildingStore.HasComponent(e.EntityId)) return;

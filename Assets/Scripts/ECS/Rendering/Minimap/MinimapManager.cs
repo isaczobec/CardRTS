@@ -13,7 +13,7 @@ using UnityEngine.UI;
 // Right-click issues the same target/move command right-clicking the 3D world would (see
 // SelectionManager.PerformPointTargetOrMove).
 //
-// Mirrors SelectionManager's entity lifecycle (TroopActivatedEvent /
+// Mirrors SelectionManager's entity lifecycle (EntityActivatedEvent /
 // ComponentRemovedEvent<SelectableComponent> / EntityDeletedEvent /
 // RespawnableEntityDied/Respawned) and HealthBarManager's per-frame position refresh, but
 // intentionally skips TickPositionInterpolator — dots just snap to the latest simulated
@@ -72,7 +72,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
 
     public void Initialize()
     {
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+        TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnTroopActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<ComponentRemovedEvent<SelectableComponent>>(OnSelectableRemoved);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnRespawnableEntityDied);
@@ -142,7 +142,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
 
     // ── Dot lifecycle ───────────────────────────────────────────────────────
 
-    private void OnTroopActivated(TroopActivatedEvent e)
+    private void OnTroopActivated(EntityActivatedEvent e)
     {
         if (_dots.ContainsKey(e.EntityId)) return;
         if (!_selectableStore.HasComponent(e.EntityId)) return;

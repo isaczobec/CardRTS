@@ -30,14 +30,14 @@ public class RenderableManager : MonoBehaviour
     public void Initialize(ECS ecs)
     {
         _ecs = ecs;
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+        TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnTroopActivated);
 
         foreach (var entry in _rendererEntries) {
             Register(entry.type, (IComponentRenderer) entry.renderer);
         }
     }
 
-    private void OnTroopActivated(TroopActivatedEvent e)
+    private void OnTroopActivated(EntityActivatedEvent e)
     {
         if (_ecs == null) return;
 

@@ -67,7 +67,7 @@ public class SelectionManager : Singleton<SelectionManager>
 
     public void Initialize()
     {
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(SetupSelection);
+        TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(SetupSelection);
         TickManager.instance.ServerFlagEvents.Subscribe<ComponentRemovedEvent<SelectableComponent>>(RemoveSelectionObject);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(DeleteSelectionObject);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnRespawnableEntityDied);
@@ -86,7 +86,7 @@ public class SelectionManager : Singleton<SelectionManager>
         // which also vetoes entities currently on a respawn cooldown.
         _ecs.Requests.Subscribe<IsSelectableRequest>((req, ecs) =>
         {
-            if (_troopStore.HasComponent(req.EntityId) && !_troopStore.GetComponent(req.EntityId).CanTakeActions)
+            if (!ActivationQuery.CanTakeActions(ecs, req.EntityId))
                 req.IsSelectable = false;
         });
 
@@ -568,7 +568,7 @@ public class SelectionManager : Singleton<SelectionManager>
             prefab.gameObject.SetActive(true);
     }
 
-    public void SetupSelection(TroopActivatedEvent e)
+    public void SetupSelection(EntityActivatedEvent e)
     {
         if (_selectionObjects.ContainsKey(e.EntityId)) return;
         if (!_selectableStore.HasComponent(e.EntityId)) return;

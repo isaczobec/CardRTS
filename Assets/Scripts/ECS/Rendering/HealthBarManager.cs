@@ -18,7 +18,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
 
     public void Initialize()
     {
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+        TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnTroopActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<TroopDiedEvent>(OnTroopRemoved);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
         TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
@@ -45,7 +45,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
         }
     }
 
-    private void OnTroopActivated(TroopActivatedEvent e)
+    private void OnTroopActivated(EntityActivatedEvent e)
     {
         if (_healthBars.ContainsKey(e.EntityId)) return;
         if (!_healthStore.HasComponent(e.EntityId)) return;

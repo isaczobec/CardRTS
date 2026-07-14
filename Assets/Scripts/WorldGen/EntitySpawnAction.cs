@@ -23,8 +23,12 @@ public class EntitySpawnAction : IWorldGenAction
     {
         ecs.AddComponent(id, new TroopComponent
         {
-            OwnerPlayerId    = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
-            _ticksUntilActive = 1,   // activates on the first tick so the renderer fires OnEntityActivated
+            OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+        });
+        ecs.AddComponent(id, new ActivatableComponent
+        {
+            _ticksUntilActive       = 1,   // activates on the first tick so the renderer fires OnEntityActivated
+            InitialTicksUntilActive = 1,
         });
         ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.Tree });
         ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = TreeSelectionScale });

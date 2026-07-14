@@ -1,25 +1,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Shows a flat ground disc under a troop/building while it's mid-deploy — from the moment
-// a SpawnAtPointCard spawns it (TroopComponent is added to every entity a SpawnAtPointCard
-// creates, troop or building alike — see TroopCardHelper/BuildingSpawnHelper) until its
-// activation delay finishes (TroopActivatedEvent) or it's removed early (EntityDeletedEvent).
-// Visible only for the client whose card spawned it — this is player-facing UI, not
-// server-confirmed game state other players need to see.
+// Shows a flat ground disc under an entity while it's mid-deploy — from the moment a
+// SpawnAtPointCard spawns it (every SpawnAtPointCard-spawned entity carries an
+// ActivatableComponent — see ActivationSystem) until its activation delay finishes
+// (EntityActivatedEvent) or it's removed early (EntityDeletedEvent). Visible only for the
+// client whose card spawned it — this is player-facing UI, not server-confirmed game state
+// other players need to see. Ownership is read off TroopComponent (troops/buildings only,
+// today); an activatable entity with no TroopComponent (e.g. a spell) has no indicator
+// shown until it has some other way to say whose it is.
 //
 // Separate from the ECS architecture, like CardRangeIndicatorManager — never registered as
 // an ISystem, just polls the live ECS each frame to update each indicator's fill. Deploying
-// entities never move (TroopCardHelper/BuildingSpawnHelper both leave a fresh entity's
-// destination equal to its spawn position, and CanTakeActions — which gates
-// PathfindingSystem's player-order handling — is false until activation finishes), so like
-// CardRangeIndicatorManager's building rings, each indicator's position is only ever set
-// once, at creation.
+// troops/buildings never move (TroopCardHelper/BuildingSpawnHelper both leave a fresh
+// entity's destination equal to its spawn position, and ActivationQuery.CanTakeActions —
+// which gates PathfindingSystem's player-order handling — is false until activation
+// finishes), so like CardRangeIndicatorManager's building rings, each indicator's position
+// is only ever set once, at creation.
 public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorManager>
 {
     [SerializeField] private DeployProgressIndicatorPrefab _indicatorPrefab;
 
     private ECS _ecs;
+    private ComponentStore<ActivatableComponent> _activatableStore;
     private ComponentStore<TroopComponent> _troopStore;
     private ComponentStore<PositionComponent> _positionStore;
 
@@ -27,11 +30,12 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
 
     public void Initialize()
     {
-        TickManager.instance.ServerFlagEvents.Subscribe<ComponentAddedEvent<TroopComponent>>(OnTroopAdded);
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopActivatedEvent>(OnTroopActivated);
+        TickManager.instance.ServerFlagEvents.Subscribe<ComponentAddedEvent<ActivatableComponent>>(OnActivatableAdded);
+        TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnEntityActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
 
         _ecs = TickManager.instance.ActiveECS;
+        _activatableStore = _ecs.GetComponentStore<ActivatableComponent>();
         _troopStore = _ecs.GetComponentStore<TroopComponent>();
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
     }
@@ -45,34 +49,34 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
             ulong entityId = kvp.Key;
             DeployProgressIndicatorPrefab indicator = kvp.Value;
 
-            if (!_troopStore.HasComponent(entityId))
+            if (!_activatableStore.HasComponent(entityId))
             {
                 indicator.gameObject.SetActive(false);
                 continue;
             }
 
-            TroopComponent troop = _troopStore.GetComponent(entityId);
-            if (troop.InitialTicksUntilActive == 0)
+            ActivatableComponent activatable = _activatableStore.GetComponent(entityId);
+            if (activatable.InitialTicksUntilActive == 0)
             {
                 indicator.gameObject.SetActive(false);
                 continue;
             }
 
             indicator.gameObject.SetActive(true);
-            indicator.SetProgress((float)troop._ticksUntilActive / troop.InitialTicksUntilActive);
+            indicator.SetProgress((float)activatable._ticksUntilActive / activatable.InitialTicksUntilActive);
         }
     }
 
     // ── Indicator lifecycle — one per deploying entity owned by the local client. ──────
 
-    private void OnTroopAdded(ComponentAddedEvent<TroopComponent> e)
+    private void OnActivatableAdded(ComponentAddedEvent<ActivatableComponent> e)
     {
         if (_indicators.ContainsKey(e.EntityId)) return;
-        if (_troopStore == null || !_troopStore.HasComponent(e.EntityId)) return;
+        if (_activatableStore == null || !_activatableStore.HasComponent(e.EntityId)) return;
+        if (!OwnedByLocalPlayer(e.EntityId)) return;
 
-        TroopComponent troop = _troopStore.GetComponent(e.EntityId);
-        if (troop.OwnerPlayerId != LocalPlayerId()) return;
-        if (troop.InitialTicksUntilActive == 0) return; // no deploy delay — nothing to show
+        ActivatableComponent activatable = _activatableStore.GetComponent(e.EntityId);
+        if (activatable.InitialTicksUntilActive == 0) return; // no deploy delay — nothing to show
         if (_positionStore == null || !_positionStore.HasComponent(e.EntityId)) return;
         if (_indicatorPrefab == null) return;
 
@@ -84,7 +88,7 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
         _indicators[e.EntityId] = indicator;
     }
 
-    private void OnTroopActivated(TroopActivatedEvent e) => DestroyIndicator(e.EntityId);
+    private void OnEntityActivated(EntityActivatedEvent e) => DestroyIndicator(e.EntityId);
     private void OnEntityDeleted(EntityDeletedEvent e) => DestroyIndicator(e.EntityId);
 
     private void DestroyIndicator(ulong entityId)
@@ -92,6 +96,16 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
         if (!_indicators.TryGetValue(entityId, out DeployProgressIndicatorPrefab indicator)) return;
         Destroy(indicator.gameObject);
         _indicators.Remove(entityId);
+    }
+
+    // Ownership isn't part of ActivatableComponent itself — today the only activatable
+    // entities that carry an owner are troops/buildings (TroopComponent.OwnerPlayerId).
+    // An activatable entity with no TroopComponent (e.g. a spell) can't be attributed to a
+    // client yet, so no indicator is shown for it until it has its own way to say whose it is.
+    private bool OwnedByLocalPlayer(ulong entityId)
+    {
+        if (_troopStore == null || !_troopStore.HasComponent(entityId)) return false;
+        return _troopStore.GetComponent(entityId).OwnerPlayerId == LocalPlayerId();
     }
 
     private static Vector3 WorldPositionFor(PositionComponent pos)

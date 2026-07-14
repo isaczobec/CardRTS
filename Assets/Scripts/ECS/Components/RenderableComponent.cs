@@ -11,6 +11,7 @@ public enum RenderableType : byte
     RespawnableBuilding = 6,
     Tree = 7,
     PlayerBaseCore = 8,
+    AoeSpell = 9,
 }
 
 public struct RenderableComponent : IComponent
