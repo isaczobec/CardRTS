@@ -69,11 +69,17 @@ public static class SpawnAtPointCardPlaySystem
             return;
         }
 
-        if (definition.RequiresFriendlyBuildingRange() &&
-            !BuildingRangeHelper.IsWithinRangeOfFriendlyBuilding(ecs, card.OwnerPlayerId, input.X, input.Y, definition.MaxDistanceFromFriendlyBuilding))
+        if (definition.RequiresFriendlyBuildingRange())
         {
-            DebugLogger.LogWarning($"[SpawnAtPointCardPlaySystem] Rejected: ({input.X}, {input.Y}) is not within range of any friendly building for player {card.OwnerPlayerId} (base range {definition.MaxDistanceFromFriendlyBuilding}).", "cards");
-            return;
+            bool inBuildingRange = BuildingRangeHelper.IsWithinRangeOfFriendlyBuilding(ecs, card.OwnerPlayerId, input.X, input.Y, definition.MaxDistanceFromFriendlyBuilding);
+            bool inTroopRange = definition.AllowsFriendlyTroopRange() &&
+                TroopRangeHelper.IsWithinRangeOfFriendlyTroop(ecs, card.OwnerPlayerId, input.X, input.Y, definition.MaxDistanceFromFriendlyTroop);
+
+            if (!inBuildingRange && !inTroopRange)
+            {
+                DebugLogger.LogWarning($"[SpawnAtPointCardPlaySystem] Rejected: ({input.X}, {input.Y}) is not within range of any friendly building or troop for player {card.OwnerPlayerId} (building range {definition.MaxDistanceFromFriendlyBuilding}, troop range {definition.MaxDistanceFromFriendlyTroop}).", "cards");
+                return;
+            }
         }
 
         ulong resourceEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, card.OwnerPlayerId);

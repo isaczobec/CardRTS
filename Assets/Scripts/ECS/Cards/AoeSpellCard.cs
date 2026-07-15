@@ -15,6 +15,7 @@ public class AoeSpellCard : SpawnAtPointCard
     private const int GoldCost = 4;
     private const float ActivationDelaySeconds = 2f;
     private const float MaxDistanceFromBuilding = 25f;
+    private const float MaxDistanceFromTroop = 15f;
 
     // Blast radius, in world/tile units. Doubles as the placement indicator's diameter
     // (see OnIndicatorSpawned) so the player can see exactly what the blast will cover
@@ -38,6 +39,8 @@ public class AoeSpellCard : SpawnAtPointCard
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
+    public override bool AllowsFriendlyTroopRange() => true;
 
     // MaxHealth/Speed/Armor are STAT_NA — this entity has no HealthComponent/
     // MovableComponent, so nothing ever reads them. Range/Damage/AttackSpeed are real:
@@ -78,7 +81,7 @@ public class AoeSpellCard : SpawnAtPointCard
         // DeployProgressIndicatorManager showing the deploy-progress disc only to the
         // client whose spell this is. Same reuse BuildingSpawnHelper already relies on for
         // buildings.
-        ecs.AddComponent(id, new TroopComponent { OwnerPlayerId = ownerPlayerId });
+        ecs.AddComponent(id, new TroopComponent { OwnerPlayerId = ownerPlayerId, IsPhysicalTroop = false });
 
         ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds);
         ecs.AddComponent(id, new ActivatableComponent

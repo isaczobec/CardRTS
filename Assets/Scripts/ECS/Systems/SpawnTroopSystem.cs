@@ -66,6 +66,7 @@ public static class SpawnTroopSystem
         ecs.AddComponent(entity.Id, new TroopComponent
         {
             OwnerPlayerId = input.ClientId,
+            IsPhysicalTroop = true,
         });
 
         ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds);
@@ -146,6 +147,7 @@ public static class SpawnTroopSystem
         ecs.AddComponent(entity.Id, new TroopComponent
         {
             OwnerPlayerId = input.ClientId,
+            IsPhysicalTroop = false,
         });
 
         ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds);

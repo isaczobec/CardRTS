@@ -50,4 +50,18 @@ public abstract class Card
     // false for cards with unlimited range — e.g. Clash-Royale-style spells playable
     // anywhere on the map.
     public virtual bool RequiresFriendlyBuildingRange() => true;
+
+    // Base max distance (world/tile units) from a friendly *physical* troop
+    // (TroopComponent.IsPhysicalTroop) this card may ALSO be played at, only consulted
+    // when AllowsFriendlyTroopRange() is true. Unlike MaxDistanceFromFriendlyBuilding,
+    // there's no per-troop multiplier/bonus equivalent to BuildingComponent — this value
+    // applies directly (see TroopRangeHelper.IsWithinRangeOfFriendlyTroop).
+    public virtual float MaxDistanceFromFriendlyTroop => 0f;
+
+    // Whether this card may be played within MaxDistanceFromFriendlyTroop of a friendly
+    // physical troop, as an alternative to (not a replacement for) the
+    // RequiresFriendlyBuildingRange check — the card is playable if it's in range of
+    // EITHER a friendly building OR (when this returns true) a friendly troop. Defaults to
+    // false — most cards are building-range-only.
+    public virtual bool AllowsFriendlyTroopRange() => false;
 }

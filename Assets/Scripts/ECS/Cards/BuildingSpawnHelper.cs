@@ -16,6 +16,7 @@ public static class BuildingSpawnHelper
         ecs.AddComponent(id, new TroopComponent
         {
             OwnerPlayerId = ownerPlayerId,
+            IsPhysicalTroop = false,
         });
 
         ecs.AddComponent(id, new ActivatableComponent

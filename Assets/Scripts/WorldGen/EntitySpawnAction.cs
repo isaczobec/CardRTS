@@ -34,6 +34,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new TroopComponent
         {
             OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            IsPhysicalTroop = false,
         });
         ecs.AddComponent(id, new ActivatableComponent
         {
@@ -61,6 +62,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new TroopComponent
         {
             OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            IsPhysicalTroop = false,
         });
         ecs.AddComponent(id, new ActivatableComponent
         {
@@ -88,6 +90,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new TroopComponent
         {
             OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            IsPhysicalTroop = false,
         });
         ecs.AddComponent(id, new ActivatableComponent
         {

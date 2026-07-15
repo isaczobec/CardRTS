@@ -29,6 +29,7 @@ public static class TroopCardHelper
         ecs.AddComponent(id, new TroopComponent
         {
             OwnerPlayerId = ownerPlayerId,
+            IsPhysicalTroop = true,
         });
 
         ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(DefaultActivationDelaySeconds);
