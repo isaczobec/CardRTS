@@ -162,6 +162,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ActivatableComponent>(20);
         _componentTypeRegistry.Register<DamageAuraComponent>(21);
         _componentTypeRegistry.Register<LifetimeComponent>(22);
+        _componentTypeRegistry.Register<SkillshotProjectileComponent>(23);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -230,6 +231,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<DamageAuraComponent>>(57);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<LifetimeComponent>>(58);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<LifetimeComponent>>(59);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<SkillshotProjectileComponent>>(60);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<SkillshotProjectileComponent>>(61);
 
         ECS = CreateSimulationECS();
     }
@@ -416,6 +419,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ProjectileBaseComponent>());
         ecs.AddComponentStore(new ComponentStore<BasicRangedAIComponent>());
         ecs.AddComponentStore(new ComponentStore<SeekingProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<SkillshotProjectileComponent>());
         ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
@@ -437,10 +441,12 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new PathfindingSystem());
         ecs.RegisterSystem(new BuildingBlockingSystem());
         ecs.RegisterSystem(SeekingProjectileSystem.Instance);
+        ecs.RegisterSystem(SkillshotProjectileSystem.Instance);
         ecs.RegisterSystem(DamageAuraSystem.Instance);
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
+        ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
@@ -467,6 +473,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ProjectileBaseComponent>());
         ecs.AddComponentStore(new ComponentStore<BasicRangedAIComponent>());
         ecs.AddComponentStore(new ComponentStore<SeekingProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<SkillshotProjectileComponent>());
         ecs.AddComponentStore(new ComponentStore<BuildingComponent>());
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());

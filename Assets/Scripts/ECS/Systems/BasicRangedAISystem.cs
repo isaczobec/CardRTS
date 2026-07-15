@@ -160,7 +160,7 @@ public class BasicRangedAISystem : ISystem
             if (ProjectilePool.Fire(_ecs, id, targetId, myPos) != 0)
             {
                 int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
-                ai.WindDownTicksRemaining = attackSpeedTicks;
+                ai.WindDownTicksRemaining = attackSpeedTicks * 3;
             }
         }
 

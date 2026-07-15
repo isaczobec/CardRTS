@@ -5,7 +5,7 @@
 // dequeues the head into hand once its draw cooldown finishes.
 public static class DeckHelper
 {
-    const int StartingCopiesPerCardType = 3;
+    const int StartingCopiesPerCardType = 1;
 
     // Creates copiesPerType card entities of every CardType, all starting in the deck, and
     // enqueues them onto ownerPlayerId's deck. Called once per player at game start, after

@@ -14,6 +14,7 @@ public enum RenderableType : byte
     AoeSpell = 9,
     Rock = 10,
     Ore = 11,
+    SkillshotProjectile = 12,
 }
 
 public struct RenderableComponent : IComponent

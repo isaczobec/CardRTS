@@ -854,6 +854,52 @@ MonoBehaviour:
   _gemsIcon: {fileID: 21300000, guid: e7d29a79bc7fae248887c8a08a160303, type: 3}
   _soulstonesIcon: {fileID: 21300000, guid: 8e859c149e0cd814ea9acc8581953bd6, type: 3}
   _goldIcon: {fileID: 21300000, guid: 3676a0b185daeb54fb257f700ba7ead4, type: 3}
+--- !u!1 &226858187
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 226858188}
+  - component: {fileID: 226858189}
+  m_Layer: 0
+  m_Name: SkillshotProjectileRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &226858188
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226858187}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &226858189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226858187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac2631886645f494ab5e0907d9d99639, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkillshotProjectileRenderer
+  _prefab: {fileID: 8077043507155612275, guid: 739532cd11a5ae043bd61e1bd753b6a6, type: 3}
+  _rotationDegreesPerSecond: 1080
 --- !u!1 &231996844
 GameObject:
   m_ObjectHideFlags: 0
@@ -1538,6 +1584,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 506363030}
   m_CullTransparentMesh: 1
+--- !u!1 &509328318
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 509328319}
+  - component: {fileID: 509328320}
+  m_Layer: 0
+  m_Name: SkillshotRangedRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &509328319
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 509328318}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &509328320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 509328318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26d0909a1d996654ab75789cd4e32d3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
+  _prefab: {fileID: 9082625173468486924, guid: d2e438824aa35d04eaadc1d098b344ac, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimationDuration: 1.0666667
+  _attackAnimationTimeUntilImpact: 0.61
 --- !u!1 &541862059
 GameObject:
   m_ObjectHideFlags: 0
@@ -2312,6 +2406,8 @@ MonoBehaviour:
     renderer: {fileID: 73635956}
   - type: 10
     renderer: {fileID: 868344197}
+  - type: 12
+    renderer: {fileID: 226858189}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -4034,6 +4130,8 @@ MonoBehaviour:
     prefab: {fileID: 9030713940054835064, guid: b19127ebbad5b3a47a3c240a52bc3532, type: 3}
   - name: AoeSpell
     prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
+  - name: SkillshotRangedTroop
+    prefab: {fileID: 6472282922783299243, guid: d2e438824aa35d04eaadc1d098b344ac, type: 3}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -4299,7 +4397,9 @@ Transform:
   m_Children:
   - {fileID: 1914037911}
   - {fileID: 1671680053}
+  - {fileID: 509328319}
   - {fileID: 982359450}
+  - {fileID: 226858188}
   - {fileID: 920356594}
   - {fileID: 1439762914}
   - {fileID: 868344196}
@@ -4465,6 +4565,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: acb89545de0826f4c82b03f0ce47a7cc, type: 3}
   - name: AoeSpell
     sprite: {fileID: 21300000, guid: 1d6d7bf04d2101c4ea04650b6d6b911b, type: 3}
+  - name: SkillshotRangedTroop
+    sprite: {fileID: 21300000, guid: ba7b3ed94bec5c64ab4ee22be5e0f9fa, type: 3}
 --- !u!1 &1512918886
 GameObject:
   m_ObjectHideFlags: 0

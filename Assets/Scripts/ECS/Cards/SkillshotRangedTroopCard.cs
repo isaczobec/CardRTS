@@ -1,0 +1,88 @@
+using System;
+using System.Collections.Generic;
+
+// Same "ranged troop with a projectile pool" shape as BasicRangedTroopCard, but its pool
+// is skillshot-typed (straight-line, radius-hit, piercing — see SkillshotProjectileComponent)
+// instead of homing. No AI system changes needed at all: BasicRangedAISystem already just
+// calls ProjectilePool.Fire, which auto-detects which kind of projectile a troop's pool
+// holds and aims/resets it accordingly (see ProjectilePool.Fire) — this card only differs
+// from BasicRangedTroopCard in which CreatePool variant it calls and in granting its
+// troop's own HealthComponent a HitboxImmunityTicksToGive, so its piercing shot doesn't
+// restack damage on the same target every tick it overlaps it.
+public class SkillshotRangedTroopCard : SpawnAtPointCard
+{
+    private const int MaxHealth = 100;
+    private const int Speed = 6;
+    private const int Range = 16;
+    private const int Armor = 0;
+    private const int Damage = 8;
+    private const float AttackSpeedMilliseconds = 900f;
+
+    private const float DetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 5f;
+    private const float AttackRangeMultiplier = 1.5f;
+
+    private const int ProjectilePoolSize = 32;
+    private const int ProjectileSpeedMilliTilesPerSecond = 20000; // 20 tiles/sec
+    private const float ProjectileHitRadius = 1f;
+
+    // How long a target this troop's projectiles hit stays hitbox-immune afterward —
+    // without this, the piercing shot would deal damage every single tick it overlaps the
+    // same target instead of once per pass through it.
+    private const float HitboxImmunityMilliseconds = 500f;
+
+    private const int GoldCost = 4;
+
+    private const float MaxDistanceFromBuilding = 20f;
+
+    public override CardType Type => CardType.SkillshotRangedTroop;
+    public override string Title => "Skillshot Troop";
+    public override string ImageName => "SkillshotRangedTroop";
+    public override string Description => "A ranged troop that fires a piercing shot straight ahead, hitting everything in its path.";
+    public override string IndicatorPrefabName => "SkillshotRangedTroop";
+
+    public override StatsComponent DefaultStats => BuildStats();
+    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+
+    private static StatsComponent BuildStats() => new StatsComponent
+    {
+        MaxHealth   = MaxHealth,
+        Speed       = Speed,
+        Range       = Range,
+        Armor       = Armor,
+        Damage      = Damage,
+        AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
+    };
+
+    public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
+    {
+        StatsComponent stats = BuildStats();
+
+        TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.BasicRanged, stats, new List<Action<ECS, ulong>>
+        {
+            (e, id) => e.AddComponent(id, new BasicRangedAIComponent
+            {
+                DetectionRangeMultiplier = DetectionRangeMultiplier,
+                ChaseRangeMultiplier     = ChaseRangeMultiplier,
+                AttackRangeMultiplier    = AttackRangeMultiplier,
+            }),
+            (e, id) =>
+            {
+                ulong firstProjectileId = ProjectilePool.CreateSkillshotPool(e, id, ProjectilePoolSize, ProjectileSpeedMilliTilesPerSecond, ProjectileHitRadius);
+                e.AddComponent(id, new ProjectileOwnerComponent
+                {
+                    MaxProjectiles   = ProjectilePoolSize,
+                    NextProjectileId = firstProjectileId,
+                });
+            },
+            (e, id) =>
+            {
+                ComponentStore<HealthComponent> healthStore = e.GetComponentStore<HealthComponent>();
+                ref HealthComponent health = ref healthStore.GetComponent(id);
+                health.HitboxImmunityTicksToGive = TickManager.MillisecondsToTicks(HitboxImmunityMilliseconds);
+                e.Delta.MarkComponentDirty(id, typeof(HealthComponent));
+            },
+        });
+    }
+}

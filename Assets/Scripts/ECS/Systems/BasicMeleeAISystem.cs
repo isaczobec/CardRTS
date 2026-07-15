@@ -157,7 +157,7 @@ public class BasicMeleeAISystem : ISystem
             _ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = id });
 
             int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
-            ai.CooldownTicksRemaining = attackSpeedTicks * 2;
+            ai.CooldownTicksRemaining = attackSpeedTicks * 3;
         }
 
         ai.AttackTargetId = 0;
