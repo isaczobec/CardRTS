@@ -31,6 +31,10 @@ public static class AbilityManager
     // ProjectilePool.AimSkillshot actually uses for RangeRemaining.
     private const float RingOfProjectilesRange = 16f;
 
+    // The caster's own +50%-speed-for-3s buff (see BuildRingOfProjectilesAbility).
+    private const float RingOfProjectilesSpeedBoostRatio = 0.5f;
+    private const float RingOfProjectilesSpeedBoostSeconds = 3f;
+
     private static readonly Dictionary<int, Ability> _abilities = new Dictionary<int, Ability>
     {
         { RingOfProjectilesAbilityId, BuildRingOfProjectilesAbility() },
@@ -62,6 +66,23 @@ public static class AbilityManager
                 Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
                 ProjectilePool.FireInDirection(ecs, input.CastingEntityId, direction, firePosition);
             }
+
+            // Spawned unconditionally on both the predicting client and the server, unlike
+            // AoeSpellCloneAbility above — by design (see ModifierComponent's own doc
+            // comment), a modifier only ever acts through StatModifierSystem's request
+            // subscriptions, which key off ModifierComponent.TargetEntityId, not the
+            // modifier entity's own ID, so the client and server ending up with two
+            // different entity IDs for "the same" buff is harmless.
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = TickManager.SecondsToTicks(RingOfProjectilesSpeedBoostSeconds),
+            });
+            ecs.AddComponent(modifier.Id, new StatModifierComponent
+            {
+                SpeedRatioBonus = RingOfProjectilesSpeedBoostRatio,
+            });
         },
     };
 

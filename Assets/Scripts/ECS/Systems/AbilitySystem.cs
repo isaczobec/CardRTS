@@ -17,6 +17,16 @@ public static class AbilitySystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
+    // Slack added to the range check below, in squared world units (~0.1 units of linear
+    // slack). AbilityTargeting.ResolveCastPoint clamps a client's cast point to exactly
+    // Range away via sqrt/divide/multiply, which is only exact up to float precision — a
+    // legitimately-clamped point can land a hair over Range*Range once this recomputes it,
+    // and a strict rejection there would bounce every cast made right at the edge of the
+    // range circle (exactly where a player clamping their aim is likely to click). This
+    // also absorbs any small drift between a client's predicted caster position at clamp
+    // time and the server's authoritative one by the tick this actually runs.
+    private const float RangeToleranceSq = 0.1f;
+
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
         ComponentStore<AbilityComponent> abilityStore = ecs.GetComponentStore<AbilityComponent>();
@@ -67,7 +77,7 @@ public static class AbilitySystem
 
         PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
         float dx = input.X - casterPos.X, dy = input.Y - casterPos.Y;
-        if (dx * dx + dy * dy > ability.Range * ability.Range)
+        if (dx * dx + dy * dy > ability.Range * ability.Range + RangeToleranceSq)
         {
             DebugLogger.LogWarning($"[AbilitySystem] Rejected: target ({input.X}, {input.Y}) is outside ability {input.AbilityId}'s range ({ability.Range}) of entity {input.CastingEntityId}.", "abilities");
             return;

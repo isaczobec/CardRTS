@@ -164,6 +164,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<LifetimeComponent>(22);
         _componentTypeRegistry.Register<SkillshotProjectileComponent>(23);
         _componentTypeRegistry.Register<AbilityComponent>(24);
+        _componentTypeRegistry.Register<ModifierComponent>(25);
+        _componentTypeRegistry.Register<StatModifierComponent>(26);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -238,6 +240,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SkillshotProjectileComponent>>(61);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<AbilityComponent>>(62);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<AbilityComponent>>(63);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ModifierComponent>>(64);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ModifierComponent>>(65);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<StatModifierComponent>>(66);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<StatModifierComponent>>(67);
 
         ECS = CreateSimulationECS();
     }
@@ -435,10 +441,14 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<DamageAuraComponent>());
         ecs.AddComponentStore(new ComponentStore<LifetimeComponent>());
         ecs.AddComponentStore(new ComponentStore<AbilityComponent>());
+        ecs.AddComponentStore(new ComponentStore<ModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
         ecs.RegisterSystem(LifetimeSystem.Instance);
+        ecs.RegisterSystem(ModifierSystem.Instance);
+        ecs.RegisterSystem(StatModifierSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(new TargetingSystem());
@@ -492,6 +502,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<DamageAuraComponent>());
         ecs.AddComponentStore(new ComponentStore<LifetimeComponent>());
         ecs.AddComponentStore(new ComponentStore<AbilityComponent>());
+        ecs.AddComponentStore(new ComponentStore<ModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
 
         return ecs;
     }

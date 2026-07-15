@@ -33,6 +33,13 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // bottom half of each card is below the screen edge at rest.
     [SerializeField] private float _restingYOffset = -220f;
     [SerializeField] private float _hoverRaiseAmount = 150f;
+    // Extra vertical slack above the raised (hovered) card position still counted as
+    // hovering it — keeps hover sticky right at the card's raised edge without this needing
+    // to be huge. Previously this slack was the card's own full height stacked on top of
+    // _hoverRaiseAmount (see UpdateHoveredCard), which made the hover zone — and, since
+    // IsCardHovered also suppresses troop selection/movement clicks, the "no troop clicks
+    // here" zone — extend uncomfortably far up into the area used for controlling troops.
+    [SerializeField] private float _hoverDetectionMargin = 40f;
     [SerializeField] private float _cardMoveSpeed = 12f;
     [SerializeField] private float _cardRotateSpeed = 12f;
     // Hover hit-test half-width is multiplied by this for whichever card is already
@@ -387,10 +394,10 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
             float dx = Mathf.Abs(mouse.x - restPos.x);
             if (dx > halfWidth) continue;
 
-            // Generous vertical window: a little below the resting slot up through the
-            // fully hover-raised height, so hovering far above/below the hand never sticks.
+            // Vertical window: a little below the resting slot up through the raised
+            // (hovered) position plus a small margin — see _hoverDetectionMargin.
             float dy = mouse.y - restPos.y;
-            if (dy < -cardSize.y * 0.25f || dy > cardSize.y + _hoverRaiseAmount) continue;
+            if (dy < -cardSize.y * 0.25f || dy > _hoverRaiseAmount + _hoverDetectionMargin) continue;
 
             if (dx < bestDist)
             {
