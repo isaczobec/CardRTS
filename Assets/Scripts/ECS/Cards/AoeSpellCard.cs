@@ -19,8 +19,9 @@ public class AoeSpellCard : SpawnAtPointCard
 
     // Blast radius, in world/tile units. Doubles as the placement indicator's diameter
     // (see OnIndicatorSpawned) so the player can see exactly what the blast will cover
-    // before committing to it.
-    private const int Range = 5;
+    // before committing to it. Public so AbilityManager's AoeSpellCloneAbility can preview
+    // the exact same radius (CursorCircleRadius) without duplicating/drifting from it.
+    public const int Range = 5;
 
     private const int Damage = 20;
     // Pulse interval, once active — same units as every other card's AttackSpeed

@@ -28,7 +28,8 @@ public class NetworkClient
         var settings = new NetworkSettings();
         settings.WithNetworkConfigParameters(receiveQueueCapacity: 1024, sendQueueCapacity: 1024);
         // Must match the server's pipeline stages/config — see NetworkServer.Start.
-        settings.WithFragmentationStageParameters(payloadCapacity: 64 * 1024);
+        settings.WithFragmentationStageParameters(payloadCapacity: 256 * 1024);
+        settings.WithReliableStageParameters(windowSize: 256);
 
         _driver = NetworkDriver.Create(settings);
         _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));

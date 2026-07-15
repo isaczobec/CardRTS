@@ -23,9 +23,48 @@ public class Ability
 
     // World/tile units. Only consulted for AbilityType.TargetLocation — AbilitySystem
     // rejects an AbilityUsedAtLocationInput whose point is further than this from the
-    // casting entity's own position before ExecuteAtLocation runs. Unused (leave 0) for
-    // AbilityType.Instant.
+    // casting entity's own position before ExecuteAtLocation runs (a server-side safety
+    // net; the client is never trusted). In the common case the client itself already
+    // clamps the point to within Range before sending — see ClampCastLocationToRange —
+    // so that rejection only ever fires against a client that isn't clamping or is lying.
+    // Unused (leave 0) for AbilityType.Instant.
     public float Range;
+
+    // Key into ImageRegistry for this ability's icon — see AbilityBarUI.
+    public string ImageName;
+
+    // The following Show*/Clamp* fields are purely client-side presentation, read by
+    // AbilityIndicatorManager while this ability's hotkey is held (see
+    // AbilityInputManager.HeldCasterId/HeldSlot) — AbilitySystem itself never looks at them.
+
+    // Ground circle of radius Range, centered on the caster.
+    public bool ShowRangeCircle;
+
+    // Ground circle of radius CursorCircleRadius, centered on the cast point (the cursor's
+    // world position, range-clamped per ClampCastLocationToRange — see
+    // AbilityTargeting.ResolveCastPoint). Only meaningful for AbilityType.TargetLocation.
+    public bool ShowCursorCircle;
+    public float CursorCircleRadius;
+
+    // Direction arrow from the caster toward the cast point — for skillshot-style
+    // abilities. Only meaningful for AbilityType.TargetLocation.
+    public bool ShowDirectionArrow;
+
+    // When true, the direction arrow is always drawn Range long (the same radius as
+    // ShowRangeCircle) instead of the actual distance to the cast point — so it always
+    // reads as "this is exactly how far it'll travel" rather than shrinking as the cursor
+    // gets closer to the caster. The arrow's direction still follows the cursor either
+    // way; only its length is pinned. Only meaningful alongside ShowDirectionArrow.
+    public bool DirectionArrowAlwaysMaxRange;
+
+    // Whether the actual cast location — and every indicator above that depends on the
+    // cursor (ShowCursorCircle/ShowDirectionArrow) — clamps to the closest point within
+    // Range of the caster when the raw cursor position is further away, instead of using
+    // the raw point as-is. AbilityInputManager applies this to what it actually sends;
+    // AbilityIndicatorManager applies the identical resolution so the preview always
+    // matches where the cast will really land. Only meaningful for
+    // AbilityType.TargetLocation.
+    public bool ClampCastLocationToRange = true;
 
     // Exactly one of these should be non-null, matching Type. Left null for whichever
     // input kind this ability doesn't apply to; AbilitySystem checks for that and rejects

@@ -14,13 +14,28 @@ public static class AbilityManager
     // point (see SkillshotRangedTroopCard).
     public const int AoeSpellCloneAbilityId = 2;
 
+    // Test ability #3 — target location, fires one of the caster's own pooled skillshot
+    // projectiles straight at the point (see SkillshotRangedTroopCard). Exists mainly to
+    // exercise the direction-arrow indicator (ShowDirectionArrow) — see
+    // AbilityIndicatorManager.
+    public const int SkillshotAbilityId = 3;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
+    private const float SkillshotAbilityRange = 20f;
+    // Not used for any cast validation (RingOfProjectilesAbility is Instant — no location
+    // to check), only so AbilityIndicatorManager can preview roughly how far the fired
+    // projectiles will travel. Abilities are stateless/shared, so this can't read the
+    // caster's own Range stat dynamically; kept in step with SkillshotRangedTroopCard.Range
+    // (the only troop that currently equips this ability), which is what
+    // ProjectilePool.AimSkillshot actually uses for RangeRemaining.
+    private const float RingOfProjectilesRange = 16f;
 
     private static readonly Dictionary<int, Ability> _abilities = new Dictionary<int, Ability>
     {
         { RingOfProjectilesAbilityId, BuildRingOfProjectilesAbility() },
         { AoeSpellCloneAbilityId, BuildAoeSpellCloneAbility() },
+        { SkillshotAbilityId, BuildSkillshotAbility() },
     };
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
@@ -28,7 +43,11 @@ public static class AbilityManager
     private static Ability BuildRingOfProjectilesAbility() => new Ability
     {
         Type = AbilityType.Instant,
-        Range = 0f, // unused by an Instant ability
+        Range = RingOfProjectilesRange,
+        ImageName = "RingOfProjectiles",
+        // No cast location for an Instant ability, so this is just the plain range-circle
+        // preview around the caster — no cursor circle/arrow, nothing to clamp.
+        ShowRangeCircle = true,
         ExecuteInstant = (ecs, input) =>
         {
             ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
@@ -50,6 +69,13 @@ public static class AbilityManager
     {
         Type = AbilityType.TargetLocation,
         Range = AoeSpellCloneRange,
+        ImageName = "AoeSpellClone",
+        ShowRangeCircle = true,
+        // Previews the spell's actual blast radius, not the cast range above — reads
+        // AoeSpellCard.Range directly so the preview can never drift from what actually
+        // spawns (see AoeSpellCard.OnPlayed, which this ability calls).
+        ShowCursorCircle = true,
+        CursorCircleRadius = AoeSpellCard.Range,
         ExecuteAtLocation = (ecs, input) =>
         {
             // AbilitySystem runs unconditionally (predicted on clients too), but spawning
@@ -69,6 +95,36 @@ public static class AbilityManager
 
             ushort ownerPlayerId = troopStore.GetComponent(input.CastingEntityId).OwnerPlayerId;
             aoeSpellCard.OnPlayed(ecs, 0, ownerPlayerId, input.X, input.Y);
+        },
+    };
+
+    // Fires one of the caster's own pooled projectiles (ProjectilePool.FireInDirection —
+    // aims whatever kind the pool holds; a skillshot troop's pool is skillshot-typed, see
+    // SkillshotRangedTroopCard) in a straight line toward the cast point. Deterministic and
+    // side-effect-free like RingOfProjectilesAbility, so — unlike AoeSpellCloneAbility — no
+    // isServer guard is needed; both server and predicting clients activating "the same"
+    // pooled projectile is exactly how every other pooled shot in this codebase already works.
+    private static Ability BuildSkillshotAbility() => new Ability
+    {
+        Type = AbilityType.TargetLocation,
+        Range = SkillshotAbilityRange,
+        ImageName = "SkillshotAbility",
+        ShowRangeCircle = true,
+        ShowDirectionArrow = true,
+        // The shot always travels the full Range regardless of where within it you aim, so
+        // the arrow should always read as the full range circle's radius, not shrink to
+        // wherever the cursor happens to be.
+        DirectionArrowAlwaysMaxRange = true,
+        ExecuteAtLocation = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null || !posStore.HasComponent(input.CastingEntityId)) return;
+
+            PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
+            Vector2 firePosition = new Vector2(casterPos.X, casterPos.Y);
+            Vector2 direction = new Vector2(input.X, input.Y) - firePosition;
+
+            ProjectilePool.FireInDirection(ecs, input.CastingEntityId, direction, firePosition);
         },
     };
 }

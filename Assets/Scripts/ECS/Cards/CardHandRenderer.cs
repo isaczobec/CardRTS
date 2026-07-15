@@ -62,6 +62,12 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // Space (see SelectionManager.HandleSelectionInput).
     public bool IsCardSelectedOrDragging => _selectedCardId != 0 || _draggingCardId != 0;
 
+    // True while a card is merely hovered (not yet selected/dragging) — SelectionManager
+    // also checks this alongside IsCardSelectedOrDragging so a click that lands on a
+    // hovered card's hand icon never falls through and deselects the current troop
+    // selection.
+    public bool IsCardHovered => _hoveredCardId != 0;
+
     // The card currently selected or being dragged (0 if neither) — the one about to be
     // played. Used by things like CardRangeIndicatorManager that need to know WHICH card's
     // rules currently apply, not just whether one is active.
@@ -276,8 +282,18 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
             PlayCard(go.CardEntityId, x, y);
     }
 
+    // Single choke point for both the click-to-play (HandlePlaySelectedCardClick) and
+    // drag-to-play (OnCardDragEnded) paths — including the SelectionManager notification,
+    // so neither path can forget it (see SelectionManager.SuppressNextClickSelect for why
+    // it's needed: this same click/release is what just cleared _selectedCardId/
+    // _draggingCardId, so SelectionManager can no longer tell "a card was just played
+    // here" from "nothing was selected" by the time it processes the corresponding
+    // mouse-up).
     private void PlayCard(ulong cardEntityId, float x, float y)
-        => InputBuffer.EnqueueInput(new SpawnAtPointInput { CardEntityId = cardEntityId, X = x, Y = y });
+    {
+        SelectionManager.instance?.SuppressNextClickSelect();
+        InputBuffer.EnqueueInput(new SpawnAtPointInput { CardEntityId = cardEntityId, X = x, Y = y });
+    }
 
     // While below the lift threshold the dragged card sticks exactly to the cursor
     // (direct-manipulation feel); past it, it eases toward _selectedAnchor instead of

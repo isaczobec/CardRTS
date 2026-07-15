@@ -28,12 +28,26 @@ public class NetworkServer
         // connected client each server tick, so give it more headroom than the client.
         var settings = new NetworkSettings();
         settings.WithNetworkConfigParameters(receiveQueueCapacity: 2048, sendQueueCapacity: 2048);
-        // SimulationDelta messages grow with entity/component count and have no fixed
-        // upper bound — without fragmentation, BeginSend/EndSend silently fail (dropped,
-        // no exception, no log) the moment a message exceeds the ~1400-byte UDP MTU, which
-        // is exactly what starts happening once enough troops exist. Must match on the
-        // client (pipeline stage order/config has to agree on both ends of a connection).
-        settings.WithFragmentationStageParameters(payloadCapacity: 64 * 1024);
+        // SimulationDelta/GameStart messages grow with entity/component count and have no
+        // fixed upper bound — without fragmentation, BeginSend/EndSend silently fail
+        // (dropped, no exception, no log) the moment a message exceeds the ~1400-byte UDP
+        // MTU, which is exactly what starts happening once enough entities exist. 256 KB
+        // gives real headroom over what GameStart's initial-entity snapshot needs today
+        // (as of writing, ~66 KB with one player and default world-gen content) for more
+        // map/entity content later; bump further if a snapshot ever gets close to this.
+        // Must match on the client (pipeline stage order/config has to agree on both ends
+        // of a connection).
+        const int payloadCapacity = 256 * 1024;
+        settings.WithFragmentationStageParameters(payloadCapacity: payloadCapacity);
+        // The reliable pipeline's default WindowSize (32) caps how many fragments of one
+        // message can be in flight (sent but not yet ACKed) at once. A big message gets
+        // split by the fragmentation stage above into ~1400-byte chunks that all get
+        // queued in the same BeginSend/EndSend call, before any round trip can ACK earlier
+        // ones; once that exceeds the window, EndSend fails with NetworkSendQueueFull. Must
+        // cover a full payloadCapacity's worth of fragments (256*1024 / ~1400 ≈ 188) with
+        // headroom — keep this and payloadCapacity in step if either changes. Must match on
+        // the client, same as the fragmentation stage above.
+        settings.WithReliableStageParameters(windowSize: 256);
 
         _driver = NetworkDriver.Create(settings);
         _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));

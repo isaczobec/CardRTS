@@ -31,11 +31,12 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     // same target instead of once per pass through it.
     private const float HitboxImmunityMilliseconds = 500f;
 
-    // Cooldown lengths for this troop's two test abilities (see AbilityManager) — cooldown
-    // length lives on AbilityComponent rather than on Ability itself, so different troops
-    // could equip the same ability with different cooldowns.
+    // Cooldown lengths for this troop's three test abilities (see AbilityManager) —
+    // cooldown length lives on AbilityComponent rather than on Ability itself, so
+    // different troops could equip the same ability with different cooldowns.
     private const float RingOfProjectilesCooldownSeconds = 5f;
     private const float AoeSpellCloneCooldownSeconds = 8f;
+    private const float SkillshotAbilityCooldownSeconds = 3f;
 
     private const int GoldCost = 4;
 
@@ -89,13 +90,15 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
                 health.HitboxImmunityTicksToGive = TickManager.MillisecondsToTicks(HitboxImmunityMilliseconds);
                 e.Delta.MarkComponentDirty(id, typeof(HealthComponent));
             },
-            // Test abilities (Q/W) — see AbilityManager. Slots 3/4 (E/R) are left empty (0).
+            // Test abilities (Q/W/E) — see AbilityManager. Slot 4 (R) is left empty (0).
             (e, id) => e.AddComponent(id, new AbilityComponent
             {
                 Ability1Id = AbilityManager.RingOfProjectilesAbilityId,
                 Ability1CooldownTicks = TickManager.SecondsToTicks(RingOfProjectilesCooldownSeconds),
                 Ability2Id = AbilityManager.AoeSpellCloneAbilityId,
                 Ability2CooldownTicks = TickManager.SecondsToTicks(AoeSpellCloneCooldownSeconds),
+                Ability3Id = AbilityManager.SkillshotAbilityId,
+                Ability3CooldownTicks = TickManager.SecondsToTicks(SkillshotAbilityCooldownSeconds),
             }),
         });
     }

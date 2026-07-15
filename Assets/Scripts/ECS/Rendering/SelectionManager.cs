@@ -4,10 +4,15 @@ using UnityEngine.EventSystems;
 
 public class SelectionManager : Singleton<SelectionManager>
 {
-    private const float SingleSelectRadius = 5f;
+    private const float SingleSelectRadius = 2.2f;
     // Deliberately generous: a plain click that twitches a few pixels while releasing
     // the mouse button should never be misread as the start of a drag-select.
-    private const float DragThresholdPixels = 180f;
+    private const float DragThresholdPixels = 130f;
+    // How far from the cursor the A-key nearest-target hotkey (HandleTargetHotkeyInput)
+    // will reach to find an enemy/neutral troop — deliberately much more generous than
+    // SingleSelectRadius, since there's no visual "am I close enough" feedback for a
+    // keypress the way there is for clicking directly on/near a troop.
+    private const float TargetHotkeyRadius = 40f;
 
     [SerializeField] private GameObject _selectionPrefab;
     [SerializeField] private GameObject _targetingPrefab;
@@ -54,6 +59,22 @@ public class SelectionManager : Singleton<SelectionManager>
     // minimap) at that moment — a click/drag that started on UI should never fall through
     // to world point/rect select (which would otherwise deselect the current selection).
     private bool _leftDownOverUI;
+
+    // Set by CardHandRenderer.PlayCard right when a click or drag-release plays a card
+    // (see SuppressNextClickSelect) — consumed by the very next GetMouseButtonUp(0), then
+    // cleared. Needed because that same click/release is what CardHandRenderer used to
+    // clear its own "card selected/dragging" state — by the time this class's mouse-up
+    // handling runs, IsCardSelectedOrDragging/IsCardHovered are already back to false, so
+    // they can no longer distinguish "a card was just played here" from "nothing was ever
+    // selected." This isn't a script-execution-order thing to work around: the click that
+    // plays a card (GetMouseButtonDown) and the release that would otherwise deselect
+    // troops (GetMouseButtonUp) are two different events, potentially different frames —
+    // the card's selected state is genuinely gone in between, not just racily read.
+    private bool _suppressNextClickSelect;
+
+    // Called by CardHandRenderer.PlayCard for both the click-to-play and drag-to-play
+    // paths, right before enqueuing the play input.
+    public void SuppressNextClickSelect() => _suppressNextClickSelect = true;
 
     // Right-drag (target/move) state
     private Vector2 _rightDragStartScreen;
@@ -127,6 +148,7 @@ public class SelectionManager : Singleton<SelectionManager>
 
         RefreshTargetingVisuals();
         HandleSelectionInput();
+        HandleTargetHotkeyInput();
     }
 
     // Diffs which entities are currently targeted by one of the local player's troops
@@ -178,12 +200,8 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // Held Space is reserved for camera pan/rotate (see CameraController) — while it's
     // down, no selection box may appear and no selection (drag or point) can be made.
-    // Same for while a card is selected/being dragged (CardHandRenderer) — a click in the
-    // world in that state means "play the card here," not "select/target troops."
     private void HandleSelectionInput()
     {
-        if (CardHandRenderer.instance != null && CardHandRenderer.instance.IsCardSelectedOrDragging) return;
-
         if (Input.GetKey(KeyCode.Space))
         {
             // Cancel any drag that was already in progress before Space was pressed,
@@ -198,7 +216,19 @@ public class SelectionManager : Singleton<SelectionManager>
             {
                 _dragStartScreen = Input.mousePosition;
                 _isDragging = false;
-                _leftDownOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+                // A click that starts over UI (e.g. the minimap), or while a card is
+                // selected/being dragged/hovered (CardHandRenderer) — where a click means
+                // "play the card here" (or is just passing over its hand icon), never
+                // "select/target troops" — must never fall through to PerformPointSelect on
+                // release. Latched here at mouse-DOWN rather than re-checked live at
+                // mouse-up: a drag already in progress must always finish (hide its box,
+                // reset _isDragging) on release regardless of what the cursor drifts over
+                // in between — e.g. releasing a drag-select over the hand while it happens
+                // to be hovering a card must still clear the box and select, not silently
+                // do nothing because IsCardHovered is true *now*.
+                bool cardActive = CardHandRenderer.instance != null &&
+                    (CardHandRenderer.instance.IsCardSelectedOrDragging || CardHandRenderer.instance.IsCardHovered);
+                _leftDownOverUI = cardActive || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
             }
 
             if (Input.GetMouseButton(0) && !_leftDownOverUI)
@@ -220,10 +250,16 @@ public class SelectionManager : Singleton<SelectionManager>
                 if (_dragSelectionBox != null)
                     _dragSelectionBox.gameObject.SetActive(false);
 
+                if (_suppressNextClickSelect)
+                {
+                    // See SuppressNextClickSelect: this release belongs to a click/drag
+                    // that CardHandRenderer already consumed to play a card.
+                    _suppressNextClickSelect = false;
+                }
                 // A click/drag that started over UI (e.g. the minimap) never reaches world
                 // point/rect select — otherwise clicking the minimap to jump the camera
                 // would also deselect whatever was currently selected.
-                if (!_leftDownOverUI)
+                else if (!_leftDownOverUI)
                 {
                     if (_isDragging)
                         PerformRectSelect();
@@ -236,6 +272,26 @@ public class SelectionManager : Singleton<SelectionManager>
         }
 
         HandleRightClickInput();
+    }
+
+    // Pressing A targets the closest enemy/neutral troop to the cursor, within
+    // TargetHotkeyRadius, for the currently selected friendly troops — same effect as
+    // right-clicking directly on that troop (SendSetTargets), just without needing the
+    // cursor to be right on top of it. No-ops with nothing selected, the console open, or
+    // Space held (camera pan), matching every other selection input's own guards.
+    private void HandleTargetHotkeyInput()
+    {
+        if (DevConsole.IsOpen) return;
+        if (Input.GetKey(KeyCode.Space)) return;
+        if (!Input.GetKeyDown(KeyCode.A)) return;
+        if (_selectedEntityIds.Count == 0) return;
+
+        if (!TileSpaceMouse.TryGetPosition(out float tx, out float ty)) return;
+
+        ulong targetId = FindClosestTargetable(tx, ty, TargetHotkeyRadius);
+        if (targetId == 0) return;
+
+        SendSetTargets(new List<ulong> { targetId });
     }
 
     // Right click either sets targets (cursor is over a selectable enemy/neutral troop
@@ -259,7 +315,10 @@ public class SelectionManager : Singleton<SelectionManager>
         {
             _rightDragStartScreen = Input.mousePosition;
             _isRightDragging = false;
-            _rightDownOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            // Same latch-at-mouse-down reasoning as _leftDownOverUI in HandleSelectionInput.
+            bool cardActive = CardHandRenderer.instance != null &&
+                (CardHandRenderer.instance.IsCardSelectedOrDragging || CardHandRenderer.instance.IsCardHovered);
+            _rightDownOverUI = cardActive || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
         }
 
         if (Input.GetMouseButton(1) && !_rightDownOverUI)
@@ -416,7 +475,7 @@ public class SelectionManager : Singleton<SelectionManager>
     // issue the exact same "target if something's there, else move" command.
     public void PerformPointTargetOrMove(float tx, float ty)
     {
-        ulong targetId = FindPointTarget(tx, ty);
+        ulong targetId = FindClosestTargetable(tx, ty, SingleSelectRadius);
         if (targetId != 0)
         {
             SendSetTargets(new List<ulong> { targetId });
@@ -429,13 +488,17 @@ public class SelectionManager : Singleton<SelectionManager>
         SendMoveCommand(tx, ty);
     }
 
-    private ulong FindPointTarget(float tx, float ty)
+    // Closest IsTargetable entity to (tx, ty) within radius, or 0 if none. Shared by
+    // right-click/point targeting (SingleSelectRadius) and the A-key nearest-target
+    // hotkey (TargetHotkeyRadius) — same "closest valid target near a point" query, just a
+    // different radius and trigger.
+    private ulong FindClosestTargetable(float tx, float ty, float radius)
     {
         _queryBuffer.Clear();
-        _chunkTracker.GetEntitiesNear(tx, ty, SingleSelectRadius, _queryBuffer);
+        _chunkTracker.GetEntitiesNear(tx, ty, radius, _queryBuffer);
 
         ulong bestId = 0;
-        float bestDist2 = SingleSelectRadius * SingleSelectRadius;
+        float bestDist2 = radius * radius;
 
         foreach (ulong entityId in _queryBuffer)
         {
