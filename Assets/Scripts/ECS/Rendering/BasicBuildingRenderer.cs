@@ -10,6 +10,11 @@ using UnityEngine;
 public class BasicBuildingRenderer : MonoBehaviour, IComponentRenderer
 {
     [SerializeField] private GameObject _prefab;
+    // If non-empty, one of these is chosen at random per entity instead of _prefab.
+    [SerializeField] private GameObject[] _prefabVariants;
+    [SerializeField] private bool _randomRotation;
+    [SerializeField] private float _minScale = 1f;
+    [SerializeField] private float _maxScale = 1f;
 
     private const float GroundOffset = 0f;
 
@@ -35,19 +40,36 @@ public class BasicBuildingRenderer : MonoBehaviour, IComponentRenderer
 
     public void OnEntityActivated(ulong entityId)
     {
-        if (_objects.ContainsKey(entityId) || _prefab == null || _ecs == null) return;
+        if (_objects.ContainsKey(entityId) || _ecs == null) return;
+
+        GameObject prefab = ChoosePrefab();
+        if (prefab == null) return;
 
         var posStore = _ecs.GetComponentStore<PositionComponent>();
         if (posStore == null || !posStore.HasComponent(entityId)) return;
 
-        GameObject go = Instantiate(_prefab);
+        GameObject go = Instantiate(prefab);
         go.name = $"Building_{entityId}";
         go.transform.position = ToWorldPosition(posStore.GetComponent(entityId));
+
+        if (_randomRotation)
+            go.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+
+        float scale = Random.Range(_minScale, _maxScale);
+        go.transform.localScale *= scale;
+
         _objects[entityId] = go;
     }
 
     // Buildings don't move — nothing to do per frame.
     public void UpdateRenderable(List<ulong> entityIds) { }
+
+    private GameObject ChoosePrefab()
+    {
+        if (_prefabVariants != null && _prefabVariants.Length > 0)
+            return _prefabVariants[Random.Range(0, _prefabVariants.Length)];
+        return _prefab;
+    }
 
     private Vector3 ToWorldPosition(PositionComponent pos)
     {

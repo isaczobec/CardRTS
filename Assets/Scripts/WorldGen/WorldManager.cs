@@ -121,11 +121,29 @@ public class WorldManager : Singleton<WorldManager>
 
     public TileSettings GetTileSettings(TileType type) => _settingsByType[(int)type];
 
+    // Returns every WorldGenFeature of type T currently registered on Handler (including
+    // ones enqueued as biome children — see BiomeFeature.Generate/EnqueueFeature) for which
+    // predicate (if given) returns true. Mirrors WorldGenHandler.GetActions's shape.
+    public List<T> GetFeatures<T>(Func<T, bool> predicate = null) where T : WorldGenFeature
+    {
+        var result = new List<T>();
+        if (Handler == null) return result;
+        foreach (var feature in Handler.features)
+            if (feature is T typed && (predicate == null || predicate(typed)))
+                result.Add(typed);
+        return result;
+    }
+
     public bool HasCollision(ushort tileX, ushort tileY)
         => _settingsByType[(int)Handler.GetTileType(tileX, tileY)].HasCollision;
 
     void SetupWorldGen(WorldGenHandler handler)
     {
+        // Tracks every spawned entity's position for fast radius/closest-point lookups (see
+        // EntityClusterFeature.MinDistanceToOtherEntities) — added first so it's present no
+        // matter which feature enqueues the first EntitySpawnAction.
+        handler.AddResource(new SpawnedEntityRegistry());
+
         // Spawn player bases first, before any terrain/entity features run, so everything
         // added below can see where they ended up (via GetPreviousFeature) if it needs to.
         handler.features.Add(new SpawnPlayerBasesFeature());
@@ -190,11 +208,28 @@ public class WorldManager : Singleton<WorldManager>
                 },
                 new EntityClusterFeature
                 {
-                    Spawner            = EntitySpawnAction.SpawnTree,
-                    ClusterCount       = 6,
-                    EntitiesPerCluster = 8,
-                    ClusterRadius      = 5f,
-                    AllowedTileTypes   = new[] { TileType.Grass },
+                    Spawner               = EntitySpawnAction.SpawnTree,
+                    ClusterCountMin       = 25,
+                    ClusterCountMax       = 35,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 4,
+                    ClusterRadius         = 15f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 6f,
+                    AllowedTileTypes      = new[] { TileType.Grass },
+                },
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnRock,
+                    ClusterCountMin       = 25,
+                    ClusterCountMax       = 35,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 5,
+                    ClusterRadius         = 5f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 1.5f,
+                    AllowedTileTypes      = new[] { TileType.Grass },
+                
                 },
             }
         });

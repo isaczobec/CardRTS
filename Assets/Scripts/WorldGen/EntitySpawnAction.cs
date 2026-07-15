@@ -9,8 +9,18 @@ public class EntitySpawnAction : IWorldGenAction
 {
     private const int   TreeMaxHealth     = 100;
     private const float TreeBlockRadius   = 1f;
-    private const float TreeRespawnSeconds = 30f;
+    private const float TreeRespawnSeconds = 120f;
     private const float TreeSelectionScale = 2f;
+
+    private const int   RockMaxHealth      = 150;
+    private const float RockBlockRadius    = 1f;
+    private const float RockRespawnSeconds = 120f;
+    private const float RockSelectionScale = 2f;
+
+    private const int   OreMaxHealth       = 150;
+    private const float OreBlockRadius     = 1f;
+    private const float OreRespawnSeconds  = 150f;
+    private const float OreSelectionScale  = 2f;
 
     public float X;
     public float Y;
@@ -42,6 +52,60 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(TreeRespawnSeconds),
+        });
+    };
+
+    // Neutral respawnable rock: drops Stone.
+    public static readonly Action<ulong, ECS> SpawnRock = (id, ecs) =>
+    {
+        ecs.AddComponent(id, new TroopComponent
+        {
+            OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+        });
+        ecs.AddComponent(id, new ActivatableComponent
+        {
+            _ticksUntilActive       = 1,
+            InitialTicksUntilActive = 1,
+        });
+        ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.Rock });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = RockSelectionScale });
+        ecs.AddComponent(id, new StatsComponent { MaxHealth = RockMaxHealth });
+        ecs.AddComponent(id, new HealthComponent { CurrentHealth = RockMaxHealth });
+        ecs.AddComponent(id, new BuildingComponent { BlockRadius = RockBlockRadius, CardPlayRangeMultiplier = 1f });
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Stone = 20
+        } } );
+        ecs.AddComponent(id, new RespawnableInPlaceComponent
+        {
+            CooldownTicks = (ulong)TickManager.SecondsToTicks(RockRespawnSeconds),
+        });
+    };
+
+    // Neutral respawnable ore deposit: drops Metal.
+    public static readonly Action<ulong, ECS> SpawnOre = (id, ecs) =>
+    {
+        ecs.AddComponent(id, new TroopComponent
+        {
+            OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+        });
+        ecs.AddComponent(id, new ActivatableComponent
+        {
+            _ticksUntilActive       = 1,
+            InitialTicksUntilActive = 1,
+        });
+        ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.Ore });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = OreSelectionScale });
+        ecs.AddComponent(id, new StatsComponent { MaxHealth = OreMaxHealth });
+        ecs.AddComponent(id, new HealthComponent { CurrentHealth = OreMaxHealth });
+        ecs.AddComponent(id, new BuildingComponent { BlockRadius = OreBlockRadius, CardPlayRangeMultiplier = 1f });
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Metal = 20
+        } } );
+        ecs.AddComponent(id, new RespawnableInPlaceComponent
+        {
+            CooldownTicks = (ulong)TickManager.SecondsToTicks(OreRespawnSeconds),
         });
     };
 

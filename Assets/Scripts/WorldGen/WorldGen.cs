@@ -71,7 +71,15 @@ public class WorldGenHandler
         _currentFeatureLastChildIndex++;
     }
 
-    public void EnqueueAction(IWorldGenAction action) => _pendingActions.Add(action);
+    public void EnqueueAction(IWorldGenAction action)
+    {
+        _pendingActions.Add(action);
+
+        // Keeps the SpawnedEntityRegistry (if one was added — see WorldManager.SetupWorldGen)
+        // in sync automatically, so features don't need to remember to register spawns themselves.
+        if (action is EntitySpawnAction spawnAction)
+            GetWorldGenResource<SpawnedEntityRegistry>(SpawnedEntityRegistry.ResourceKey)?.Register(spawnAction);
+    }
 
     // Returns every currently-pending action of type T for which predicate (if given)
     // returns true. Mirrors GetPreviousFeature's shape, but actions — unlike features —
@@ -88,7 +96,13 @@ public class WorldGenHandler
 
     // Removes a single previously-enqueued action (e.g. one returned by GetActions) so it
     // never runs. Returns false if it wasn't pending.
-    public bool RemoveAction(IWorldGenAction action) => _pendingActions.Remove(action);
+    public bool RemoveAction(IWorldGenAction action)
+    {
+        bool removed = _pendingActions.Remove(action);
+        if (removed && action is EntitySpawnAction spawnAction)
+            GetWorldGenResource<SpawnedEntityRegistry>(SpawnedEntityRegistry.ResourceKey)?.Unregister(spawnAction);
+        return removed;
+    }
 
     public void ExecuteActions(ECS ecs)
     {
