@@ -163,6 +163,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<DamageAuraComponent>(21);
         _componentTypeRegistry.Register<LifetimeComponent>(22);
         _componentTypeRegistry.Register<SkillshotProjectileComponent>(23);
+        _componentTypeRegistry.Register<AbilityComponent>(24);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -170,6 +171,8 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<MoveTroopInput>(3);
         _inputTypeRegistry.Register<SetTargetsInput>(4);
         _inputTypeRegistry.Register<SpawnAtPointInput>(5);
+        _inputTypeRegistry.Register<AbilityUsedInput>(6);
+        _inputTypeRegistry.Register<AbilityUsedAtLocationInput>(7);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -233,6 +236,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<LifetimeComponent>>(59);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<SkillshotProjectileComponent>>(60);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SkillshotProjectileComponent>>(61);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<AbilityComponent>>(62);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<AbilityComponent>>(63);
 
         ECS = CreateSimulationECS();
     }
@@ -429,6 +434,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ActivatableComponent>());
         ecs.AddComponentStore(new ComponentStore<DamageAuraComponent>());
         ecs.AddComponentStore(new ComponentStore<LifetimeComponent>());
+        ecs.AddComponentStore(new ComponentStore<AbilityComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -444,9 +450,11 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(SkillshotProjectileSystem.Instance);
         ecs.RegisterSystem(DamageAuraSystem.Instance);
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
+        ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
+        ecs.RegisterSystem(AbilityCooldownSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
@@ -483,6 +491,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ActivatableComponent>());
         ecs.AddComponentStore(new ComponentStore<DamageAuraComponent>());
         ecs.AddComponentStore(new ComponentStore<LifetimeComponent>());
+        ecs.AddComponentStore(new ComponentStore<AbilityComponent>());
 
         return ecs;
     }

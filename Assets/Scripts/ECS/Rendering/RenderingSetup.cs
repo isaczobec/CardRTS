@@ -21,5 +21,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
         CardRangeIndicatorManager.instance.Initialize();
         CardPlacementIndicatorManager.instance.Initialize();
         DeployProgressIndicatorManager.instance.Initialize();
+        AbilityInputManager.instance.Initialize();
     }
 }

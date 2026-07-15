@@ -3,8 +3,8 @@ using UnityEngine;
 // Shared "pool based" projectile-firing helper for any troop with a ProjectileOwnerComponent
 // pool of ProjectileBaseComponent entities (see those types for how the pool ring works).
 // Finds the next available (non-active) pooled projectile starting from the owner's
-// NextProjectileId, activates it aimed at a target from a given firing position, and
-// advances the owner's pointer past it so the following shot starts searching from there.
+// NextProjectileId, activates it aimed from a given firing position, and advances the
+// owner's pointer past it so the following shot starts searching from there.
 public static class ProjectilePool
 {
     // Fallback for StatsQuery.GetRange when a skillshot's owner somehow has no
@@ -13,22 +13,14 @@ public static class ProjectilePool
     private const int DefaultRange = 10;
 
     // Returns the activated projectile's entity ID, or 0 if the troop has no projectile
-    // pool or every pooled projectile is currently in flight.
+    // pool or every pooled projectile is currently in flight. For a pooled
+    // SeekingProjectileComponent, homes in on targetId. For a pooled
+    // SkillshotProjectileComponent, aims once at targetId's position at the moment of
+    // firing (never re-homes) — targetId itself isn't stored anywhere on that projectile.
     public static ulong Fire(ECS ecs, ulong ownerId, ulong targetId, Vector2 firePosition)
     {
-        ComponentStore<ProjectileOwnerComponent> ownerStore = ecs.GetComponentStore<ProjectileOwnerComponent>();
-        ComponentStore<ProjectileBaseComponent> projectileStore = ecs.GetComponentStore<ProjectileBaseComponent>();
-        if (ownerStore == null || projectileStore == null || !ownerStore.HasComponent(ownerId)) return 0;
-
-        ref ProjectileOwnerComponent owner = ref ownerStore.GetComponent(ownerId);
-        ulong projectileId = FindAvailable(projectileStore, owner.NextProjectileId, owner.MaxProjectiles);
+        ulong projectileId = ActivateNext(ecs, ownerId);
         if (projectileId == 0) return 0;
-
-        ref ProjectileBaseComponent projectile = ref projectileStore.GetComponent(projectileId);
-        projectile.IsActive = true;
-        owner.NextProjectileId = projectile.NextProjectileId;
-        ecs.Delta.MarkComponentDirty(projectileId, typeof(ProjectileBaseComponent));
-        ecs.Delta.MarkComponentDirty(ownerId, typeof(ProjectileOwnerComponent));
 
         ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
 
@@ -43,11 +35,6 @@ public static class ProjectilePool
         ComponentStore<SkillshotProjectileComponent> skillshotStore = ecs.GetComponentStore<SkillshotProjectileComponent>();
         if (skillshotStore != null && skillshotStore.HasComponent(projectileId))
         {
-            ref SkillshotProjectileComponent skillshot = ref skillshotStore.GetComponent(projectileId);
-
-            // Aimed once, straight at the target's position at the moment of firing —
-            // unlike SeekingProjectileComponent this never re-homes, so targetId itself
-            // isn't stored anywhere on the projectile after this.
             Vector2 direction = Vector2.right;
             if (posStore != null && posStore.HasComponent(targetId))
             {
@@ -55,22 +42,29 @@ public static class ProjectilePool
                 Vector2 toTarget = new Vector2(targetPos.X, targetPos.Y) - firePosition;
                 if (toTarget.sqrMagnitude > 0.0001f) direction = toTarget.normalized;
             }
-
-            skillshot.DirectionX = direction.x;
-            skillshot.DirectionY = direction.y;
-            skillshot.RangeRemaining = StatsQuery.GetRange(ecs, ownerId, DefaultRange);
-            ecs.Delta.MarkComponentDirty(projectileId, typeof(SkillshotProjectileComponent));
+            AimSkillshot(ecs, projectileId, ownerId, skillshotStore, direction);
         }
 
-        if (posStore != null && posStore.HasComponent(projectileId))
-        {
-            ref PositionComponent pos = ref posStore.GetComponent(projectileId);
-            pos.X = firePosition.x;
-            pos.Y = firePosition.y;
-            ecs.Delta.MarkComponentDirty(projectileId, typeof(PositionComponent));
-        }
+        PlaceAndAnnounce(ecs, projectileId, ownerId, targetId, firePosition, posStore);
+        return projectileId;
+    }
 
-        ecs.FlagEvents.Add(new ProjectileActivatedEvent { EntityId = projectileId, OwnerEntityId = ownerId, TargetEntityId = targetId });
+    // Same as Fire, but for a fixed direction instead of a target entity — e.g. an ability
+    // that fires a ring of shots outward with nothing to aim at. Only meaningful for a
+    // pooled SkillshotProjectileComponent (a homing SeekingProjectileComponent fired this
+    // way has no target, so it deactivates itself the next tick — see
+    // SeekingProjectileSystem).
+    public static ulong FireInDirection(ECS ecs, ulong ownerId, Vector2 direction, Vector2 firePosition)
+    {
+        ulong projectileId = ActivateNext(ecs, ownerId);
+        if (projectileId == 0) return 0;
+
+        ComponentStore<SkillshotProjectileComponent> skillshotStore = ecs.GetComponentStore<SkillshotProjectileComponent>();
+        if (skillshotStore != null && skillshotStore.HasComponent(projectileId))
+            AimSkillshot(ecs, projectileId, ownerId, skillshotStore, direction);
+
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        PlaceAndAnnounce(ecs, projectileId, ownerId, 0, firePosition, posStore);
         return projectileId;
     }
 
@@ -93,6 +87,54 @@ public static class ProjectilePool
             e.AddComponent(id, new RenderableComponent { Type = RenderableType.SkillshotProjectile });
             e.AddComponent(id, new SkillshotProjectileComponent { Speed = speedMilliTilesPerSecond, HitRadius = hitRadius });
         });
+
+    // Finds the next available pooled projectile, activates it, and advances the owner's
+    // search pointer past it. Shared by Fire/FireInDirection; callers still need to aim
+    // (kind-specific) and place/announce it themselves.
+    private static ulong ActivateNext(ECS ecs, ulong ownerId)
+    {
+        ComponentStore<ProjectileOwnerComponent> ownerStore = ecs.GetComponentStore<ProjectileOwnerComponent>();
+        ComponentStore<ProjectileBaseComponent> projectileStore = ecs.GetComponentStore<ProjectileBaseComponent>();
+        if (ownerStore == null || projectileStore == null || !ownerStore.HasComponent(ownerId)) return 0;
+
+        ref ProjectileOwnerComponent owner = ref ownerStore.GetComponent(ownerId);
+        ulong projectileId = FindAvailable(projectileStore, owner.NextProjectileId, owner.MaxProjectiles);
+        if (projectileId == 0) return 0;
+
+        ref ProjectileBaseComponent projectile = ref projectileStore.GetComponent(projectileId);
+        projectile.IsActive = true;
+        owner.NextProjectileId = projectile.NextProjectileId;
+        ecs.Delta.MarkComponentDirty(projectileId, typeof(ProjectileBaseComponent));
+        ecs.Delta.MarkComponentDirty(ownerId, typeof(ProjectileOwnerComponent));
+
+        return projectileId;
+    }
+
+    private static void AimSkillshot(ECS ecs, ulong projectileId, ulong ownerId, ComponentStore<SkillshotProjectileComponent> skillshotStore, Vector2 direction)
+    {
+        ref SkillshotProjectileComponent skillshot = ref skillshotStore.GetComponent(projectileId);
+
+        if (direction.sqrMagnitude <= 0.0001f) direction = Vector2.right;
+        else direction.Normalize();
+
+        skillshot.DirectionX = direction.x;
+        skillshot.DirectionY = direction.y;
+        skillshot.RangeRemaining = StatsQuery.GetRange(ecs, ownerId, DefaultRange);
+        ecs.Delta.MarkComponentDirty(projectileId, typeof(SkillshotProjectileComponent));
+    }
+
+    private static void PlaceAndAnnounce(ECS ecs, ulong projectileId, ulong ownerId, ulong targetId, Vector2 firePosition, ComponentStore<PositionComponent> posStore)
+    {
+        if (posStore != null && posStore.HasComponent(projectileId))
+        {
+            ref PositionComponent pos = ref posStore.GetComponent(projectileId);
+            pos.X = firePosition.x;
+            pos.Y = firePosition.y;
+            ecs.Delta.MarkComponentDirty(projectileId, typeof(PositionComponent));
+        }
+
+        ecs.FlagEvents.Add(new ProjectileActivatedEvent { EntityId = projectileId, OwnerEntityId = ownerId, TargetEntityId = targetId });
+    }
 
     // Shared ring-building loop for CreatePool/CreateSkillshotPool: every pooled projectile
     // needs a PositionComponent + ProjectileBaseComponent (linked into the ring) regardless

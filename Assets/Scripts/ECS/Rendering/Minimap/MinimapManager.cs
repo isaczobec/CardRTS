@@ -29,9 +29,20 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
     [Header("Map")]
     [SerializeField] private RawImage _mapImage;
 
+    [System.Serializable]
+    private struct MinimapIconEntry
+    {
+        public RenderableType Type;
+        public GameObject Prefab;
+    }
+
     [Header("Dots")]
     [SerializeField] private GameObject _dotPrefab;
     [SerializeField] private Vector2 _dotSize = new Vector2(6f, 6f);
+    // Per-RenderableType icon overrides — an entity whose RenderableComponent.Type has no
+    // entry here (or has no RenderableComponent at all) falls back to _dotPrefab. Turned
+    // into _iconPrefabsByType (a lookup dictionary) once, in Awake.
+    [SerializeField] private List<MinimapIconEntry> _iconPrefabEntries = new();
 
     [Header("Colors")]
     [SerializeField] private Color _friendlyColor = Color.green;
@@ -49,6 +60,10 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
     private ECS _ecs;
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<SelectableComponent> _selectableStore;
+    private ComponentStore<RenderableComponent> _renderableStore;
+
+    // Built once in Awake from _iconPrefabEntries — see ResolveIconPrefab.
+    private readonly Dictionary<RenderableType, GameObject> _iconPrefabsByType = new();
 
     // Tiles per side of the (square) world — set once BuildMapTexture runs.
     private ushort _worldSizeTiles;
@@ -68,6 +83,10 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
         if (_mapImage == null)
             _mapImage = GetComponent<RawImage>();
         _mapRect = _mapImage.rectTransform;
+
+        foreach (MinimapIconEntry entry in _iconPrefabEntries)
+            if (entry.Prefab != null)
+                _iconPrefabsByType[entry.Type] = entry.Prefab;
     }
 
     public void Initialize()
@@ -81,6 +100,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
         _ecs = TickManager.instance.ActiveECS;
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
         _selectableStore = _ecs.GetComponentStore<SelectableComponent>();
+        _renderableStore = _ecs.GetComponentStore<RenderableComponent>();
 
         BuildMapTexture();
         SpawnViewportIndicator();
@@ -147,13 +167,16 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
         if (_dots.ContainsKey(e.EntityId)) return;
         if (!_selectableStore.HasComponent(e.EntityId)) return;
         if (!_positionStore.HasComponent(e.EntityId)) return;
-        if (_dotPrefab == null || _mapRect == null) return;
+        if (_mapRect == null) return;
+
+        GameObject prefab = ResolveIconPrefab(e.EntityId);
+        if (prefab == null) return;
 
         // Parented directly under the map's own RectTransform so a (0,0) child anchor maps
         // 1:1 onto the map's own 0..1 UV span, regardless of the map's pivot — see
         // ApplyDotPosition. Being a later sibling of the RawImage also means it draws on
         // top of the map.
-        GameObject go = Instantiate(_dotPrefab, _mapRect);
+        GameObject go = Instantiate(prefab, _mapRect);
         go.name = $"MinimapDot_{e.EntityId}";
 
         RectTransform rect = go.GetComponent<RectTransform>();
@@ -206,6 +229,16 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
 
         Rect mapRect = _mapRect.rect;
         return new Vector2(u * mapRect.width, v * mapRect.height);
+    }
+
+    // Looks up _iconPrefabsByType by the entity's own RenderableComponent.Type, falling
+    // back to _dotPrefab if there's no RenderableComponent or no entry for that type.
+    private GameObject ResolveIconPrefab(ulong entityId)
+    {
+        if (_renderableStore != null && _renderableStore.HasComponent(entityId)
+            && _iconPrefabsByType.TryGetValue(_renderableStore.GetComponent(entityId).Type, out GameObject prefab))
+            return prefab;
+        return _dotPrefab;
     }
 
     // Mirrors SelectionManager.GetUnselectedColor's ownership check.
