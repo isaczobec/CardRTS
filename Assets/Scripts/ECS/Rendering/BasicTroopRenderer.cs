@@ -18,14 +18,33 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private float _attackAnimationTimeUntilImpact = 0.5f;
     private const float GroundOffset = 0f;
 
+    // The Speed stat value the running animation was authored/tuned at — the Animator's
+    // MovementSpeed param is set to (actual Speed stat) / this, so the run cycle plays back
+    // at its original, non-sliding pace for a troop with exactly this Speed, and scales up/
+    // down for anything faster/slower (e.g. from a StatModifierComponent buff/debuff).
+    [SerializeField] private float _runAnimationSpeedStat = 5f;
+
+    // How often (seconds) to recompute/set MovementSpeed — a troop's Speed stat only
+    // changes when a modifier is applied/expires, not every frame, so this doesn't need
+    // per-frame precision.
+    [SerializeField] private float _speedParamUpdateInterval = 0.25f;
+
+    private const int DefaultSpeed = 10;
+
     private static readonly int AttackTrigger = Animator.StringToHash("Attack");
     private static readonly int DieTrigger = Animator.StringToHash("Die");
     private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
     private static readonly int AttackSpeedMultiplierFloat = Animator.StringToHash("AttackSpeedMultiplier");
+    private static readonly int MovementSpeedFloat = Animator.StringToHash("MovementSpeed");
 
     private ECS _ecs;
     private readonly Dictionary<ulong, BasicTroopGameObject> _objects = new();
     private readonly TickPositionInterpolator _interpolator = new();
+
+    // Shared across all entities this renderer owns, rather than tracked per entity —
+    // MovementSpeed just gets recalculated for the whole batch once this elapses (see
+    // UpdateRenderable), instead of staggering individual entities' updates.
+    private float _speedUpdateTimer;
 
     public void Initialize(ECS ecs)
     {
@@ -103,6 +122,11 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
         var movStore = _ecs?.GetComponentStore<MovableComponent>();
         if (posStore == null) return;
 
+        _speedUpdateTimer += Time.deltaTime;
+        bool updateSpeedParam = _speedUpdateTimer >= _speedParamUpdateInterval;
+        if (updateSpeedParam)
+            _speedUpdateTimer -= _speedParamUpdateInterval;
+
         foreach (ulong id in entityIds)
         {
             if (!_objects.TryGetValue(id, out BasicTroopGameObject go)) continue;
@@ -126,7 +150,15 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
             }
 
             if (go.Animator != null)
+            {
                 go.Animator.SetBool(IsMovingParam, isMoving);
+
+                if (updateSpeedParam && _runAnimationSpeedStat > 0f)
+                {
+                    int speed = StatsQuery.GetSpeed(_ecs, id, DefaultSpeed);
+                    go.Animator.SetFloat(MovementSpeedFloat, speed / _runAnimationSpeedStat);
+                }
+            }
         }
     }
 

@@ -64,6 +64,10 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
 
     private ulong _localPlayerResourceEntityId;
 
+    // Scratch buffer for EntityTargeting.FindClosestSelectable (TargetEntityCard play) —
+    // reused across calls rather than allocated per play.
+    private readonly List<ulong> _targetQueryBuffer = new List<ulong>();
+
     // True while a card is selected or being dragged — SelectionManager checks this to
     // suppress normal troop selection/targeting input, the same way it already checks
     // Space (see SelectionManager.HandleSelectionInput).
@@ -82,11 +86,17 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
 
     // Resolves the Card definition for ActiveCardEntityId, or null if nothing is active /
     // not resolvable. Shared convenience for other systems (CardRangeIndicatorManager,
-    // CardPlacementIndicatorManager, ...) that need to know which card's rules currently
-    // apply rather than duplicating the CardComponent -> CardRegistry lookup themselves.
-    public Card ResolveActiveCard()
+    // CardPlacementIndicatorManager, CardTargetIndicatorManager, ...) that need to know
+    // which card's rules currently apply rather than duplicating the CardComponent ->
+    // CardRegistry lookup themselves.
+    public Card ResolveActiveCard() => ResolveCard(ActiveCardEntityId);
+
+    // Same lookup as ResolveActiveCard, but for an explicit card entity rather than
+    // whichever is currently selected/dragging — needed by TryPlayCard, which is called
+    // from OnCardDragEnded after _draggingCardId has already been cleared (so
+    // ActiveCardEntityId would no longer resolve to the card actually being played).
+    private Card ResolveCard(ulong cardEntityId)
     {
-        ulong cardEntityId = ActiveCardEntityId;
         if (cardEntityId == 0 || _ecs == null) return null;
 
         ComponentStore<CardComponent> cardStore = _ecs.GetComponentStore<CardComponent>();
@@ -255,12 +265,9 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         if (!Input.GetMouseButtonDown(0)) return;
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
-        if (TileSpaceMouse.TryGetPosition(out float x, out float y))
-        {
-            ulong cardId = _selectedCardId;
+        ulong cardId = _selectedCardId;
+        if (TryPlayCard(cardId))
             _selectedCardId = 0;
-            PlayCard(cardId, x, y);
-        }
     }
 
     private void SelectCard(ulong cardEntityId)
@@ -283,23 +290,51 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         if (_draggingCardId != go.CardEntityId) return;
         _draggingCardId = 0;
 
-        // If the drop point isn't a valid world position (e.g. released over UI or above
-        // the horizon), the card just falls back into its normal hand layout below.
-        if (TileSpaceMouse.TryGetPosition(out float x, out float y))
-            PlayCard(go.CardEntityId, x, y);
+        // If the drop point/target isn't valid (e.g. released over UI, above the horizon,
+        // or no matching entity under the cursor), the card just falls back into its
+        // normal hand layout below.
+        TryPlayCard(go.CardEntityId);
     }
 
-    // Single choke point for both the click-to-play (HandlePlaySelectedCardClick) and
-    // drag-to-play (OnCardDragEnded) paths — including the SelectionManager notification,
-    // so neither path can forget it (see SelectionManager.SuppressNextClickSelect for why
-    // it's needed: this same click/release is what just cleared _selectedCardId/
-    // _draggingCardId, so SelectionManager can no longer tell "a card was just played
-    // here" from "nothing was selected" by the time it processes the corresponding
-    // mouse-up).
-    private void PlayCard(ulong cardEntityId, float x, float y)
+    // Resolves cardEntityId's kind and, if a valid play point/target is currently under
+    // the cursor, sends the matching input and returns true (so the caller can clear
+    // _selectedCardId/_draggingCardId) — false leaves the card as-is (still selected, or
+    // falling back into the hand) for the caller to decide what to do. SpawnAtPointCard
+    // plays at a ground point; TargetEntityCard plays on the closest matching selectable
+    // entity to the cursor (see EntityTargeting.FindClosestSelectable) — a future card kind
+    // needing a different targeting shape gets its own branch here (and its own InputBase
+    // subtype/play system, see Card.cs).
+    //
+    // Takes cardEntityId explicitly rather than reading ActiveCardEntityId, since
+    // OnCardDragEnded already clears _draggingCardId before calling this — by then
+    // ActiveCardEntityId would no longer resolve to the card actually being played.
+    private bool TryPlayCard(ulong cardEntityId)
     {
-        SelectionManager.instance?.SuppressNextClickSelect();
-        InputBuffer.EnqueueInput(new SpawnAtPointInput { CardEntityId = cardEntityId, X = x, Y = y });
+        Card definition = ResolveCard(cardEntityId);
+
+        if (definition is SpawnAtPointCard)
+        {
+            if (!TileSpaceMouse.TryGetPosition(out float x, out float y)) return false;
+            SelectionManager.instance?.SuppressNextClickSelect();
+            InputBuffer.EnqueueInput(new SpawnAtPointInput { CardEntityId = cardEntityId, X = x, Y = y });
+            return true;
+        }
+
+        if (definition is TargetEntityCard targetEntityCard)
+        {
+            if (!TileSpaceMouse.TryGetPosition(out float x, out float y)) return false;
+
+            ulong targetId = EntityTargeting.FindClosestSelectable(
+                _ecs, x, y, targetEntityCard.TargetSelectionRadius, LocalPlayerId(),
+                targetEntityCard.CanTargetFriendly, targetEntityCard.CanTargetEnemyOrNeutral, _targetQueryBuffer);
+            if (targetId == 0) return false;
+
+            SelectionManager.instance?.SuppressNextClickSelect();
+            InputBuffer.EnqueueInput(new SpawnAtEntityInput { CardEntityId = cardEntityId, TargetEntityId = targetId });
+            return true;
+        }
+
+        return false;
     }
 
     // While below the lift threshold the dragged card sticks exactly to the cursor

@@ -11,6 +11,7 @@ public static class CardRegistry
         { CardType.Building, new BuildingCard() },
         { CardType.AoeSpell, new AoeSpellCard() },
         { CardType.SkillshotRangedTroop, new SkillshotRangedTroopCard() },
+        { CardType.SpeedBoost, new SpeedBoostCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

@@ -20,6 +20,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         FloatingTextManager.instance.Initialize();
         CardRangeIndicatorManager.instance.Initialize();
         CardPlacementIndicatorManager.instance.Initialize();
+        CardTargetIndicatorManager.instance.Initialize();
         DeployProgressIndicatorManager.instance.Initialize();
         AbilityInputManager.instance.Initialize();
         AbilityBarUI.instance.Initialize();

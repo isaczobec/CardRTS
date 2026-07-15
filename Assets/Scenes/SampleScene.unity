@@ -2698,6 +2698,8 @@ MonoBehaviour:
   _rotationDegreesPerSecond: 540
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
+  _runAnimationSpeedStat: 5
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &523945574
 GameObject:
   m_ObjectHideFlags: 0
@@ -4191,6 +4193,51 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &740374361
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 740374362}
+  - component: {fileID: 740374363}
+  m_Layer: 0
+  m_Name: CardTargetIndicatorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &740374362
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 740374361}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 203.08678, y: 0, z: 320.9557}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &740374363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 740374361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfb65f93c934e984ea4761e8422a8057, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardTargetIndicatorManager
+  _indicatorPrefab: {fileID: 4699926547919323133, guid: 6e0ca42641be46e4f8821aecd5679848, type: 3}
 --- !u!1 &753286934
 GameObject:
   m_ObjectHideFlags: 0
@@ -7001,6 +7048,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: fb1e48043961d8f44948225f539a83bb, type: 3}
   - name: MeleeStrike
     sprite: {fileID: 21300000, guid: 4b5c3887b0bad8548a4414947f05a7ba, type: 3}
+  - name: SpeedBoost
+    sprite: {fileID: 21300000, guid: 00fbb4588136cde4fbf9001df788bcfb, type: 3}
 --- !u!1 &1467796127
 GameObject:
   m_ObjectHideFlags: 0
@@ -7874,6 +7923,8 @@ MonoBehaviour:
   _rotationDegreesPerSecond: 540
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
+  _runAnimationSpeedStat: 7
+  _speedParamUpdateInterval: 0.1
 --- !u!1 &1687809272
 GameObject:
   m_ObjectHideFlags: 0
@@ -9037,6 +9088,7 @@ Transform:
   - {fileID: 1558029375}
   - {fileID: 352234083}
   - {fileID: 1933770740}
+  - {fileID: 740374362}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1914037910
@@ -9087,6 +9139,8 @@ MonoBehaviour:
   _rotationDegreesPerSecond: 540
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
+  _runAnimationSpeedStat: 7
+  _speedParamUpdateInterval: 0.1
 --- !u!1 &1919728739
 GameObject:
   m_ObjectHideFlags: 0
