@@ -2096,6 +2096,7 @@ MonoBehaviour:
   _fanAngleStepDegrees: 12
   _restingYOffset: -10
   _hoverRaiseAmount: 150
+  _hoverDetectionMargin: 40
   _cardMoveSpeed: 12
   _cardRotateSpeed: 12
   _hoverStickyMultiplier: 1.25
@@ -6996,6 +6997,10 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 31af4c11b0228d142b71af2d3940bbcb, type: 3}
   - name: RingOfProjectiles
     sprite: {fileID: 21300000, guid: 0d852f5493cecf94a90183f3f83ce947, type: 3}
+  - name: SkillshotAbility
+    sprite: {fileID: 21300000, guid: fb1e48043961d8f44948225f539a83bb, type: 3}
+  - name: MeleeStrike
+    sprite: {fileID: 21300000, guid: 4b5c3887b0bad8548a4414947f05a7ba, type: 3}
 --- !u!1 &1467796127
 GameObject:
   m_ObjectHideFlags: 0
@@ -9204,6 +9209,7 @@ MonoBehaviour:
   _rangeCirclePrefab: {fileID: 8278580109453892702, guid: 66a3854c50773d84ca99269a38ed5bba, type: 3}
   _cursorCirclePrefab: {fileID: 8278580109453892702, guid: 1724dbe353d90164f889c4ab37ecb142, type: 3}
   _directionArrowPrefab: {fileID: 7822238005596537607, guid: e11992e67b2bf4a47a2034ce40c119c1, type: 3}
+  _targetIndicatorPrefab: {fileID: 4699926547919323133, guid: 6e0ca42641be46e4f8821aecd5679848, type: 3}
   _rangeCircleColor: {r: 0, g: 1, b: 0, a: 0.25}
   _cursorCircleColor: {r: 1, g: 0, b: 0, a: 0.25}
 --- !u!1 &1943663250

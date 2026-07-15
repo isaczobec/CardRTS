@@ -175,6 +175,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<SpawnAtPointInput>(5);
         _inputTypeRegistry.Register<AbilityUsedInput>(6);
         _inputTypeRegistry.Register<AbilityUsedAtLocationInput>(7);
+        _inputTypeRegistry.Register<AbilityUsedOnEntityInput>(8);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);

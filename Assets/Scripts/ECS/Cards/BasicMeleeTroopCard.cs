@@ -18,6 +18,9 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
 
     private const float MaxDistanceFromBuilding = 20f;
 
+    // Cooldown for the troop's test ability (see AbilityManager.MeleeStrikeAbilityId).
+    private const float MeleeStrikeCooldownSeconds = 4f;
+
     public override CardType Type => CardType.BasicMeleeTroop;
     public override string Title => "Melee Troop";
     public override string ImageName => "BasicMeleeTroop";
@@ -49,6 +52,12 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
+            }),
+            // Test ability (Q) — see AbilityManager. Slots 2-4 (W/E/R) are left empty (0).
+            (e, id) => e.AddComponent(id, new AbilityComponent
+            {
+                Ability1Id = AbilityManager.MeleeStrikeAbilityId,
+                Ability1CooldownTicks = TickManager.SecondsToTicks(MeleeStrikeCooldownSeconds),
             }),
         });
     }

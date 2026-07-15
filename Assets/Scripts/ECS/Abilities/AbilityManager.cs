@@ -20,9 +20,16 @@ public static class AbilityManager
     // AbilityIndicatorManager.
     public const int SkillshotAbilityId = 3;
 
+    // Test ability #4 — target entity, deals direct damage to an enemy/neutral within
+    // Range (see BasicMeleeTroopCard). Exists mainly to exercise AbilityType.TargetEntity
+    // and its target-indicator preview — see AbilityIndicatorManager/EntityTargetIndicator.
+    public const int MeleeStrikeAbilityId = 4;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     private const float SkillshotAbilityRange = 20f;
+    private const float MeleeStrikeRange = 6f;
+    private const int MeleeStrikeDamage = 25;
     // Not used for any cast validation (RingOfProjectilesAbility is Instant — no location
     // to check), only so AbilityIndicatorManager can preview roughly how far the fired
     // projectiles will travel. Abilities are stateless/shared, so this can't read the
@@ -40,6 +47,7 @@ public static class AbilityManager
         { RingOfProjectilesAbilityId, BuildRingOfProjectilesAbility() },
         { AoeSpellCloneAbilityId, BuildAoeSpellCloneAbility() },
         { SkillshotAbilityId, BuildSkillshotAbility() },
+        { MeleeStrikeAbilityId, BuildMeleeStrikeAbility() },
     };
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
@@ -146,6 +154,25 @@ public static class AbilityManager
             Vector2 direction = new Vector2(input.X, input.Y) - firePosition;
 
             ProjectilePool.FireInDirection(ecs, input.CastingEntityId, direction, firePosition);
+        },
+    };
+
+    // Deterministic and side-effect-free like the other test abilities — a DamageRequest is
+    // just enqueued and flushed the same tick by DamageResolutionSystem (which runs after
+    // AbilitySystem), exactly the way BasicMeleeAISystem's own attacks already work, so no
+    // isServer guard is needed here either.
+    private static Ability BuildMeleeStrikeAbility() => new Ability
+    {
+        Type = AbilityType.TargetEntity,
+        Range = MeleeStrikeRange,
+        ImageName = "MeleeStrike",
+        CanTargetFriendly = false,
+        CanTargetEnemyOrNeutral = true,
+        ShowRangeCircle = true,
+        ShowTargetIndicator = true,
+        ExecuteOnEntity = (ecs, input) =>
+        {
+            ecs.Requests.CreateRequest(new DamageRequest(input.TargetEntityId, MeleeStrikeDamage) { DealerEntityId = input.CastingEntityId });
         },
     };
 }

@@ -1,14 +1,18 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Shows a held ability's preview indicators — a range circle around the caster, a circle at
-// the cast point, and/or a direction arrow from the caster toward the cast point — driven
-// entirely by AbilityInputManager's currently-held slot (HeldCasterId/HeldSlot, set while a
-// Q/W/E/R key is held down but not yet released — see AbilityInputManager) and the equipped
-// Ability's own Show*/ClampCastLocationToRange flags. All three indicators are optional per
-// ability and can be combined freely; each is only shown while its own flag is set on the
-// currently-held ability. The cast point used for the circle/arrow is resolved through
+// the cast point, a direction arrow from the caster toward the cast point, and/or a marker
+// on whichever entity would be targeted — driven entirely by AbilityInputManager's
+// currently-held slot (HeldCasterId/HeldSlot, set while a Q/W/E/R key is held down but not
+// yet released — see AbilityInputManager) and the equipped Ability's own
+// Show*/ClampCastLocationToRange fields. All indicators are optional per ability and can be
+// combined freely; each is only shown while its own flag is set on the currently-held
+// ability. The cast point used for the circle/arrow is resolved through
 // AbilityTargeting.ResolveCastPoint, the exact same clamping AbilityInputManager applies to
-// what it actually sends, so the preview never lies about where the cast will land.
+// what it actually sends, so the preview never lies about where the cast will land; the
+// target-entity marker likewise reuses EntityTargeting.FindClosestSelectable, the same
+// resolution AbilityInputManager uses for a TargetEntity ability's actual cast.
 //
 // Separate from the ECS architecture, like CardRangeIndicatorManager — never registered as
 // an ISystem, just polls AbilityInputManager/the live cursor each frame.
@@ -17,6 +21,7 @@ public class AbilityIndicatorManager : Singleton<AbilityIndicatorManager>
     [SerializeField] private RangeIndicatorPrefab _rangeCirclePrefab;
     [SerializeField] private RangeIndicatorPrefab _cursorCirclePrefab;
     [SerializeField] private AbilityDirectionIndicatorPrefab _directionArrowPrefab;
+    [SerializeField] private EntityTargetIndicatorPrefab _targetIndicatorPrefab;
 
     [SerializeField] private Color _rangeCircleColor = new Color(0f, 1f, 0f, 0.25f);
     [SerializeField] private Color _cursorCircleColor = new Color(1f, 0f, 0f, 0.25f);
@@ -25,10 +30,14 @@ public class AbilityIndicatorManager : Singleton<AbilityIndicatorManager>
     private RangeIndicatorPrefab _rangeCircleInstance;
     private RangeIndicatorPrefab _cursorCircleInstance;
     private AbilityDirectionIndicatorPrefab _directionArrowInstance;
+    private EntityTargetIndicator _targetIndicator;
+
+    private readonly List<ulong> _targetQueryBuffer = new List<ulong>();
 
     public void Initialize()
     {
         _ecs = TickManager.instance.ActiveECS;
+        _targetIndicator = new EntityTargetIndicator(_targetIndicatorPrefab, transform);
     }
 
     void Update()
@@ -57,6 +66,7 @@ public class AbilityIndicatorManager : Singleton<AbilityIndicatorManager>
 
         UpdateRangeCircle(ability, casterPos);
         UpdateCursorIndicators(ability, casterId, casterPos);
+        UpdateTargetIndicator(ability, casterId, casterPos);
     }
 
     private void UpdateRangeCircle(Ability ability, PositionComponent casterPos)
@@ -141,11 +151,51 @@ public class AbilityIndicatorManager : Singleton<AbilityIndicatorManager>
         _directionArrowInstance.gameObject.SetActive(true);
     }
 
+    private void UpdateTargetIndicator(Ability ability, ulong casterId, PositionComponent casterPos)
+    {
+        if (!ability.ShowTargetIndicator || !TileSpaceMouse.TryGetPosition(out float x, out float y))
+        {
+            _targetIndicator.Hide();
+            return;
+        }
+
+        ushort localPlayerId = NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
+        ulong targetId = EntityTargeting.FindClosestSelectable(
+            _ecs, x, y, ability.TargetSelectionRadius, localPlayerId,
+            ability.CanTargetFriendly, ability.CanTargetEnemyOrNeutral, _targetQueryBuffer);
+        if (targetId == 0)
+        {
+            _targetIndicator.Hide();
+            return;
+        }
+
+        ComponentStore<PositionComponent> posStore = _ecs.GetComponentStore<PositionComponent>();
+        if (posStore == null || !posStore.HasComponent(targetId))
+        {
+            _targetIndicator.Hide();
+            return;
+        }
+
+        // Same range check AbilityInputManager applies before actually sending a cast — no
+        // point showing a target marker for an entity the cast would just get rejected for.
+        float dx = posStore.GetComponent(targetId).X - casterPos.X;
+        float dy = posStore.GetComponent(targetId).Y - casterPos.Y;
+        if (dx * dx + dy * dy > ability.Range * ability.Range)
+        {
+            _targetIndicator.Hide();
+            return;
+        }
+
+        PositionComponent targetPos = posStore.GetComponent(targetId);
+        _targetIndicator.Show(WorldPositionForXY(targetPos.X, targetPos.Y));
+    }
+
     private void HideAll()
     {
         SetActive(_rangeCircleInstance, false);
         SetActive(_cursorCircleInstance, false);
         SetActive(_directionArrowInstance, false);
+        _targetIndicator?.Hide();
     }
 
     private static void SetActive(Component c, bool active)

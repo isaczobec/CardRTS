@@ -10,6 +10,10 @@ public enum AbilityType
     // Cast via AbilityUsedAtLocationInput — needs a world point within Range of the
     // casting entity.
     TargetLocation,
+
+    // Cast via AbilityUsedOnEntityInput — needs an existing selectable entity within Range
+    // of the casting entity, matching CanTargetFriendly/CanTargetEnemyOrNeutral.
+    TargetEntity,
 }
 
 // Data + behavior for one ability, looked up by ID via AbilityManager. Not subclassed —
@@ -66,9 +70,29 @@ public class Ability
     // AbilityType.TargetLocation.
     public bool ClampCastLocationToRange = true;
 
+    // The following are only meaningful for AbilityType.TargetEntity.
+
+    // Whether this ability may be cast on an entity owned by the casting player.
+    public bool CanTargetFriendly;
+    // Whether this ability may be cast on an entity NOT owned by the casting player
+    // (covers both enemy and neutral).
+    public bool CanTargetEnemyOrNeutral;
+
+    // How close to the cursor (world units) a candidate entity must be to be considered
+    // "the one the cursor is pointing at" — see EntityTargeting.FindClosestSelectable.
+    // Independent of Range (the max distance from the CASTER a target may be); this is
+    // about resolving which entity near the cursor the player means, the same role
+    // SelectionManager.SingleSelectRadius plays for click-selection.
+    public float TargetSelectionRadius = 2.5f;
+
+    // World-space marker on the entity that would be targeted right now, shown while this
+    // ability's hotkey is held — see AbilityIndicatorManager/EntityTargetIndicator.
+    public bool ShowTargetIndicator;
+
     // Exactly one of these should be non-null, matching Type. Left null for whichever
     // input kind this ability doesn't apply to; AbilitySystem checks for that and rejects
     // an input whose matching lambda is missing instead of throwing.
     public Action<ECS, AbilityUsedInput> ExecuteInstant;
     public Action<ECS, AbilityUsedAtLocationInput> ExecuteAtLocation;
+    public Action<ECS, AbilityUsedOnEntityInput> ExecuteOnEntity;
 }

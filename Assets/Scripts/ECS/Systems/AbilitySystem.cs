@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 
-// Reads AbilityUsedInput/AbilityUsedAtLocationInput each tick. For each, validates the
-// casting entity exists, is owned by the requesting client, can currently take actions,
-// has the requested ability equipped in one of its 4 AbilityComponent slots, that slot
-// isn't on cooldown, and (for a TargetLocation ability) that the point is within the
-// ability's own Range of the caster — then dispatches to whichever of Ability.
-// ExecuteInstant/ExecuteAtLocation matches the input actually received, and puts that slot
-// on cooldown (AbilityComponent's own per-slot CooldownTicks; see AbilityCooldownSystem
-// for the countdown).
+// Reads AbilityUsedInput/AbilityUsedAtLocationInput/AbilityUsedOnEntityInput each tick. For
+// each, validates the casting entity exists, is owned by the requesting client, can
+// currently take actions, has the requested ability equipped in one of its 4
+// AbilityComponent slots, that slot isn't on cooldown, and — for a TargetLocation ability,
+// that the point is within the ability's own Range of the caster, or for a TargetEntity
+// ability, that the target exists/is selectable, matches CanTargetFriendly/
+// CanTargetEnemyOrNeutral, and is within Range — then dispatches to whichever of Ability.
+// ExecuteInstant/ExecuteAtLocation/ExecuteOnEntity matches the input actually received, and
+// puts that slot on cooldown (AbilityComponent's own per-slot CooldownTicks; see
+// AbilityCooldownSystem for the countdown).
 //
 // Stateless, so registered as a GlobalSystem the same way SpawnAtPointCardPlaySystem is.
 // Runs unconditionally (predicted on clients) — abilities that only create/mutate
@@ -42,6 +44,12 @@ public static class AbilitySystem
         if (locationInputs != null)
             foreach (AbilityUsedAtLocationInput input in locationInputs)
                 ExecuteAtLocation(ecs, input, abilityStore, troopStore, posStore);
+
+        ComponentStore<SelectableComponent> selectableStore = ecs.GetComponentStore<SelectableComponent>();
+        List<AbilityUsedOnEntityInput> entityInputs = ecs.GetInputsForTick<AbilityUsedOnEntityInput>();
+        if (entityInputs != null)
+            foreach (AbilityUsedOnEntityInput input in entityInputs)
+                ExecuteOnEntity(ecs, input, abilityStore, troopStore, posStore, selectableStore);
     }
 
     private static void ExecuteInstant(ECS ecs, AbilityUsedInput input,
@@ -84,6 +92,57 @@ public static class AbilitySystem
         }
 
         ability.ExecuteAtLocation(ecs, input);
+        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore);
+    }
+
+    private static void ExecuteOnEntity(ECS ecs, AbilityUsedOnEntityInput input,
+        ComponentStore<AbilityComponent> abilityStore, ComponentStore<TroopComponent> troopStore,
+        ComponentStore<PositionComponent> posStore, ComponentStore<SelectableComponent> selectableStore)
+    {
+        if (!TryBeginCast(ecs, input.CastingEntityId, input.AbilityId, input.ClientId, abilityStore, troopStore, out Ability ability, out int slot))
+            return;
+
+        if (ability.ExecuteOnEntity == null)
+        {
+            DebugLogger.LogWarning($"[AbilitySystem] Rejected: ability {input.AbilityId} has no target-entity behavior.", "abilities");
+            return;
+        }
+
+        if (!ecs.HasEntity(input.TargetEntityId) || selectableStore == null || !selectableStore.HasComponent(input.TargetEntityId))
+        {
+            DebugLogger.LogWarning($"[AbilitySystem] Rejected: target entity {input.TargetEntityId} does not exist or is not selectable.", "abilities");
+            return;
+        }
+
+        // Never trust the client's own friend/enemy filtering (EntityTargeting on the
+        // input-capture side) — re-derive it here from authoritative state.
+        bool isFriendly = selectableStore.GetComponent(input.TargetEntityId).OwnerPlayerId == input.ClientId;
+        if (isFriendly && !ability.CanTargetFriendly || !isFriendly && !ability.CanTargetEnemyOrNeutral)
+        {
+            DebugLogger.LogWarning($"[AbilitySystem] Rejected: ability {input.AbilityId} cannot target {(isFriendly ? "friendly" : "enemy/neutral")} entity {input.TargetEntityId}.", "abilities");
+            return;
+        }
+
+        bool isSelectable = ecs.Requests.Process(new IsSelectableRequest(input.TargetEntityId), ecs, executeIfNotCancelled: false).IsSelectable;
+        if (!isSelectable)
+        {
+            DebugLogger.LogWarning($"[AbilitySystem] Rejected: target entity {input.TargetEntityId} is not currently selectable.", "abilities");
+            return;
+        }
+
+        if (posStore == null || !posStore.HasComponent(input.CastingEntityId) || !posStore.HasComponent(input.TargetEntityId))
+            return;
+
+        PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
+        PositionComponent targetPos = posStore.GetComponent(input.TargetEntityId);
+        float dx = targetPos.X - casterPos.X, dy = targetPos.Y - casterPos.Y;
+        if (dx * dx + dy * dy > ability.Range * ability.Range + RangeToleranceSq)
+        {
+            DebugLogger.LogWarning($"[AbilitySystem] Rejected: target entity {input.TargetEntityId} is outside ability {input.AbilityId}'s range ({ability.Range}) of entity {input.CastingEntityId}.", "abilities");
+            return;
+        }
+
+        ability.ExecuteOnEntity(ecs, input);
         CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore);
     }
 
