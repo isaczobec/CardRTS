@@ -9,18 +9,33 @@ using UnityEngine;
 //
 // Stationary — an AOE spell entity has no MovableComponent — so unlike BasicTroopRenderer's
 // TickPositionInterpolator, position/scale are only ever set once, at activation.
+//
+// Also owns the spell's audio: a crossfading looping "active" sound starts alongside the
+// visual on activation and fades out (rather than cutting off) when the spell ends, and a
+// one-shot "damage" sound plays on every DamageDealtEvent this spell's own entity deals
+// (DealerEntityId lookup against _audioSources, so other damage sources don't trigger it).
 public class AoeSpellRenderer : MonoBehaviour, IComponentRenderer
 {
     [SerializeField] private AoeSpellPrefab _prefab;
+
+    [Header("Audio")]
+    [SerializeField] private float _loopCrossfadeDuration = 1.5f;
+    [SerializeField] private float _stopFadeOutDuration = 1f;
+
+    [SerializeField] private string _loopSoundName;
+    [SerializeField] private string _damageSoundName;
 
     private const int DefaultRange = 5;
 
     private ECS _ecs;
     private readonly Dictionary<ulong, AoeSpellPrefab> _objects = new();
+    private readonly Dictionary<ulong, CardRTSAudioSource> _audioSources = new();
+    private readonly Dictionary<ulong, PlayingSound> _loopSounds = new();
 
     public void Initialize(ECS ecs)
     {
         _ecs = ecs;
+        TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
     }
 
     public void OnEntityAdded(ulong entityId)
@@ -34,6 +49,18 @@ public class AoeSpellRenderer : MonoBehaviour, IComponentRenderer
         if (_objects.TryGetValue(entityId, out AoeSpellPrefab go))
             Destroy(go.gameObject);
         _objects.Remove(entityId);
+
+        if (_loopSounds.TryGetValue(entityId, out PlayingSound loopSound))
+        {
+            loopSound.Stop(_stopFadeOutDuration);
+            _loopSounds.Remove(entityId);
+        }
+
+        if (_audioSources.TryGetValue(entityId, out CardRTSAudioSource audioSource))
+        {
+            audioSource.DestroyWhenIdle(); // lets the fade-out above finish before tearing down
+            _audioSources.Remove(entityId);
+        }
     }
 
     public void OnEntityActivated(ulong entityId)
@@ -44,7 +71,9 @@ public class AoeSpellRenderer : MonoBehaviour, IComponentRenderer
         if (posStore == null || !posStore.HasComponent(entityId)) return;
 
         PositionComponent pos = posStore.GetComponent(entityId);
-        AoeSpellPrefab go = Instantiate(_prefab, WorldPositionFor(pos), Quaternion.identity);
+        Vector3 worldPos = WorldPositionFor(pos);
+
+        AoeSpellPrefab go = Instantiate(_prefab, worldPos, Quaternion.identity);
         go.name = $"AoeSpell_{entityId}";
 
         float range = StatsQuery.GetRange(_ecs, entityId, DefaultRange);
@@ -52,6 +81,19 @@ public class AoeSpellRenderer : MonoBehaviour, IComponentRenderer
         go.SetDurationElapsed(0f);
 
         _objects[entityId] = go;
+
+        if (AudioManager.instance != null)
+        {
+            CardRTSAudioSource audioSource = AudioManager.instance.CreateAudioSource(worldPos, spatialBlend: 1f);
+            _audioSources[entityId] = audioSource;
+            _loopSounds[entityId] = audioSource.PlaySound(_loopSoundName, loop: true, crossfadeDuration: _loopCrossfadeDuration);
+        }
+    }
+
+    private void OnDamageDealt(DamageDealtEvent e)
+    {
+        if (_audioSources.TryGetValue(e.DealerEntityId, out CardRTSAudioSource audioSource))
+            audioSource.PlaySound(_damageSoundName);
     }
 
     public void UpdateRenderable(List<ulong> entityIds)

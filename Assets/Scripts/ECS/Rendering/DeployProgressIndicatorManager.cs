@@ -144,6 +144,8 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
         indicator.SetProgress(1f);
 
         _indicators[entityId] = indicator;
+
+        AudioManager.instance?.PlayOneShotAtPosition("DeploySpawn", indicator.transform.position);
     }
 
     // A modifier entity (ModifierComponent + ActivatableComponent) shows its progress
@@ -172,10 +174,31 @@ public class DeployProgressIndicatorManager : Singleton<DeployProgressIndicatorM
         indicator.SetProgress(1f);
 
         _modifierIndicators[modifierId] = indicator;
+
+        AudioManager.instance?.PlayOneShotAtPosition("DeploySpawn", indicator.transform.position);
     }
 
-    private void OnEntityActivated(EntityActivatedEvent e) => DestroyIndicator(e.EntityId);
+    // Only the successful-completion path (not early removal via OnEntityDeleted) plays a
+    // sound — position is read off the indicator itself before DestroyIndicator tears it down.
+    private void OnEntityActivated(EntityActivatedEvent e)
+    {
+        Vector3? indicatorPosition = GetIndicatorPosition(e.EntityId);
+        DestroyIndicator(e.EntityId);
+
+        if (indicatorPosition.HasValue)
+            AudioManager.instance?.PlayOneShotAtPosition("DeployComplete", indicatorPosition.Value);
+    }
+
     private void OnEntityDeleted(EntityDeletedEvent e) => DestroyIndicator(e.EntityId);
+
+    private Vector3? GetIndicatorPosition(ulong entityId)
+    {
+        if (_indicators.TryGetValue(entityId, out DeployProgressIndicatorPrefab indicator))
+            return indicator.transform.position;
+        if (_modifierIndicators.TryGetValue(entityId, out DeployProgressIndicatorPrefab modifierIndicator))
+            return modifierIndicator.transform.position;
+        return null;
+    }
 
     private void DestroyIndicator(ulong entityId)
     {

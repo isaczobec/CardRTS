@@ -25,5 +25,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
         AbilityInputManager.instance.Initialize();
         AbilityBarUI.instance.Initialize();
         AbilityIndicatorManager.instance.Initialize();
+        AudioManager.instance.Initialize();
     }
 }

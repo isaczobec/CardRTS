@@ -17,6 +17,11 @@ public class RespawnableBuildingRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private float _minScale = 1f;
     [SerializeField] private float _maxScale = 1f;
 
+    [Header("Audio")]
+    [SerializeField] private string _takeDamageSoundName;
+    [SerializeField] private string _diedSoundName;
+    [SerializeField] private string _respawnedSoundName;
+
     private const float GroundOffset = 0f;
 
     private ECS _ecs;
@@ -28,12 +33,16 @@ public class RespawnableBuildingRenderer : MonoBehaviour, IComponentRenderer
         _ecs = ecs;
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnEntityDied);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityRespawnedEvent>(OnEntityRespawned);
+        TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
     }
 
     private void OnEntityDied(RespawnableEntityDiedEvent e)
     {
         if (_aliveObjects.TryGetValue(e.EntityId, out GameObject aliveGo))
+        {
             aliveGo.SetActive(false);
+            PlaySoundAt(_diedSoundName, aliveGo.transform.position);
+        }
         if (_respawningObjects.TryGetValue(e.EntityId, out GameObject respawningGo))
             respawningGo.SetActive(true);
     }
@@ -41,9 +50,26 @@ public class RespawnableBuildingRenderer : MonoBehaviour, IComponentRenderer
     private void OnEntityRespawned(RespawnableEntityRespawnedEvent e)
     {
         if (_aliveObjects.TryGetValue(e.EntityId, out GameObject aliveGo))
+        {
             aliveGo.SetActive(true);
+            PlaySoundAt(_respawnedSoundName, aliveGo.transform.position);
+        }
         if (_respawningObjects.TryGetValue(e.EntityId, out GameObject respawningGo))
             respawningGo.SetActive(false);
+    }
+
+    // Only while alive — a respawning (dead) building isn't a valid damage target, so
+    // there's no matching _aliveObjects entry for the lookup to find in that state anyway.
+    private void OnDamageDealt(DamageDealtEvent e)
+    {
+        if (_aliveObjects.TryGetValue(e.EntityId, out GameObject aliveGo))
+            PlaySoundAt(_takeDamageSoundName, aliveGo.transform.position);
+    }
+
+    private void PlaySoundAt(string soundName, Vector3 position)
+    {
+        if (string.IsNullOrEmpty(soundName) || AudioManager.instance == null) return;
+        AudioManager.instance.PlayOneShotAtPosition(soundName, position);
     }
 
     public void OnEntityAdded(ulong _) { }

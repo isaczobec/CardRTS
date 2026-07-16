@@ -833,6 +833,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AoeSpellRenderer
   _prefab: {fileID: 4309100484666204601, guid: cd23fb4a008b90e44ac91c670f38e34d, type: 3}
+  _loopCrossfadeDuration: 1.5
+  _stopFadeOutDuration: 1
+  _loopSoundName: BloodSpellLoop
+  _damageSoundName: BloodSpellDamage
 --- !u!1 &113975537
 GameObject:
   m_ObjectHideFlags: 0
@@ -1479,6 +1483,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillshotProjectileRenderer
   _prefab: {fileID: 8077043507155612275, guid: 739532cd11a5ae043bd61e1bd753b6a6, type: 3}
   _rotationDegreesPerSecond: 1080
+  _launchSoundName: 
+  _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &231996844
 GameObject:
   m_ObjectHideFlags: 0
@@ -1694,6 +1700,8 @@ MonoBehaviour:
   _randomRotation: 0
   _minScale: 1
   _maxScale: 1
+  _takeDamageSoundName: WoodTakeDamage
+  _destroyedSoundName: DefaultDeath
 --- !u!1 &279553959
 GameObject:
   m_ObjectHideFlags: 0
@@ -2696,10 +2704,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: d2e438824aa35d04eaadc1d098b344ac, type: 3}
   _rotationDegreesPerSecond: 540
+  _attackWindupSoundName: DefaultTroopWindup
+  _dealDamageSoundName: 
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
-  _runAnimationSpeedStat: 5
-  _speedParamUpdateInterval: 0.25
+  _runAnimationSpeedStat: 7
+  _speedParamUpdateInterval: 0.1
 --- !u!1 &523945574
 GameObject:
   m_ObjectHideFlags: 0
@@ -4855,6 +4867,9 @@ MonoBehaviour:
   _randomRotation: 1
   _minScale: 0.9
   _maxScale: 1.1
+  _takeDamageSoundName: StoneTakeDamage
+  _diedSoundName: DefaultDeath
+  _respawnedSoundName: Revive
 --- !u!1 &891085904
 GameObject:
   m_ObjectHideFlags: 0
@@ -4958,6 +4973,8 @@ MonoBehaviour:
   _randomRotation: 0
   _minScale: 1
   _maxScale: 1
+  _takeDamageSoundName: WoodTakeDamage
+  _destroyedSoundName: DefaultDeath
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -4971,6 +4988,7 @@ GameObject:
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
   - component: {fileID: 963194230}
+  - component: {fileID: 963194231}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -5116,6 +5134,103 @@ MonoBehaviour:
   _edgeThreshold: 0.05
   _dragPanSensitivity: 0.5
   _rotateSensitivity: 1
+--- !u!82 &963194231
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &982359449
 GameObject:
   m_ObjectHideFlags: 0
@@ -5162,6 +5277,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
   _prefab: {fileID: 8077043507155612275, guid: 5c06d9abc9800cd42b76770a9e6d0a7a, type: 3}
   _rotationDegreesPerSecond: 1080
+  _launchSoundName: 
+  _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &987012150
 GameObject:
   m_ObjectHideFlags: 0
@@ -6934,6 +7051,9 @@ MonoBehaviour:
   _randomRotation: 1
   _minScale: 0.9
   _maxScale: 1.1
+  _takeDamageSoundName: WoodTakeDamage
+  _diedSoundName: DefaultDeath
+  _respawnedSoundName: Revive
 --- !u!1 &1449116594
 GameObject:
   m_ObjectHideFlags: 0
@@ -6985,6 +7105,9 @@ MonoBehaviour:
   _randomRotation: 0
   _minScale: 1
   _maxScale: 1
+  _takeDamageSoundName: 
+  _diedSoundName: 
+  _respawnedSoundName: 
 --- !u!1 &1458940767
 GameObject:
   m_ObjectHideFlags: 0
@@ -7921,6 +8044,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: 3ed22e2c4cbcfa14582110c357d666aa, type: 3}
   _rotationDegreesPerSecond: 540
+  _attackWindupSoundName: DefaultTroopWindup
+  _dealDamageSoundName: 
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
   _runAnimationSpeedStat: 7
@@ -9048,6 +9175,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1889187866}
+  - component: {fileID: 1889187867}
   m_Layer: 0
   m_Name: Singletons
   m_TagString: Untagged
@@ -9089,8 +9217,106 @@ Transform:
   - {fileID: 352234083}
   - {fileID: 1933770740}
   - {fileID: 740374362}
+  - {fileID: 1985718169}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1889187867
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1889187865}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1914037910
 GameObject:
   m_ObjectHideFlags: 0
@@ -9137,6 +9363,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: 5e19c257e7d7515438efa3458bc5ecaf, type: 3}
   _rotationDegreesPerSecond: 540
+  _attackWindupSoundName: DefaultTroopWindup
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
   _runAnimationSpeedStat: 7
@@ -9528,6 +9758,157 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_EffectDistance: {x: 3, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!1 &1985718168
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1985718169}
+  - component: {fileID: 1985718171}
+  - component: {fileID: 1985718170}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1985718169
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1985718168}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1985718170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1985718168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd4541acc14535b4aaa49a1930c706e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundRegistry
+  _entries:
+  - name: CardHover
+    clips:
+    - {fileID: 8300000, guid: cd3f5623300e7404b9df36ea96c328ab, type: 3}
+    - {fileID: 8300000, guid: 94f1f6fb1a4ec6d4ab48a3fd9236c07d, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 0.05
+  - name: CardSelect
+    clips:
+    - {fileID: 8300000, guid: 5e7bc695c1adcf0489162823f2f1c7a9, type: 3}
+    minPitch: 0.95
+    maxPitch: 1.05
+    defaultVolume: 0.14
+  - name: CardDraw
+    clips:
+    - {fileID: 8300000, guid: a634ee6fcac89124f92b1910dacfb922, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 0.14
+  - name: CardPlay
+    clips:
+    - {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 0.14
+  - name: DeploySpawn
+    clips:
+    - {fileID: 8300000, guid: 7a9de5c4d998126449cf964a6b27a8b0, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 2.5
+  - name: DeployComplete
+    clips:
+    - {fileID: 8300000, guid: c5cb2ac29e89dbf43a9b644caaad45e6, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 2.5
+  - name: DefaultTroopTakeDamage
+    clips:
+    - {fileID: 8300000, guid: eaae8fe8d600e1f459f34aa5757fa3b8, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 13
+  - name: DefaultTroopWindup
+    clips:
+    - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+    minPitch: 1.1
+    maxPitch: 0.9
+    defaultVolume: 8
+  - name: DeafultTroopDealDamage
+    clips:
+    - {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
+    minPitch: 1.1
+    maxPitch: 0.9
+    defaultVolume: 8
+  - name: StoneTakeDamage
+    clips:
+    - {fileID: 8300000, guid: b7b5a6156961bac44a67504d42ce6fcf, type: 3}
+    minPitch: 1.1
+    maxPitch: 0.9
+    defaultVolume: 12
+  - name: WoodTakeDamage
+    clips:
+    - {fileID: 8300000, guid: 2352822feb4caa14ebdbc0c713289f8d, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 14
+  - name: Revive
+    clips:
+    - {fileID: 8300000, guid: cfce0cea076109f478783201b2a9f57f, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 8
+  - name: BloodSpellLoop
+    clips:
+    - {fileID: 8300000, guid: ffde96e429ba5cb409491619888d8b98, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 14
+  - name: BloodSpellDamage
+    clips:
+    - {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
+    minPitch: 1.1
+    maxPitch: 0.9
+    defaultVolume: 18
+  - name: DefaultDeath
+    clips:
+    - {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
+    minPitch: 1.1
+    maxPitch: 0.9
+    defaultVolume: 8
+--- !u!114 &1985718171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1985718168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6b5059966606cc4aacb55899d3b4258, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  _minDistance: 15
+  _maxDistance: 500
 --- !u!1 &1999478540
 GameObject:
   m_ObjectHideFlags: 0

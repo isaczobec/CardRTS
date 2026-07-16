@@ -12,6 +12,12 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private BasicTroopGameObject _prefab;
     [SerializeField] private float _rotationDegreesPerSecond = 540f;
 
+    [Header("Audio")]
+    [SerializeField] private string _attackWindupSoundName;
+    [SerializeField] private string _dealDamageSoundName;
+    [SerializeField] private string _takeDamageSoundName;
+    [SerializeField] private string _deathSoundName;
+
     // Capsule primitive (used by the prefab's placeholder mesh, if any) is 2 units tall;
     // offset by 1 so it stands on the ground plane.
     [SerializeField] private float _attackAnimationDuration = 1;
@@ -51,20 +57,43 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
         _ecs = ecs;
         TickManager.instance.ServerFlagEvents.Subscribe<TroopBeginAttackEvent>(OnTroopBeginAttack);
         TickManager.instance.ServerFlagEvents.Subscribe<TroopDiedEvent>(OnTroopDied);
+        TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
     }
 
     private void OnTroopBeginAttack(TroopBeginAttackEvent e)
     {
-        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go) && go.Animator != null)
+        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go))
         {
-            int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, e.EntityId, TickManager.MillisecondsToTicks(1000f));
-            float windupSeconds = TickManager.TicksToSeconds(attackSpeedTicks);
-            float multiplier = _attackAnimationTimeUntilImpact / windupSeconds;
-            go.Animator.SetFloat(AttackSpeedMultiplierFloat, multiplier);
-            go.Animator.SetTrigger(AttackTrigger);
+            if (go.Animator != null)
+            {
+                int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, e.EntityId, TickManager.MillisecondsToTicks(1000f));
+                float windupSeconds = TickManager.TicksToSeconds(attackSpeedTicks);
+                float multiplier = _attackAnimationTimeUntilImpact / windupSeconds;
+                go.Animator.SetFloat(AttackSpeedMultiplierFloat, multiplier);
+                go.Animator.SetTrigger(AttackTrigger);
+            }
+
+            PlaySoundAt(_attackWindupSoundName, go.transform.position);
         }
 
         FaceTarget(e.EntityId, e.TargetEntityId);
+    }
+
+    // Dealer/target are separate troops (usually) — each gets its own sound lookup, so a
+    // troop with only one of the two fields configured still gets that half.
+    private void OnDamageDealt(DamageDealtEvent e)
+    {
+        if (_objects.TryGetValue(e.DealerEntityId, out BasicTroopGameObject dealerGo))
+            PlaySoundAt(_dealDamageSoundName, dealerGo.transform.position);
+
+        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject targetGo))
+            PlaySoundAt(_takeDamageSoundName, targetGo.transform.position);
+    }
+
+    private void PlaySoundAt(string soundName, Vector3 position)
+    {
+        if (string.IsNullOrEmpty(soundName) || AudioManager.instance == null) return;
+        AudioManager.instance.PlayOneShotAtPosition(soundName, position);
     }
 
     // Snaps the troop to face its target the instant the attack windup starts. This is
@@ -89,8 +118,11 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
 
     private void OnTroopDied(TroopDiedEvent e)
     {
-        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go) && go.Animator != null)
-            go.Animator.SetTrigger(DieTrigger);
+        if (_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go))
+        {
+            if (go.Animator != null) go.Animator.SetTrigger(DieTrigger);
+            PlaySoundAt(_deathSoundName, go.transform.position);
+        }
     }
 
     public void OnEntityAdded(ulong entityId)

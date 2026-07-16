@@ -13,6 +13,10 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private GameObject _prefab;
     [SerializeField] private float _rotationDegreesPerSecond = 1080f;
 
+    [Header("Audio")]
+    [SerializeField] private string _launchSoundName;
+    [SerializeField] private string _impactSoundName;
+
     private const float GroundOffset = 0f;
 
     private ECS _ecs;
@@ -36,6 +40,12 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
 
         TickManager.instance.ServerFlagEvents.Subscribe<ProjectileActivatedEvent>(OnProjectileActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<ProjectileDeactivatedEvent>(OnProjectileDeactivated);
+
+        // Audio subscribes only to the local/predicted stream above, NOT also
+        // ServerFlagEvents — unlike the (idempotent) SetActive toggle above, playing a sound
+        // twice for the same shot would be an audible double-trigger.
+        ecs.FlagEvents.Subscribe<ProjectileActivatedEvent>(OnProjectileActivatedAudio);
+        ecs.FlagEvents.Subscribe<ProjectileDeactivatedEvent>(OnProjectileDeactivatedAudio);
     }
 
     private void OnProjectileActivated(ProjectileActivatedEvent e)
@@ -49,6 +59,21 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
         if (_objects.TryGetValue(e.EntityId, out GameObject go))
             go.SetActive(false);
         _interpolator.Remove(e.EntityId);
+    }
+
+    private void OnProjectileActivatedAudio(ProjectileActivatedEvent e) => PlaySoundAtEntity(_launchSoundName, e.EntityId);
+    private void OnProjectileDeactivatedAudio(ProjectileDeactivatedEvent e) => PlaySoundAtEntity(_impactSoundName, e.EntityId);
+
+    // Reads the live ECS position rather than the GameObject's transform - at the instant
+    // activation fires the transform may still hold last cycle's (pre-UpdateRenderable) spot.
+    private void PlaySoundAtEntity(string soundName, ulong entityId)
+    {
+        if (string.IsNullOrEmpty(soundName) || AudioManager.instance == null) return;
+
+        var posStore = _ecs?.GetComponentStore<PositionComponent>();
+        if (posStore == null || !posStore.HasComponent(entityId)) return;
+
+        AudioManager.instance.PlayOneShotAtPosition(soundName, ToWorldPosition(posStore.GetComponent(entityId)));
     }
 
     public void OnEntityAdded(ulong entityId)

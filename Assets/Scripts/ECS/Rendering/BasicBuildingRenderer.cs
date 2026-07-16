@@ -16,6 +16,10 @@ public class BasicBuildingRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private float _minScale = 1f;
     [SerializeField] private float _maxScale = 1f;
 
+    [Header("Audio")]
+    [SerializeField] private string _takeDamageSoundName;
+    [SerializeField] private string _destroyedSoundName;
+
     private const float GroundOffset = 0f;
 
     private ECS _ecs;
@@ -24,6 +28,19 @@ public class BasicBuildingRenderer : MonoBehaviour, IComponentRenderer
     public void Initialize(ECS ecs)
     {
         _ecs = ecs;
+        TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
+    }
+
+    private void OnDamageDealt(DamageDealtEvent e)
+    {
+        if (_objects.TryGetValue(e.EntityId, out GameObject go))
+            PlaySoundAt(_takeDamageSoundName, go.transform.position);
+    }
+
+    private void PlaySoundAt(string soundName, Vector3 position)
+    {
+        if (string.IsNullOrEmpty(soundName) || AudioManager.instance == null) return;
+        AudioManager.instance.PlayOneShotAtPosition(soundName, position);
     }
 
     public void OnEntityAdded(ulong entityId)
@@ -34,7 +51,10 @@ public class BasicBuildingRenderer : MonoBehaviour, IComponentRenderer
     public void OnEntityRemoved(ulong entityId)
     {
         if (_objects.TryGetValue(entityId, out GameObject go))
+        {
+            PlaySoundAt(_destroyedSoundName, go.transform.position);
             Destroy(go);
+        }
         _objects.Remove(entityId);
     }
 

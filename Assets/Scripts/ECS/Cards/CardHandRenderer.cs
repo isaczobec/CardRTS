@@ -62,6 +62,12 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     private ulong _selectedCardId;
     private ulong _draggingCardId;
 
+    // Non-positional (spatialBlend 0) UI audio source shared by every hover/select/draw/play
+    // feedback sound — these are hand-UI cues, not tied to any world position. Sound keys are
+    // resolved through SoundRegistry, so each of "CardHover"/"CardSelect"/"CardDraw"/
+    // "CardPlay" needs a clip assigned there.
+    private CardRTSAudioSource _audioSource;
+
     private ulong _localPlayerResourceEntityId;
 
     // Scratch buffer for EntityTargeting.FindClosestSelectable (TargetEntityCard play) —
@@ -113,7 +119,12 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         TickManager.instance.ServerFlagEvents.Subscribe<ResourcesChangedEvent>(OnResourcesChanged);
 
         _ecs = TickManager.instance.ActiveECS;
+
+        if (AudioManager.instance != null)
+            _audioSource = AudioManager.instance.CreateAudioSource(Vector3.zero, spatialBlend: 0f);
     }
+
+    private void PlayCardSound(string soundName) => _audioSource?.PlaySound(soundName);
 
     private ushort LocalPlayerId()
         => NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
@@ -209,6 +220,8 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
 
         _handCards[e.EntityId] = go;
         _handOrder.Add(e.EntityId);
+
+        PlayCardSound("CardDraw");
     }
 
     private void OnCardPlayed(CardPlayedEvent e)
@@ -223,6 +236,8 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         if (_draggingCardId == e.EntityId) _draggingCardId = 0;
 
         Destroy(go.gameObject);
+
+        PlayCardSound("CardPlay");
     }
 
     // ── Input ────────────────────────────────────────────────────────────────
@@ -275,6 +290,7 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         if (_draggingCardId != 0) return; // don't fight an active drag
         if (!CanAfford(cardEntityId)) return; // can't select a card the player can't play
         _selectedCardId = cardEntityId;
+        PlayCardSound("CardSelect");
     }
 
     private void OnCardClicked(CardGameObject go) => SelectCard(go.CardEntityId);
@@ -440,6 +456,9 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
                 bestId = id;
             }
         }
+
+        if (bestId != 0 && bestId != _hoveredCardId)
+            PlayCardSound("CardHover");
 
         _hoveredCardId = bestId;
     }
