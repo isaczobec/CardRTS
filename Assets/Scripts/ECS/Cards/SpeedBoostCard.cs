@@ -62,5 +62,10 @@ public class SpeedBoostCard : TargetEntityCard
         {
             SpeedRatioBonus = SpeedBoostRatio,
         });
+
+        ecs.AddComponent(modifier.Id, new RenderableModifierComponent
+        {
+            Type = RenderableModifierType.SpeedBoost,
+        });
     }
 }

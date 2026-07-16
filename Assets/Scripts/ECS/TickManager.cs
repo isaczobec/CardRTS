@@ -166,6 +166,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<AbilityComponent>(24);
         _componentTypeRegistry.Register<ModifierComponent>(25);
         _componentTypeRegistry.Register<StatModifierComponent>(26);
+        _componentTypeRegistry.Register<RenderableModifierComponent>(27);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -246,6 +247,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ModifierComponent>>(65);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<StatModifierComponent>>(66);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<StatModifierComponent>>(67);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RenderableModifierComponent>>(68);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RenderableModifierComponent>>(69);
 
         ECS = CreateSimulationECS();
     }
@@ -445,6 +448,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<AbilityComponent>());
         ecs.AddComponentStore(new ComponentStore<ModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<RenderableModifierComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -507,6 +511,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<AbilityComponent>());
         ecs.AddComponentStore(new ComponentStore<ModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<RenderableModifierComponent>());
 
         return ecs;
     }

@@ -3,6 +3,7 @@ using UnityEngine;
 public class RenderingSetup : Singleton<RenderingSetup>
 {
     [SerializeField] RenderableManager _renderableManager;
+    [SerializeField] RenderableModifierManager _renderableModifierManager;
     [SerializeField] Material _capsuleMaterial;
 
     public void SetupRendering()
@@ -10,6 +11,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         // ActiveECS is ClientLocalECS on clients/host, ECS on standalone
         ECS ecs = TickManager.instance.ActiveECS;
         _renderableManager.Initialize(ecs);
+        _renderableModifierManager.Initialize(ecs);
 
 
         SelectionManager.instance.Initialize();
