@@ -8,14 +8,18 @@ using UnityEngine.UI;
 /// Visual + input-forwarding component for a single card in hand. Purely "how do I look
 /// and what happened to me" — CardHandRenderer owns all layout/selection/drag logic and
 /// just subscribes to the events below; this never decides anything on its own.
-/// Hover is deliberately NOT handled via IPointerEnterHandler/Exit here — CardHandRenderer
-/// computes it against each card's static rest-slot position instead (see
+/// For cards IN HAND, hover is deliberately NOT read off HoverEntered/Exited —
+/// CardHandRenderer computes it against each card's static rest-slot position instead (see
 /// CardHandRenderer.UpdateHoveredCard), since raycasting against the animated/raised
 /// transform creates a feedback loop (raising a card moves its own hit-box out from under
-/// the cursor, dropping hover, which lowers it again, regaining hover, ...).
+/// the cursor, dropping hover, which lowers it again, regaining hover, ...). That problem is
+/// specific to the hand's hover-raise animation though — a static grid (e.g. ShopUIManager's
+/// shop cards, which don't move on hover) has no such feedback loop, so HoverEntered/Exited
+/// are fine to use there.
 /// </summary>
 public class CardGameObject : MonoBehaviour,
-    IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler,
+    IPointerEnterHandler, IPointerExitHandler
 {
     // One icon+text row on the stats/cost panel. GameObjects/TMP_Text are wired in the
     // Inspector; the row's own Root is disabled when its value doesn't apply to a card
@@ -42,7 +46,11 @@ public class CardGameObject : MonoBehaviour,
     [SerializeField] private TMP_Text _text;
 
     // Deactivated by default; CardHandRenderer activates one/both while this card is
-    // hovered or selected (see SetPanelsVisible).
+    // hovered or selected (see SetPanelsVisible). Every row below is looked up through its
+    // own Root, so a prefab variant that omits the stats/cost panel hierarchy entirely
+    // (e.g. ShopUIManager's shop-card prefab) leaves these fields at their unassigned
+    // default — BuildCard/RefreshAffordability/SetPanelsVisible all already null-check
+    // before touching them, so that prefab variant works with no code changes needed here.
     [Header("Stats Panel")]
     [SerializeField] private GameObject _statsPanel;
     [SerializeField] private StatRow _maxHealthRow;
@@ -67,15 +75,37 @@ public class CardGameObject : MonoBehaviour,
     // affordable, regardless of hover/selection (unlike the stats/cost panels).
     [SerializeField] private GameObject _unaffordableOverlay;
 
+    [Header("Shop")]
+    // Optional — only wired on prefab variants that display ShopGoldCost as text (e.g.
+    // ShopUIManager's hover-preview card). Null-checked same as every other field above.
+    [SerializeField] private TMP_Text _shopGoldCostText;
+
     private ResourceCost _cost;
+    private int _shopGoldCost;
 
     // Set directly by CardHandRenderer right after instantiation — not part of BuildCard,
     // which is purely about how the card looks, not which ECS entity it represents.
     public ulong CardEntityId { get; set; }
 
+    // Set directly by ShopUIManager right after instantiation, for shop-style prefabs that
+    // call RefreshShopAffordability instead of RefreshAffordability (see both below). Also
+    // pushes the value into _shopGoldCostText, if this prefab variant has one wired.
+    public int ShopGoldCost
+    {
+        get => _shopGoldCost;
+        set
+        {
+            _shopGoldCost = value;
+            if (_shopGoldCostText != null)
+                _shopGoldCostText.text = value.ToString();
+        }
+    }
+
     public event Action<CardGameObject> Clicked;
     public event Action<CardGameObject> DragStarted;
     public event Action<CardGameObject, PointerEventData> DragEnded;
+    public event Action<CardGameObject> HoverEntered;
+    public event Action<CardGameObject> HoverExited;
 
     public void BuildCard(string title, string description, Sprite image, StatsComponent stats, ResourceCost cost)
     {
@@ -150,6 +180,15 @@ public class CardGameObject : MonoBehaviour,
             _unaffordableOverlay.SetActive(!_cost.CanAfford(resources));
     }
 
+    // Alternative to RefreshAffordability for shop-style prefabs (see ShopUIManager): there
+    // are no per-resource cost rows to color and no ResourceCost to check against — just
+    // the unaffordable overlay, compared against ShopGoldCost instead.
+    public void RefreshShopAffordability(int availableGold)
+    {
+        if (_unaffordableOverlay != null)
+            _unaffordableOverlay.SetActive(availableGold < ShopGoldCost);
+    }
+
     private static void SetStatRow(StatRow row, int value)
     {
         if (row == null || row.Root == null) return;
@@ -190,4 +229,6 @@ public class CardGameObject : MonoBehaviour,
     // pointer actually moved), so OnDrag itself doesn't need to do anything.
     public void OnDrag(PointerEventData eventData) { }
     public void OnEndDrag(PointerEventData eventData) => DragEnded?.Invoke(this, eventData);
+    public void OnPointerEnter(PointerEventData eventData) => HoverEntered?.Invoke(this);
+    public void OnPointerExit(PointerEventData eventData) => HoverExited?.Invoke(this);
 }

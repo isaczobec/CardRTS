@@ -28,5 +28,6 @@ public class RenderingSetup : Singleton<RenderingSetup>
         AbilityBarUI.instance.Initialize();
         AbilityIndicatorManager.instance.Initialize();
         AudioManager.instance.Initialize();
+        ShopUIManager.instance.Initialize();
     }
 }

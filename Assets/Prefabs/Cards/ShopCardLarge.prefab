@@ -737,7 +737,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 39.315, y: -81.53195}
+  m_AnchoredPosition: {x: 39.315, y: -265.164}
   m_SizeDelta: {x: 78.63, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1338549938934795118
@@ -1375,6 +1375,7 @@ MonoBehaviour:
     Text: {fileID: 6456272818957056620}
   _insufficientResourceColor: {r: 1, g: 0, b: 0, a: 1}
   _unaffordableOverlay: {fileID: 4758801058616178964}
+  _shopGoldCostText: {fileID: 560471540443606632}
 --- !u!222 &5651176906125492499
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1866,7 +1867,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8957219483953069360
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3101,7 +3102,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 39.315, y: -60}
+  m_AnchoredPosition: {x: 39.315, y: -128.388}
   m_SizeDelta: {x: 78.63, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4392524768999114058

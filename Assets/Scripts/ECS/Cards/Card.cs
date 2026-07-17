@@ -37,6 +37,12 @@ public abstract class Card
     // (and its row is hidden on the card face).
     public abstract ResourceCost Cost { get; }
 
+    // Persistent gold price to unlock/buy this card via the card shop (see ShopUIManager) —
+    // distinct from Cost, which is what it costs to PLAY the card once it's already in a
+    // player's deck/hand. Defaults to 0 (not yet priced); override per card to set a real
+    // shop price.
+    public virtual int ShopGoldCost => 0;
+
     // Base max distance (world/tile units) from a friendly building this card may be
     // played at — only consulted when RequiresFriendlyBuildingRange() is true. Each
     // candidate building can modify its own effective range via
