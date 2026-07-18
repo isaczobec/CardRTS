@@ -660,6 +660,14 @@ public class SelectionManager : Singleton<SelectionManager>
             targetingObj.SetScale(scale);
             ApplyTargetingPosition(e.EntityId, ref pos, targetingObj);
         }
+
+        // An entity can already be dead the moment it activates (e.g. a world-gen resource
+        // node spawned dead-on-spawn — see EntitySpawnAction.SpawnSoulstoneNode) — that never
+        // raises RespawnableEntityDiedEvent (nothing ever transitioned from alive to dead), so
+        // the ring defaulting to visible above needs correcting for that case right here,
+        // mirroring what OnRespawnableEntityDied does for an entity that dies later.
+        if (_troopStore != null && _troopStore.HasComponent(e.EntityId) && _troopStore.GetComponent(e.EntityId).IsDead)
+            prefab.gameObject.SetActive(false);
     }
 
     public void RemoveSelectionObject(ComponentRemovedEvent<SelectableComponent> e)
@@ -698,13 +706,13 @@ public class SelectionManager : Singleton<SelectionManager>
     public void ApplySelectionPosition(ulong entityId, ref PositionComponent pos, SelectionPrefab selection)
     {
         Vector3 worldPos = WorldPositionFor(pos);
-        selection.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId));
+        selection.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId), IsTeleported(entityId));
     }
 
     public void ApplyTargetingPosition(ulong entityId, ref PositionComponent pos, TargetingPrefab targeting)
     {
         Vector3 worldPos = WorldPositionFor(pos);
-        targeting.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId));
+        targeting.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId), IsTeleported(entityId));
     }
 
     private static Vector3 WorldPositionFor(PositionComponent pos)
@@ -716,4 +724,8 @@ public class SelectionManager : Singleton<SelectionManager>
     private bool IsMoving(ulong entityId)
         => _movableStore != null && _movableStore.HasComponent(entityId)
             && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+
+    private bool IsTeleported(ulong entityId)
+        => _movableStore != null && _movableStore.HasComponent(entityId)
+            && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
 }

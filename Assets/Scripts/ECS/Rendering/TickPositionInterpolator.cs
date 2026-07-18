@@ -21,9 +21,12 @@ public class TickPositionInterpolator
 
     public void Remove(ulong entityId) => _samples.Remove(entityId);
 
-    public Vector3 Update(ulong entityId, Vector3 worldPos, bool isMoving)
+    public Vector3 Update(ulong entityId, Vector3 worldPos, bool isMoving, bool teleported = false)
     {
-        if (!isMoving)
+        // A teleport is an instantaneous, potentially huge jump — lerping across it (which
+        // would otherwise happen whenever isMoving is true, e.g. a troop teleported mid-path)
+        // reads as a slide/jitter. Snap immediately instead, same as the not-moving case.
+        if (!isMoving || teleported)
         {
             _samples[entityId] = new Sample { Previous = worldPos, Current = worldPos };
             return worldPos;

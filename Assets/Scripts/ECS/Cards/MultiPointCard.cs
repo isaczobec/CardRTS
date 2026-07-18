@@ -12,6 +12,25 @@ public abstract class MultiPointCard : Card
     // How many ground points this card needs before OnPlayed can run.
     public abstract int PointCount { get; }
 
+    // Maximum distance (world/tile units) point N may be from point N-1, for every N >= 1
+    // (there's no "previous point" for point 0, so this never constrains the first click).
+    // Defaults to float.MaxValue (unconstrained). Enforced three times: CardHandRenderer
+    // clamps the actual point captured before it's ever added to the sequence or sent to the
+    // server; CardPlacementIndicatorManager clamps the live preview identically so what you
+    // see is exactly what gets played; and MultiPointCardPlaySystem re-checks it server-side
+    // in case a modified/malicious client sent unclamped points directly.
+    public virtual float MaxRangeFromPreviousPoint => float.MaxValue;
+
+    // Clamps candidatePoint to at most maxRange from previousPoint (returned unchanged if
+    // already within range). Shared by CardHandRenderer/CardPlacementIndicatorManager so the
+    // visual preview and the point actually captured/sent never disagree.
+    public static Vector2 ClampToPreviousPoint(Vector2 previousPoint, Vector2 candidatePoint, float maxRange)
+    {
+        Vector2 offset = candidatePoint - previousPoint;
+        if (offset.sqrMagnitude <= maxRange * maxRange) return candidatePoint;
+        return previousPoint + offset.normalized * maxRange;
+    }
+
     // Key into IndicatorPrefabRegistry for the prefab shown at each point — see
     // CardPlacementIndicatorManager. Null/empty means no per-point indicator is shown.
     public virtual string IndicatorPrefabName => null;

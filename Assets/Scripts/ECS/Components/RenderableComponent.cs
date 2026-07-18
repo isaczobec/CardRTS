@@ -15,6 +15,10 @@ public enum RenderableType : byte
     Rock = 10,
     Ore = 11,
     SkillshotProjectile = 12,
+    SoulstoneNodeSmall = 13,
+    SoulstoneNodeMedium = 14,
+    SoulstoneNodeLarge = 15,
+    Gem = 16,
 }
 
 public struct RenderableComponent : IComponent

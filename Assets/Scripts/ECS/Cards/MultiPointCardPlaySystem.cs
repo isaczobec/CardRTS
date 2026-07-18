@@ -73,6 +73,21 @@ public static class MultiPointCardPlaySystem
             return;
         }
 
+        // Re-checked here rather than trusted from the client — CardHandRenderer/
+        // CardPlacementIndicatorManager already clamp every point after the first to
+        // MaxRangeFromPreviousPoint on their end, but a modified/malicious client could send
+        // unclamped points directly.
+        float maxRangeFromPreviousPoint = multiPointCard.MaxRangeFromPreviousPoint;
+        for (int i = 1; i < input.Points.Count; i++)
+        {
+            float distance = Vector2.Distance(input.Points[i - 1], input.Points[i]);
+            if (distance > maxRangeFromPreviousPoint)
+            {
+                DebugLogger.LogWarning($"[MultiPointCardPlaySystem] Rejected: point {i} is {distance} from point {i - 1}, exceeding MaxRangeFromPreviousPoint {maxRangeFromPreviousPoint} for card type {card.Type} (client {input.ClientId}).", "cards");
+                return;
+            }
+        }
+
         if (definition.RequiresFriendlyBuildingRange())
         {
             Vector2 firstPoint = input.Points[0];

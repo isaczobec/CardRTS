@@ -18,4 +18,11 @@ TickManager.Update () (at Assets/Scripts/ECS/TickManager.cs:314)
 
 can you try to find the issue and fix it?
 
-Can you to the multipoint card add a field for maximum range from the previous point, and clamp this both visually and when before the input (so that if i put my cursor further away than this range, the visual indicator is clamped to the max range, and that clamped position is also the position that will be inputtted)? Also add a max range between points for the blink card.
+Can you to the multipoint card add a field for maximum range from the previous point, and clamp this both visually and when before the input (so that if i put my cursor further away than this range, the visual indicator is clamped to the max range, and that clamped position is also the position that will be inputtted)? The max range between points requirement should also be checked on the server before applying the inputs. Also add a max range between points for the blink card.
+
+Can you make it so that the troops position relative to the center of the blink is kept on the destination? This should be done on the BlinkSystem. Also, on the Teleporting modifier system, can you add a check if the destination is inside a not traversable tile, and in that case find the closest walkable tile in one of the cardinal directions and make this the new destination tile?
+
+Also, can you add a teleported flag to the movable component and make this true for one tick when the teleport modifier fires, and use this to make sure that the position interpolation is working correctly? Sometimes when blinking the troops start jittering back and forth.
+
+Now, i want to create a source of gems. these i want to generate in clusters that are spawned in the following way: imagine drawing a line from every base to the center of the map. This entire shape should then be rotated 360 / (2n) degrees (where n is the amount of players/bases), and then one cluster should be placed at the end of each line (at some offset from the center). Half of the clusters (rounded down) should contain 3 objects and the other half should contain 7. Each object should drop 10 gems.
+

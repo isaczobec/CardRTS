@@ -170,6 +170,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<AIModeComponent>(28);
         _componentTypeRegistry.Register<TeleportingModifierComponent>(29);
         _componentTypeRegistry.Register<BlinkComponent>(30);
+        _componentTypeRegistry.Register<RespawnCooldownRampComponent>(31);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -261,6 +262,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<TeleportingModifierComponent>>(73);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<BlinkComponent>>(74);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BlinkComponent>>(75);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RespawnCooldownRampComponent>>(76);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RespawnCooldownRampComponent>>(77);
 
         ECS = CreateSimulationECS();
     }
@@ -464,14 +467,15 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<AIModeComponent>());
         ecs.AddComponentStore(new ComponentStore<TeleportingModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
+        ecs.AddComponentStore(new ComponentStore<RespawnCooldownRampComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
         ecs.RegisterSystem(LifetimeSystem.Instance);
         ecs.RegisterSystem(ModifierSystem.Instance);
         ecs.RegisterSystem(StatModifierSystem.Instance);
-        ecs.RegisterSystem(TeleportingModifierSystem.Instance);
-        ecs.RegisterSystem(BlinkSystem.Instance);
+        ecs.RegisterSystem(new TeleportingModifierSystem());
+        ecs.RegisterSystem(new BlinkSystem());
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(new TargetingSystem());
@@ -495,6 +499,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(RespawnSystem.Instance);
+        ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
@@ -536,6 +541,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<AIModeComponent>());
         ecs.AddComponentStore(new ComponentStore<TeleportingModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
+        ecs.AddComponentStore(new ComponentStore<RespawnCooldownRampComponent>());
 
         return ecs;
     }

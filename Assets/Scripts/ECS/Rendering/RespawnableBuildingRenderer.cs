@@ -28,9 +28,12 @@ public class RespawnableBuildingRenderer : MonoBehaviour, IComponentRenderer
     private readonly Dictionary<ulong, GameObject> _aliveObjects = new();
     private readonly Dictionary<ulong, GameObject> _respawningObjects = new();
 
+    private ComponentStore<TroopComponent> _troopStore;
+
     public void Initialize(ECS ecs)
     {
         _ecs = ecs;
+        _troopStore = ecs.GetComponentStore<TroopComponent>();
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnEntityDied);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityRespawnedEvent>(OnEntityRespawned);
         TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
@@ -117,6 +120,18 @@ public class RespawnableBuildingRenderer : MonoBehaviour, IComponentRenderer
             respawning.transform.localScale *= scale;
             respawning.SetActive(false);
             _respawningObjects[entityId] = respawning;
+        }
+
+        // An entity can already be dead the moment it activates (e.g. a world-gen resource
+        // node spawned dead-on-spawn with a long initial respawn timer — see
+        // EntitySpawnAction.SpawnSoulstoneNode) — that never raises RespawnableEntityDiedEvent
+        // (nothing ever transitioned from alive to dead), so the initial alive/respawning
+        // visibility set above needs correcting for that case right here instead.
+        bool isDead = _troopStore != null && _troopStore.HasComponent(entityId) && _troopStore.GetComponent(entityId).IsDead;
+        if (isDead)
+        {
+            if (_aliveObjects.TryGetValue(entityId, out GameObject aliveGo)) aliveGo.SetActive(false);
+            if (_respawningObjects.TryGetValue(entityId, out GameObject respawningGo)) respawningGo.SetActive(true);
         }
     }
 

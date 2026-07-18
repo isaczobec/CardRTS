@@ -7,10 +7,12 @@ using UnityEngine;
 ///  - SpawnAtPointCard: a single prefab that follows the cursor (unchanged behavior).
 ///  - MultiPointCard: one prefab per point — frozen in place for each point already
 ///    clicked (CardHandRenderer.ArmedMultiPointPoints), plus one live prefab following the
-///    cursor for the next point not yet placed — and, if the card opts in
-///    (MultiPointCard.RenderBetweenPoints), one additional prefab per consecutive pair,
-///    positioned at their midpoint and rotated (around Y only, ignoring height) to face
-///    from the first to the second, every frame.
+///    cursor for the next point not yet placed (clamped to MultiPointCard.MaxRangeFromPreviousPoint
+///    of the last placed point, identically to how CardHandRenderer clamps the point it
+///    actually captures — so the preview never shows a position the click wouldn't produce)
+///    — and, if the card opts in (MultiPointCard.RenderBetweenPoints), one additional prefab
+///    per consecutive pair, positioned at their midpoint and rotated (around Y only,
+///    ignoring height) to face from the first to the second, every frame.
 /// Hidden whenever no such card is active, or the ground raycast fails (e.g. cursor off the
 /// horizon).
 ///
@@ -130,7 +132,13 @@ public class CardPlacementIndicatorManager : Singleton<CardPlacementIndicatorMan
             _pointIndicators[i].transform.position = WorldPositionFor(placedPoints[i].x, placedPoints[i].y);
 
         if (haveLivePoint && placedPoints.Count < _pointIndicators.Count)
-            _pointIndicators[placedPoints.Count].transform.position = WorldPositionFor(mx, my);
+        {
+            Vector2 livePoint = new Vector2(mx, my);
+            if (placedPoints.Count > 0)
+                livePoint = MultiPointCard.ClampToPreviousPoint(placedPoints[placedPoints.Count - 1], livePoint, card.MaxRangeFromPreviousPoint);
+
+            _pointIndicators[placedPoints.Count].transform.position = WorldPositionFor(livePoint.x, livePoint.y);
+        }
 
         for (int i = 0; i < _pointIndicators.Count; i++)
             _pointIndicators[i].SetActive(i < visibleCount);

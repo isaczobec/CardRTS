@@ -25,6 +25,29 @@ public class EntitySpawnAction : IWorldGenAction
     private const float OreRespawnSeconds  = 150f;
     private const float OreSelectionScale  = 2f;
 
+    // Neutral soulstone resource nodes (see SoulstoneClusterFeature) — dead from the moment
+    // they're spawned, each with its own long "grace period" respawn timer, ramping down to
+    // a shared shorter steady-state timer after each one's first respawn (see
+    // RespawnCooldownRampComponent/RespawnCooldownRampSystem).
+    private const int   SoulstoneSmallMaxHealth  = 400;
+    private const int   SoulstoneMediumMaxHealth = 550;
+    private const int   SoulstoneLargeMaxHealth  = 700;
+    private const float SoulstoneBlockRadius     = 1f;
+    private const float SoulstoneSelectionScale  = 2f;
+
+    private const float SoulstoneSmallInitialRespawnSeconds  = 5f  * 60f;
+    private const float SoulstoneMediumInitialRespawnSeconds = 10f * 60f;
+    private const float SoulstoneLargeInitialRespawnSeconds  = 15f * 60f;
+    private const float SoulstoneSteadyStateRespawnSeconds   = 5f  * 60f;
+
+    // Neutral gem deposit (see GemClusterFeature) — spawned alive, same shape as
+    // Tree/Rock/Ore, just dropping Gems instead.
+    private const int   GemMaxHealth      = 400;
+    private const float GemBlockRadius    = 1f;
+    private const float GemRespawnSeconds = 3f * 60f + 30f; // 3:30
+    private const float GemSelectionScale = 2f;
+    private const int   GemDropAmount     = 10;
+
     public float X;
     public float Y;
 
@@ -112,6 +135,86 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(OreRespawnSeconds),
+        });
+    };
+
+    // Neutral soulstone resource node: dead from the moment it's spawned (unlike
+    // Tree/Rock/Ore, which are spawned alive) — TicksUntilRespawn is seeded with the same
+    // value as CooldownTicks so it starts counting down immediately. Drops a single
+    // Soulstone on every death, including this initial one.
+    private static void SpawnSoulstoneNode(ulong id, ECS ecs, RenderableType type, int maxHealth,
+        float initialRespawnSeconds, float steadyStateRespawnSeconds)
+    {
+        ecs.AddComponent(id, new TroopComponent
+        {
+            OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            IsPhysicalTroop = false,
+            IsDead = true,
+        });
+        ecs.AddComponent(id, new ActivatableComponent
+        {
+            _ticksUntilActive       = 1,   // activates on the first tick so the renderer fires OnEntityActivated
+            InitialTicksUntilActive = 1,
+        });
+        ecs.AddComponent(id, new RenderableComponent { Type = type });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = SoulstoneSelectionScale });
+        ecs.AddComponent(id, new StatsComponent { MaxHealth = maxHealth });
+        ecs.AddComponent(id, new HealthComponent { CurrentHealth = 0 });
+        ecs.AddComponent(id, new BuildingComponent { BlockRadius = SoulstoneBlockRadius, CardPlayRangeMultiplier = 1f });
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Soulstones = 1
+        } });
+
+        ulong initialCooldownTicks = (ulong)TickManager.SecondsToTicks(initialRespawnSeconds);
+        ecs.AddComponent(id, new RespawnableInPlaceComponent
+        {
+            CooldownTicks     = initialCooldownTicks,
+            TicksUntilRespawn = initialCooldownTicks,
+        });
+        ecs.AddComponent(id, new RespawnCooldownRampComponent
+        {
+            CooldownTicksAfterFirstRespawn = (ulong)TickManager.SecondsToTicks(steadyStateRespawnSeconds),
+        });
+    }
+
+    public static readonly Action<ulong, ECS> SpawnSoulstoneNodeSmall = (id, ecs) =>
+        SpawnSoulstoneNode(id, ecs, RenderableType.SoulstoneNodeSmall, SoulstoneSmallMaxHealth,
+            SoulstoneSmallInitialRespawnSeconds, SoulstoneSteadyStateRespawnSeconds);
+
+    public static readonly Action<ulong, ECS> SpawnSoulstoneNodeMedium = (id, ecs) =>
+        SpawnSoulstoneNode(id, ecs, RenderableType.SoulstoneNodeMedium, SoulstoneMediumMaxHealth,
+            SoulstoneMediumInitialRespawnSeconds, SoulstoneSteadyStateRespawnSeconds);
+
+    public static readonly Action<ulong, ECS> SpawnSoulstoneNodeLarge = (id, ecs) =>
+        SpawnSoulstoneNode(id, ecs, RenderableType.SoulstoneNodeLarge, SoulstoneLargeMaxHealth,
+            SoulstoneLargeInitialRespawnSeconds, SoulstoneSteadyStateRespawnSeconds);
+
+    // Neutral respawnable gem deposit: drops Gems.
+    public static readonly Action<ulong, ECS> SpawnGemDeposit = (id, ecs) =>
+    {
+        ecs.AddComponent(id, new TroopComponent
+        {
+            OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            IsPhysicalTroop = false,
+        });
+        ecs.AddComponent(id, new ActivatableComponent
+        {
+            _ticksUntilActive       = 1,
+            InitialTicksUntilActive = 1,
+        });
+        ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.Gem });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = GemSelectionScale });
+        ecs.AddComponent(id, new StatsComponent { MaxHealth = GemMaxHealth });
+        ecs.AddComponent(id, new HealthComponent { CurrentHealth = GemMaxHealth });
+        ecs.AddComponent(id, new BuildingComponent { BlockRadius = GemBlockRadius, CardPlayRangeMultiplier = 1f });
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Gems = GemDropAmount
+        } } );
+        ecs.AddComponent(id, new RespawnableInPlaceComponent
+        {
+            CooldownTicks = (ulong)TickManager.SecondsToTicks(GemRespawnSeconds),
         });
     };
 

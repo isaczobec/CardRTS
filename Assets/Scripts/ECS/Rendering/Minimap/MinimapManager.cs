@@ -49,6 +49,12 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
     [SerializeField] private Color _neutralColor = Color.gray;
     [SerializeField] private Color _enemyColor = Color.red;
 
+    // Opacity applied to a respawnable object's dot while it's dead/on cooldown (see
+    // OnRespawnableEntityDied/OnRespawnableEntityRespawned) — the dot stays visible (unlike
+    // e.g. SelectionManager's rings, which fully hide) rather than disappearing, so its
+    // position on the map is still legible while it's down.
+    [SerializeField] private float _respawningOpacity = 0.4f;
+
     [Header("Camera")]
     [SerializeField] private CameraController _cameraController;
     // Simple prefab (a bordered rectangle, texture/masking handled outside this script) —
@@ -61,6 +67,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<SelectableComponent> _selectableStore;
     private ComponentStore<RenderableComponent> _renderableStore;
+    private ComponentStore<TroopComponent> _troopStore;
 
     // Built once in Awake from _iconPrefabEntries — see ResolveIconPrefab.
     private readonly Dictionary<RenderableType, GameObject> _iconPrefabsByType = new();
@@ -101,6 +108,7 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
         _selectableStore = _ecs.GetComponentStore<SelectableComponent>();
         _renderableStore = _ecs.GetComponentStore<RenderableComponent>();
+        _troopStore = _ecs.GetComponentStore<TroopComponent>();
 
         BuildMapTexture();
         SpawnViewportIndicator();
@@ -186,7 +194,16 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
 
         Image image = go.GetComponent<Image>();
         if (image != null)
-            image.color = GetColor(e.EntityId);
+        {
+            Color color = GetColor(e.EntityId);
+            // An entity can already be dead the moment it activates (e.g. a world-gen
+            // resource node spawned dead-on-spawn — see EntitySpawnAction.SpawnSoulstoneNode)
+            // — that never raises RespawnableEntityDiedEvent (nothing ever transitioned from
+            // alive to dead), so the opacity needs to reflect that from the start here too.
+            bool isDead = _troopStore != null && _troopStore.HasComponent(e.EntityId) && _troopStore.GetComponent(e.EntityId).IsDead;
+            color.a = isDead ? _respawningOpacity : 1f;
+            image.color = color;
+        }
 
         _dots[e.EntityId] = rect;
         ApplyDotPosition(_positionStore.GetComponent(e.EntityId), rect);
@@ -198,13 +215,22 @@ public class MinimapManager : Singleton<MinimapManager>, IPointerDownHandler, IP
     private void OnRespawnableEntityDied(RespawnableEntityDiedEvent e)
     {
         if (_dots.TryGetValue(e.EntityId, out RectTransform rect))
-            rect.gameObject.SetActive(false);
+            SetDotOpacity(rect, _respawningOpacity);
     }
 
     private void OnRespawnableEntityRespawned(RespawnableEntityRespawnedEvent e)
     {
         if (_dots.TryGetValue(e.EntityId, out RectTransform rect))
-            rect.gameObject.SetActive(true);
+            SetDotOpacity(rect, 1f);
+    }
+
+    private static void SetDotOpacity(RectTransform rect, float alpha)
+    {
+        Image image = rect.GetComponent<Image>();
+        if (image == null) return;
+        Color color = image.color;
+        color.a = alpha;
+        image.color = color;
     }
 
     private void DestroyDot(ulong entityId)

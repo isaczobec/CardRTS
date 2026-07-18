@@ -166,9 +166,11 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
 
             bool isMoving = movStore != null && movStore.HasComponent(id)
                 && movStore.GetComponent(id).currentMovementMode != MovementMode.NotMoving;
+            bool teleported = movStore != null && movStore.HasComponent(id)
+                && movStore.GetComponent(id).TeleportedTick == _ecs.CurrentSimulationTick;
 
             Vector3 worldPos = ToWorldPosition(posStore.GetComponent(id));
-            go.transform.position = _interpolator.Update(id, worldPos, isMoving);
+            go.transform.position = _interpolator.Update(id, worldPos, isMoving, teleported);
 
             if (isMoving)
             {

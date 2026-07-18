@@ -3,10 +3,12 @@
 //    ShouldDelete = false, so DeathRequest.Execute still runs its normal IsDead/
 //    TroopDiedEvent/"executed"-notification logic, but leaves the entity alive to be
 //    revived in place instead of deleting it.
-//  - Once that death has actually executed, starts the cooldown countdown and fires
-//    RespawnableEntityDiedEvent.
+//  - Once that death has actually executed, processes a RespawnRequest immediately (see
+//    RespawnRequest.Execute for the actual "start the cooldown countdown and fire
+//    RespawnableEntityDiedEvent" logic).
 // In Execute, counts down the cooldown each tick. On expiry, clears IsDead, restores
-// health to MaxHealth, and fires RespawnableEntityRespawnedEvent.
+// health to MaxHealth, and fires RespawnableEntityRespawnedEvent — see
+// RespawnCooldownRampSystem for one thing that reacts to that event.
 public static class RespawnSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute, Setup);
@@ -33,14 +35,7 @@ public static class RespawnSystem
 
         ecs.Requests.SubscribeExecuted<DeathRequest>((req, innerEcs) =>
         {
-            var respawnStore = innerEcs.GetComponentStore<RespawnableInPlaceComponent>();
-            if (respawnStore == null || !respawnStore.HasComponent(req.EntityId)) return;
-
-            ref RespawnableInPlaceComponent respawn = ref respawnStore.GetComponent(req.EntityId);
-            respawn.TicksUntilRespawn = respawn.CooldownTicks;
-            innerEcs.Delta.MarkComponentDirty(req.EntityId, typeof(RespawnableInPlaceComponent));
-
-            innerEcs.FlagEvents.Add(new RespawnableEntityDiedEvent { EntityId = req.EntityId });
+            innerEcs.Requests.Process(new RespawnRequest(req.EntityId), innerEcs);
         });
     }
 

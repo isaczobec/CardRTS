@@ -398,9 +398,23 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // return here mid-sequence still re-arms _selectedCardId itself (below), since unlike
     // SpawnAtPointCard/TargetEntityCard's false-means-try-again, here it means "still
     // waiting on more clicks," not "that click didn't land on anything valid."
+    //
+    // Every point after the first is clamped to MultiPointCard.MaxRangeFromPreviousPoint
+    // before it's added — CardPlacementIndicatorManager clamps its live preview identically,
+    // so the point actually captured here always matches what was last shown on screen.
     private bool TryAddMultiPointClick(ulong cardEntityId, MultiPointCard multiPointCard)
     {
-        if (!TileSpaceMouse.TryGetPosition(out float x, out float y)) return false;
+        if (!TileSpaceMouse.TryGetPosition(out float x, out float y))
+        {
+            // A miss (cursor ray didn't hit the ground plane) shouldn't lose an in-progress
+            // sequence or drop the card back to hand — re-arm exactly like the "not enough
+            // points yet" case below, so the player can just try the click again. Matters
+            // most for a drag-release (OnCardDragEnded ignores TryPlayCard's return value and
+            // unconditionally clears _draggingCardId), which would otherwise leave both
+            // _draggingCardId and _selectedCardId at 0 with no way to resume.
+            _selectedCardId = cardEntityId;
+            return false;
+        }
 
         if (_multiPointCardId != cardEntityId)
         {
@@ -408,7 +422,11 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
             _multiPointPoints.Clear();
         }
 
-        _multiPointPoints.Add(new Vector2(x, y));
+        Vector2 point = new Vector2(x, y);
+        if (_multiPointPoints.Count > 0)
+            point = MultiPointCard.ClampToPreviousPoint(_multiPointPoints[_multiPointPoints.Count - 1], point, multiPointCard.MaxRangeFromPreviousPoint);
+
+        _multiPointPoints.Add(point);
 
         if (_multiPointPoints.Count < multiPointCard.PointCount)
         {

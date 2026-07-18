@@ -234,6 +234,14 @@ public class WorldManager : Singleton<WorldManager>
             }
         });
 
+        // Neutral soulstone objective cluster, fixed at the exact map center — after terrain/
+        // biome generation so it's placed on top of whatever terrain ended up there.
+        handler.features.Add(new SoulstoneClusterFeature());
+
+        // One gem-deposit cluster per base, symmetric around the map center — must run after
+        // SpawnPlayerBasesFeature (reads its Bases via GetPreviousFeature).
+        handler.features.Add(new GemClusterFeature());
+
         // --- End of generation: clear a landing zone around every player base ---
 
         // No collidable tiles (water/mountain/etc., whatever's configured) within reach of

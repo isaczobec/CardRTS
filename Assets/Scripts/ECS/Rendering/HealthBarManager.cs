@@ -15,6 +15,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<HealthComponent> _healthStore;
     private ComponentStore<MovableComponent> _movableStore;
+    private ComponentStore<TroopComponent> _troopStore;
 
     public void Initialize()
     {
@@ -29,6 +30,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
         _healthStore = _ecs.GetComponentStore<HealthComponent>();
         _movableStore = _ecs.GetComponentStore<MovableComponent>();
+        _troopStore = _ecs.GetComponentStore<TroopComponent>();
     }
 
     void Update()
@@ -58,6 +60,14 @@ public class HealthBarManager : Singleton<HealthBarManager>
 
         ApplyPosition(e.EntityId, _positionStore.GetComponent(e.EntityId), bar);
         ApplyHealth(e.EntityId, bar);
+
+        // An entity can already be dead the moment it activates (e.g. a world-gen resource
+        // node spawned dead-on-spawn — see EntitySpawnAction.SpawnSoulstoneNode) — that never
+        // raises RespawnableEntityDiedEvent (nothing ever transitioned from alive to dead), so
+        // the bar defaulting to visible above needs correcting for that case right here.
+        bool isDead = _troopStore != null && _troopStore.HasComponent(e.EntityId) && _troopStore.GetComponent(e.EntityId).IsDead;
+        if (isDead)
+            bar.gameObject.SetActive(false);
     }
 
     private void OnTroopRemoved(TroopDiedEvent e) => DestroyHealthBar(e.EntityId);
@@ -84,8 +94,10 @@ public class HealthBarManager : Singleton<HealthBarManager>
         Vector3 worldPos = new Vector3(pos.X, height, pos.Y);
         bool isMoving = _movableStore != null && _movableStore.HasComponent(entityId)
             && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+        bool teleported = _movableStore != null && _movableStore.HasComponent(entityId)
+            && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
 
-        bar.transform.position = _interpolator.Update(entityId, worldPos, isMoving) + bar.WorldOffset;
+        bar.transform.position = _interpolator.Update(entityId, worldPos, isMoving, teleported) + bar.WorldOffset;
     }
 
     private void OnRespawnableEntityDied(RespawnableEntityDiedEvent e)

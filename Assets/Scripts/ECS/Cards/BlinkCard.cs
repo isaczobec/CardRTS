@@ -18,6 +18,11 @@ public class BlinkCard : MultiPointCard
     // the indicator (both range circles) previews the exact same radius.
     public const int Range = 5;
 
+    // How far apart the two points may be — i.e. the max distance a troop can blink.
+    // Enforced client-side (clamped, both visually and on the point actually captured — see
+    // MultiPointCard.ClampToPreviousPoint) and re-checked server-side (MultiPointCardPlaySystem).
+    private const float MaxBlinkDistance = 20f;
+
     public override int ShopGoldCost => 10;
 
     public override CardType Type => CardType.Blink;
@@ -27,6 +32,7 @@ public class BlinkCard : MultiPointCard
     public override string IndicatorPrefabName => "Blink";
 
     public override int PointCount => 2;
+    public override float MaxRangeFromPreviousPoint => MaxBlinkDistance;
 
     public override StatsComponent DefaultStats => new StatsComponent
     {
