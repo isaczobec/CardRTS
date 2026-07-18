@@ -3,15 +3,24 @@ using System.Collections.Generic;
 
 public class BasicMeleeTroopCard : SpawnAtPointCard
 {
-    private const int MaxHealth = 100;
+    // Balance baseline: a basic melee troop still kills another basic melee troop (300 HP)
+    // in ~11 hits (ceil(300/28) = 11 before armor; see ArmorMitigationSystem's formula —
+    // 34 raw damage vs. 20 armor mitigates to round(34 * 100/120) = 28, reproducing that
+    // same 28-effective-damage-per-hit exactly). Every other troop/building/resource-node
+    // health and damage value in this rebalance is scaled proportionally off this pair (3x
+    // health, 2.8x damage vs. the old 100 HP / 10 damage baseline, then damage further
+    // scaled 1.2x to compensate for 20 armor).
+    private const int MaxHealth = 300;
     private const int Speed = 5;
     private const int Range = 5;
-    private const int Armor = 0;
-    private const int Damage = 10;
+    private const int Armor = 20;
+    private const int Damage = 34;
     private const float AttackSpeedMilliseconds = 333f;
+    // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
+    private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 5f;
+    private const float DetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 24f;
     private const float AttackRangeMultiplier = 1.5f;
 
     private const int GoldCost = 3;
@@ -41,6 +50,7 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
         Armor       = Armor,
         Damage      = Damage,
         AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
+        SpellResist = SpellResist,
     };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)

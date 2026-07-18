@@ -14,6 +14,7 @@ public static class StatsQuery
     public static int GetSpeed(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetSpeedRequest>(ecs, entityId, defaultValue, s => s.Speed);
     public static int GetRange(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetRangeRequest>(ecs, entityId, defaultValue, s => s.Range);
     public static int GetArmor(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetArmorRequest>(ecs, entityId, defaultValue, s => s.Armor);
+    public static int GetSpellResist(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetSpellResistRequest>(ecs, entityId, defaultValue, s => s.SpellResist);
     public static int GetDamage(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetDamageStatRequest>(ecs, entityId, defaultValue, s => s.Damage);
     public static int GetAttackSpeed(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetAttackSpeedRequest>(ecs, entityId, defaultValue, s => s.AttackSpeed);
 

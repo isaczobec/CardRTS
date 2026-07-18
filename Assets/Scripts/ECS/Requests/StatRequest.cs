@@ -25,6 +25,7 @@ public class GetMaxHealthRequest : StatRequest { }
 public class GetSpeedRequest : StatRequest { }
 public class GetRangeRequest : StatRequest { }
 public class GetArmorRequest : StatRequest { }
+public class GetSpellResistRequest : StatRequest { }
 
 // Named GetDamageStatRequest, not GetDamageRequest, to avoid colliding with the existing
 // DamageRequest — a "deal N damage to entity X" action request, unrelated to reading the

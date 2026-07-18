@@ -59,6 +59,7 @@ public class CardGameObject : MonoBehaviour,
     [SerializeField] private StatRow _armorRow;
     [SerializeField] private StatRow _damageRow;
     [SerializeField] private StatRow _attackSpeedRow;
+    [SerializeField] private StatRow _spellResistRow;
 
     [Header("Resource Cost Panel")]
     [SerializeField] private GameObject _costPanel;
@@ -126,6 +127,7 @@ public class CardGameObject : MonoBehaviour,
         SetStatRow(_armorRow, stats.Armor);
         SetStatRow(_damageRow, stats.Damage);
         SetStatRow(_attackSpeedRow, stats.AttackSpeed);
+        SetStatRow(_spellResistRow, stats.SpellResist);
 
         SetResourceRowAmount(_woodCostRow, cost.Wood);
         SetResourceRowAmount(_stoneCostRow, cost.Stone);

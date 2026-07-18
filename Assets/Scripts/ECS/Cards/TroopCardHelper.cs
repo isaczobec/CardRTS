@@ -4,10 +4,12 @@ using System.Collections.Generic;
 // Shared "spawn a troop" logic for troop-type cards (not buildings — those have no
 // MovableComponent/leash and are simple enough to just build inline in BuildingCard).
 // Creates the entity and adds every component a troop needs regardless of which kind it
-// is (Position, Troop, Renderable, Selectable, Movable, Stats, Health), then runs each of
-// extraComponents so the calling card can add whatever makes it the specific troop it is
-// (an AI component, a projectile pool, ...) without this helper needing to know about any
-// of them.
+// is (Position, Troop, Renderable, Selectable, Movable, AIMode, Stats, Health), then runs
+// each of extraComponents so the calling card can add whatever makes it the specific troop
+// it is (an AI component, a projectile pool, ...) without this helper needing to know about
+// any of them. AIModeComponent defaults to Guard here — see BasicMeleeAISystem/
+// BasicRangedAISystem for what each mode does; buildings never get one, since they go
+// through BuildingSpawnHelper instead and have no MovableComponent/AI component either.
 public static class TroopCardHelper
 {
     private const float DefaultActivationDelaySeconds = 2f;
@@ -49,6 +51,8 @@ public static class TroopCardHelper
             LeashX        = x,
             LeashY        = y,
         });
+
+        ecs.AddComponent(id, new AIModeComponent { Mode = AIMode.Guard });
 
         ecs.AddComponent(id, stats);
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = stats.MaxHealth });

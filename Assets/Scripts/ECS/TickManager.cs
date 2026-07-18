@@ -167,6 +167,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ModifierComponent>(25);
         _componentTypeRegistry.Register<StatModifierComponent>(26);
         _componentTypeRegistry.Register<RenderableModifierComponent>(27);
+        _componentTypeRegistry.Register<AIModeComponent>(28);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -179,6 +180,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<AbilityUsedOnEntityInput>(8);
         _inputTypeRegistry.Register<SpawnAtEntityInput>(9);
         _inputTypeRegistry.Register<BuyCardInput>(10);
+        _inputTypeRegistry.Register<SetAIModeInput>(11);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -250,6 +252,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<StatModifierComponent>>(67);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RenderableModifierComponent>>(68);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RenderableModifierComponent>>(69);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<AIModeComponent>>(70);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<AIModeComponent>>(71);
 
         ECS = CreateSimulationECS();
     }
@@ -450,6 +454,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<AIModeComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -459,6 +464,7 @@ public class TickManager : Singleton<TickManager>
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(new TargetingSystem());
+        ecs.RegisterSystem(SetAIModeSystem.Instance);
         ecs.RegisterSystem(new BasicMeleeAISystem());
         ecs.RegisterSystem(new BasicRangedAISystem());
         ecs.RegisterSystem(new PathfindingSystem());
@@ -471,6 +477,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(BuyCardSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
+        ecs.RegisterSystem(ArmorMitigationSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
@@ -514,6 +521,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<AIModeComponent>());
 
         return ecs;
     }

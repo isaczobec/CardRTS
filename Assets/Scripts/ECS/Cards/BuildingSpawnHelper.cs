@@ -6,7 +6,8 @@
 // invoking its Spawner).
 public static class BuildingSpawnHelper
 {
-    public const int Armor = 5;
+    public const int Armor = 40;
+    public const int SpellResist = 150;
     public const float BlockRadius = 3f;
     public const float SelectionScale = 3f;
 
@@ -30,8 +31,9 @@ public static class BuildingSpawnHelper
 
         ecs.AddComponent(id, new StatsComponent
         {
-            MaxHealth = maxHealth,
-            Armor     = Armor,
+            MaxHealth   = maxHealth,
+            Armor       = Armor,
+            SpellResist = SpellResist,
             // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
         });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = maxHealth });

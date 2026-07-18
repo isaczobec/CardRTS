@@ -6,15 +6,28 @@ using UnityEngine;
 //  - If mid attack windup, just count it down and resolve it — nothing else happens.
 //  - If a successful hit just landed, a cooldown (half the attack windup) counts down
 //    before anything else happens, same as the windup.
-//  - Otherwise, while not under an explicit player move order, opportunistically
-//    auto-targets nearby enemies (TargetingSystem.SetAutomaticTarget).
+//  - Otherwise, while not under an explicit player move order AND not in Passive mode
+//    (AIModeComponent — see below), opportunistically auto-targets nearby enemies
+//    (TargetingSystem.SetAutomaticTarget).
 //  - Picks an active target: the closest player-assigned one always wins and is always
-//    pursued; otherwise the closest automatic one, which is dropped
-//    (RemoveAutomaticTarget) if it strays beyond the chase range.
+//    pursued (regardless of AI mode — an explicit player order is always honored); otherwise
+//    the closest automatic one (never acquired at all in Passive mode).
+//  - An automatically-acquired target is dropped (RemoveAutomaticTarget) once this troop
+//    itself has strayed too far from its leash point in Guard mode; Aggressive never drops
+//    one (chases indefinitely) and also re-homes its own leash to wherever it currently is
+//    while it has an active target, so its "post" creeps along with the fight instead of
+//    staying pinned to where it was first deployed.
 //  - If the active target is within Range, stops and starts an attack windup
 //    (AttackSpeed milliseconds, converted to ticks); otherwise chases it.
-//  - With no target at all (and no player move order in progress), returns to its
-//    original ("leash") position.
+//  - With no target at all and no player move order in progress: Guard/Aggressive return to
+//    their leash position (GoHome); Passive just stands down in place (Stop) — it never
+//    moves or targets anything on its own, only in response to explicit player input
+//    (a move order, or an explicit attack order via SetTargetsInput/TargetKind.PlayerAssigned).
+//
+// AIModeComponent is missing entirely on a troop not spawned through TroopCardHelper (e.g.
+// SpawnTroopSystem's dev/test path) — GetMode defaults that case to Guard, same as
+// TroopCardHelper's own default. See AIModeComponent.cs for what each mode means.
+//
 // Instance (not static) and registered per ECS, like PathfindingSystem/TargetingSystem,
 // so a client's prediction ECS and the host's authoritative ECS keep independent state.
 public class BasicMeleeAISystem : ISystem
@@ -34,6 +47,7 @@ public class BasicMeleeAISystem : ISystem
     private ComponentStore<MovableComponent> _movStore;
     private ComponentStore<TroopComponent> _troopStore;
     private ComponentStore<HealthComponent> _healthStore;
+    private ComponentStore<AIModeComponent> _aiModeStore;
     private TargetingSystem _targeting;
 
     public void Setup(ECS ecs) { }
@@ -45,6 +59,7 @@ public class BasicMeleeAISystem : ISystem
         _movStore = ecs.GetComponentStore<MovableComponent>();
         _troopStore = ecs.GetComponentStore<TroopComponent>();
         _healthStore = ecs.GetComponentStore<HealthComponent>();
+        _aiModeStore = ecs.GetComponentStore<AIModeComponent>();
         _targeting = ecs.GetSystem<TargetingSystem>();
         if (_targeting == null) return;
 
@@ -100,27 +115,48 @@ public class BasicMeleeAISystem : ISystem
         }
 
         int range = StatsQuery.GetRange(_ecs, id, DefaultRange);
+        AIMode mode = GetMode(id);
 
-        if (!mov.playerDestinationSet)
+        if (mode != AIMode.Passive && !mov.playerDestinationSet)
             AcquireTargets(id, troop.OwnerPlayerId, myPos, range * ai.DetectionRangeMultiplier);
 
         ulong activeTarget = FindClosest(id, myPos, TargetKind.PlayerAssigned);
 
-        if (activeTarget == 0 && !mov.playerDestinationSet)
+        if (activeTarget == 0 && mode != AIMode.Passive && !mov.playerDestinationSet)
         {
             activeTarget = FindClosest(id, myPos, TargetKind.Automatic);
-            if (activeTarget != 0 && DistanceTo(activeTarget, myPos) > range * ai.ChaseRangeMultiplier)
+
+            // Guard gives up a chase once IT (not the target) has wandered too far from its
+            // leash post; Aggressive never gives up an automatic target at all.
+            if (activeTarget != 0 && mode == AIMode.Guard)
             {
-                _targeting.RemoveAutomaticTarget(id, activeTarget);
-                activeTarget = 0;
+                Vector2 leashPos = new Vector2(mov.LeashX, mov.LeashY);
+                if (Vector2.Distance(myPos, leashPos) > range * ai.ChaseRangeMultiplier)
+                {
+                    _targeting.RemoveAutomaticTarget(id, activeTarget);
+                    activeTarget = 0;
+                }
             }
         }
 
         if (activeTarget == 0)
         {
-            if (!mov.playerDestinationSet)
+            if (mov.playerDestinationSet) return;
+
+            if (mode == AIMode.Passive)
+                Stop(id, ref mov);
+            else
                 GoHome(id, ref mov, myPos);
             return;
+        }
+
+        // Aggressive's leash creeps along with wherever it's currently fighting, instead of
+        // staying pinned to its original post — see the class doc comment.
+        if (mode == AIMode.Aggressive && (mov.LeashX != myPos.x || mov.LeashY != myPos.y))
+        {
+            mov.LeashX = myPos.x;
+            mov.LeashY = myPos.y;
+            _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
         }
 
         float dist = DistanceTo(activeTarget, myPos);
@@ -231,6 +267,18 @@ public class BasicMeleeAISystem : ISystem
     {
         PositionComponent p = _posStore.GetComponent(entityId);
         return Vector2.Distance(from, new Vector2(p.X, p.Y));
+    }
+
+    private AIMode GetMode(ulong id)
+        => _aiModeStore != null && _aiModeStore.HasComponent(id) ? _aiModeStore.GetComponent(id).Mode : AIMode.Guard;
+
+    // Passive's "no target" resting state — just stand down in place, unlike Guard/
+    // Aggressive's GoHome, which actively walks back to the leash point.
+    private void Stop(ulong id, ref MovableComponent mov)
+    {
+        if (mov.currentMovementMode == MovementMode.NotMoving) return;
+        mov.currentMovementMode = MovementMode.NotMoving;
+        _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
     }
 
     private void GoHome(ulong id, ref MovableComponent mov, Vector2 myPos)

@@ -27,6 +27,7 @@ public class SpeedBoostCard : TargetEntityCard
         Armor       = StatsComponent.STAT_NA,
         Damage      = StatsComponent.STAT_NA,
         AttackSpeed = StatsComponent.STAT_NA,
+        SpellResist = StatsComponent.STAT_NA,
     };
 
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };

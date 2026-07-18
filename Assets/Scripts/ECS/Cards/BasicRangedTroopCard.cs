@@ -3,12 +3,17 @@ using System.Collections.Generic;
 
 public class BasicRangedTroopCard : SpawnAtPointCard
 {
-    private const int MaxHealth = 100;
+    // See BasicMeleeTroopCard for the rebalance baseline this is scaled from (3x health,
+    // 2.8x damage vs. the old 100 HP / 10 damage numbers, then damage 1.2x again to
+    // compensate for 20 armor under ArmorMitigationSystem).
+    private const int MaxHealth = 300;
     private const int Speed = 6;
     private const int Range = 19;
-    private const int Armor = 0;
-    private const int Damage = 10;
+    private const int Armor = 20;
+    private const int Damage = 34;
     private const float AttackSpeedMilliseconds = 800f;
+    // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
+    private const int SpellResist = 0;
 
     private const float DetectionRangeMultiplier = 3f;
     private const float ChaseRangeMultiplier = 5f;
@@ -41,6 +46,7 @@ public class BasicRangedTroopCard : SpawnAtPointCard
         Armor       = Armor,
         Damage      = Damage,
         AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
+        SpellResist = SpellResist,
     };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)

@@ -10,6 +10,11 @@ public class DamageRequest : Request
     public readonly ulong EntityId;
     public int Amount;
 
+    // Which stat mitigates this damage (Armor for Normal, SpellResist for Spell) — see
+    // ArmorMitigationSystem. Defaults to Normal, so every existing call site that doesn't
+    // set this keeps behaving exactly as before DamageType existed.
+    public DamageType Type = DamageType.Normal;
+
     public DamageRequest(ulong entityId, int amount)
     {
         EntityId = entityId;

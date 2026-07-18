@@ -4,8 +4,11 @@ public struct BasicMeleeAIComponent : IComponent
     // automatically target nearby enemies.
     public float DetectionRangeMultiplier;
 
-    // How far (as a multiple of Range, larger than DetectionRangeMultiplier) it will
-    // keep chasing an automatically-acquired target before giving up on it.
+    // In Guard mode (AIModeComponent): how far (as a multiple of Range, larger than
+    // DetectionRangeMultiplier) THIS TROOP may stray from its leash point while chasing an
+    // automatically-acquired target before giving up on it — measured from the leash
+    // position, not from the target. Unused in Aggressive mode, which never gives up an
+    // automatic target at all; unused in Passive mode, which never acquires one.
     public float ChaseRangeMultiplier;
 
     // Leeway (as a multiple of Range) allowed when re-checking a target is still close

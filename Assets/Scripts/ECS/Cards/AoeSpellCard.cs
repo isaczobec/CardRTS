@@ -23,7 +23,8 @@ public class AoeSpellCard : SpawnAtPointCard
     // the exact same radius (CursorCircleRadius) without duplicating/drifting from it.
     public const int Range = 5;
 
-    private const int Damage = 20;
+    // 2.8x the old 20 — see BasicMeleeTroopCard for the rebalance baseline this is scaled from.
+    private const int Damage = 56;
     // Pulse interval, once active — same units as every other card's AttackSpeed
     // (milliseconds authored here, converted to ticks below).
     private const float AttackSpeedMilliseconds = 1000f;
@@ -46,7 +47,7 @@ public class AoeSpellCard : SpawnAtPointCard
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
     public override bool AllowsFriendlyTroopRange() => true;
 
-    // MaxHealth/Speed/Armor are STAT_NA — this entity has no HealthComponent/
+    // MaxHealth/Speed/Armor/SpellResist are STAT_NA — this entity has no HealthComponent/
     // MovableComponent, so nothing ever reads them. Range/Damage/AttackSpeed are real:
     // DamageAuraSystem reads them straight off this StatsComponent via StatsQuery, which
     // only falls back to a default when there's no StatsComponent at all — leaving these
@@ -59,6 +60,7 @@ public class AoeSpellCard : SpawnAtPointCard
         Armor       = StatsComponent.STAT_NA,
         Damage      = Damage,
         AttackSpeed = TickManager.MillisecondsToTicks(AttackSpeedMilliseconds),
+        SpellResist = StatsComponent.STAT_NA,
     };
 
     // The indicator prefab's mesh is assumed to be authored at 1-unit diameter (same
@@ -98,6 +100,7 @@ public class AoeSpellCard : SpawnAtPointCard
         {
             RangeMultiplier       = 1f,
             AttackSpeedMultiplier = 1f,
+            DamageType            = DamageType.Spell,
         });
 
         int lifetimeTicks = TickManager.SecondsToTicks(DurationSeconds);

@@ -12,4 +12,8 @@ public struct DamageAuraComponent : IComponent
     // Ticks remaining until the next pulse — counts down each tick, reset to the
     // (multiplied) AttackSpeed once a pulse fires.
     public int TicksUntilNextPulse;
+
+    // Which DamageType each pulse deals (see DamageRequest/ArmorMitigationSystem) — e.g.
+    // AoeSpellCard sets this to Spell so its pulses are mitigated by SpellResist, not Armor.
+    public DamageType DamageType;
 }

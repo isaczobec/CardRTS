@@ -7,17 +7,20 @@ using System;
 // SpawnTree is a ready-made Spawner for a neutral respawnable tree resource.
 public class EntitySpawnAction : IWorldGenAction
 {
-    private const int   TreeMaxHealth     = 100;
+    // Scaled to match BasicMeleeTroopCard's rebalance baseline (3x health) — preserves
+    // Tree/Rock/Ore's old relative hardiness vs. a troop (Tree was exactly as tanky as a
+    // troop, Rock/Ore 1.5x as tanky; both ratios are unchanged here).
+    private const int   TreeMaxHealth     = 300;
     private const float TreeBlockRadius   = 1f;
     private const float TreeRespawnSeconds = 120f;
     private const float TreeSelectionScale = 2f;
 
-    private const int   RockMaxHealth      = 150;
+    private const int   RockMaxHealth      = 450;
     private const float RockBlockRadius    = 1f;
     private const float RockRespawnSeconds = 120f;
     private const float RockSelectionScale = 2f;
 
-    private const int   OreMaxHealth       = 150;
+    private const int   OreMaxHealth       = 450;
     private const float OreBlockRadius     = 1f;
     private const float OreRespawnSeconds  = 150f;
     private const float OreSelectionScale  = 2f;

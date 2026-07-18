@@ -11,4 +11,8 @@ public struct StatsComponent : IComponent
     public int Armor;
     public int Damage;
     public int AttackSpeed;
+
+    // Mitigates DamageType.Spell damage the same way Armor mitigates DamageType.Normal —
+    // see ArmorMitigationSystem.
+    public int SpellResist;
 }

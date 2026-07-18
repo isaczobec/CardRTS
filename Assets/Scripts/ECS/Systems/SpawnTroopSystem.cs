@@ -12,10 +12,13 @@ public static class SpawnTroopSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
-    private const int DefaultMaxHealth = 100;
+    // Scaled to match BasicMeleeTroopCard's rebalance baseline (3x health, 2.8x damage,
+    // then damage 1.2x again to compensate for 20 armor under ArmorMitigationSystem).
+    private const int DefaultMaxHealth = 300;
     private const int DefaultSpeed = 10;
-    private const int DefaultArmor = 0;
-    private const int DefaultDamage = 10;
+    private const int DefaultArmor = 20;
+    private const int DefaultDamage = 34;
+    private const int DefaultSpellResist = 0;
     private const float DefaultActivationDelaySeconds = 2f;
 
     private const float DefaultDetectionRangeMultiplier = 3f;
@@ -30,8 +33,9 @@ public static class SpawnTroopSystem
     private const int RangedProjectilePoolSize = 64;
     private const int RangedProjectileSpeedMilliTilesPerSecond = 15000; // 15 tiles/sec
 
-    private const int BuildingDefaultMaxHealth = 300;
-    private const int BuildingDefaultArmor = 5;
+    private const int BuildingDefaultMaxHealth = 900;
+    private const int BuildingDefaultArmor = 40;
+    private const int BuildingDefaultSpellResist = 150;
     private const float BuildingDefaultBlockRadius = 3f;
 
     private const float TroopSelectionScale = 1f;
@@ -105,6 +109,7 @@ public static class SpawnTroopSystem
             Armor       = DefaultArmor,
             Damage      = DefaultDamage,
             AttackSpeed = TickManager.MillisecondsToTicks(isRanged ? RangedDefaultAttackSpeedMilliseconds : MeleeDefaultAttackSpeedMilliseconds),
+            SpellResist = DefaultSpellResist,
         });
 
         ecs.AddComponent(entity.Id, new HealthComponent
@@ -172,8 +177,9 @@ public static class SpawnTroopSystem
 
         ecs.AddComponent(entity.Id, new StatsComponent
         {
-            MaxHealth = BuildingDefaultMaxHealth,
-            Armor     = BuildingDefaultArmor,
+            MaxHealth   = BuildingDefaultMaxHealth,
+            Armor       = BuildingDefaultArmor,
+            SpellResist = BuildingDefaultSpellResist,
             // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
         });
 

@@ -60,7 +60,7 @@ public static class DamageAuraSystem
         foreach (ulong targetId in _queryBuffer)
         {
             if (targetId == id) continue;
-            ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = id });
+            ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = id, Type = aura.DamageType });
         }
     }
 }

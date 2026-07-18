@@ -3,7 +3,9 @@
 // inline instead, mirroring what used to be SpawnTroopSystem.SpawnBuilding.
 public class BuildingCard : SpawnAtPointCard
 {
-    private const int MaxHealth = 300;
+    // 3x the old 300 — see BasicMeleeTroopCard for the rebalance baseline this (and every
+    // other troop/building/resource-node health value) is scaled from.
+    private const int MaxHealth = 900;
     private const float ActivationDelaySeconds = 2f;
 
     private const int WoodCost = 5;
@@ -33,6 +35,7 @@ public class BuildingCard : SpawnAtPointCard
         Armor       = BuildingSpawnHelper.Armor,
         Damage      = StatsComponent.STAT_NA,
         AttackSpeed = StatsComponent.STAT_NA,
+        SpellResist = BuildingSpawnHelper.SpellResist,
     };
 
     public override ResourceCost Cost => new ResourceCost { Wood = WoodCost, Stone = StoneCost };

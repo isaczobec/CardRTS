@@ -17,7 +17,7 @@ using UnityEngine;
 /// </summary>
 public class SpawnPlayerBasesFeature : WorldGenFeature
 {
-    public const int BaseMaxHealth = 1000; // BuildingCard's building has 300 — a base should outlast it by a wide margin.
+    public const int BaseMaxHealth = 3000; // BuildingCard's building has 900 — a base should outlast it by a wide margin.
 
     public float EdgeOffset = 5f;
 
