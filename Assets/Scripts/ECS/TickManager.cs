@@ -171,6 +171,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<TeleportingModifierComponent>(29);
         _componentTypeRegistry.Register<BlinkComponent>(30);
         _componentTypeRegistry.Register<RespawnCooldownRampComponent>(31);
+        _componentTypeRegistry.Register<ResourceProductionOnDeathComponent>(32);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -264,6 +265,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BlinkComponent>>(75);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RespawnCooldownRampComponent>>(76);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RespawnCooldownRampComponent>>(77);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceProductionOnDeathComponent>>(78);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceProductionOnDeathComponent>>(79);
 
         ECS = CreateSimulationECS();
     }
@@ -468,6 +471,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<TeleportingModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnCooldownRampComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceProductionOnDeathComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -501,6 +505,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
+        ecs.RegisterSystem(ResourceProductionOnDeathSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
         ecs.SetupSystems();
@@ -542,6 +547,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<TeleportingModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnCooldownRampComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceProductionOnDeathComponent>());
 
         return ecs;
     }

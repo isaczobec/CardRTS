@@ -76,6 +76,7 @@ public class EntitySpawnAction : IWorldGenAction
         {
             Wood = 20
         } } );
+        ecs.AddComponent(id, new ResourceProductionOnDeathComponent { MainResourceType = ResourceType.Wood });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(TreeRespawnSeconds),
@@ -104,6 +105,7 @@ public class EntitySpawnAction : IWorldGenAction
         {
             Stone = 20
         } } );
+        ecs.AddComponent(id, new ResourceProductionOnDeathComponent { MainResourceType = ResourceType.Stone });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(RockRespawnSeconds),
@@ -132,6 +134,7 @@ public class EntitySpawnAction : IWorldGenAction
         {
             Metal = 20
         } } );
+        ecs.AddComponent(id, new ResourceProductionOnDeathComponent { MainResourceType = ResourceType.Metal });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(OreRespawnSeconds),

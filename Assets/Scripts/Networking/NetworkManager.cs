@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 
@@ -339,10 +340,15 @@ public class NetworkManager : Singleton<NetworkManager>
         ecs.AddComponent(entity.Id, new PositionComponent());
         ecs.AddComponent(entity.Id, new PlayerComponent { PlayerId = playerId });
         ecs.AddComponent(entity.Id, new PlayerDeckComponent());
+        // Wood/Stone/Metal now come entirely from ResourceProductionOnDeathSystem (killing
+        // Tree/Rock/Ore entities) instead of a flat starting rate — only Gold keeps its
+        // baseline passive income.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
-            WoodPerSecond = 0.5f,
-            StonePerSecond = 0.5f,
-            GoldPerSecond = 0.5f,
+            GoldPerSecond = 25.0f / 60.0f,
+            Gold = 500,
+            Wood = 200,
+            Stone = 200,
+            Metal = 200,
             });
 
         DeckHelper.SeedStartingDeck(ecs, playerId);

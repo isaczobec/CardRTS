@@ -13,7 +13,8 @@ public struct TileTextureEntry
 /// Maps TileType enum values to Texture2Ds via explicit (Type, Texture) pairs assigned in
 /// the Inspector. Order does not matter; BuildArray() places each texture at the slot
 /// matching its enum value so the terrain shader can index by tile ID.
-/// All textures must share the same dimensions and format.
+/// All textures must share the same dimensions; compression/format may differ freely
+/// (BuildArray converts each one into the array's own format via Graphics.ConvertTexture).
 /// </summary>
 public class TileTextureRegistry : MonoBehaviour
 {
@@ -58,7 +59,14 @@ public class TileTextureRegistry : MonoBehaviour
         }
 
         bool useMips = first.mipmapCount > 1;
-        var arr = new Texture2DArray(first.width, first.height, count, first.format, useMips);
+        // Fixed RGBA32 rather than "whatever pixel format the first assigned texture happens
+        // to have" — tile textures aren't guaranteed to all share the same compression (e.g.
+        // mixing an uncompressed placeholder with a compressed final texture, or just
+        // importing new ones with different default settings), and Graphics.ConvertTexture
+        // below can convert any source format into this one, unlike Graphics.CopyTexture
+        // (used previously), which requires a byte-exact format match and throws a
+        // "mismatching data size" error otherwise.
+        var arr = new Texture2DArray(first.width, first.height, count, TextureFormat.RGBA32, useMips);
 
         for (int i = 0; i < count; i++)
         {
@@ -75,12 +83,13 @@ public class TileTextureRegistry : MonoBehaviour
                                $"Set the same Max Texture Size on all tile textures in their import settings.");
                 continue;
             }
-            int mipsToCopy = Mathf.Min(tex.mipmapCount, arr.mipmapCount);
-            for (int mip = 0; mip < mipsToCopy; mip++)
-                Graphics.CopyTexture(tex, 0, mip, arr, i, mip);
+            // GPU-side format conversion (handles mismatched compression/format between tex
+            // and arr, and copies every mip level in one call) — doesn't require Read/Write
+            // Enabled on tex the way a CPU-side GetPixels/SetPixels approach would.
+            Graphics.ConvertTexture(tex, 0, arr, i);
         }
 
-        // Graphics.CopyTexture writes GPU-to-GPU; calling Apply() here would
+        // Graphics.ConvertTexture writes GPU-to-GPU; calling Apply() here would
         // upload the (white-initialized) CPU buffer and overwrite the copied data.
         return arr;
     }

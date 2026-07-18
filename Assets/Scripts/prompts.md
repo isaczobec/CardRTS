@@ -26,3 +26,4 @@ Also, can you add a teleported flag to the movable component and make this true 
 
 Now, i want to create a source of gems. these i want to generate in clusters that are spawned in the following way: imagine drawing a line from every base to the center of the map. This entire shape should then be rotated 360 / (2n) degrees (where n is the amount of players/bases), and then one cluster should be placed at the end of each line (at some offset from the center). Half of the clusters (rounded down) should contain 3 objects and the other half should contain 7. Each object should drop 10 gems.
 
+can you on the minimap manager add support for respawnable objects? Objects that are currently respawning should be rendered at 40% opacity.

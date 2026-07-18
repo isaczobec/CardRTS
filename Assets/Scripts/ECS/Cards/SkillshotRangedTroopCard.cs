@@ -43,9 +43,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     private const float AoeSpellCloneCooldownSeconds = 8f;
     private const float SkillshotAbilityCooldownSeconds = 3f;
 
-    private const int GoldCost = 4;
-
-    public override int ShopGoldCost => 10; 
+    public override int ShopGoldCost => 100;
 
     private const float MaxDistanceFromBuilding = 20f;
 
@@ -56,7 +54,11 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "SkillshotRangedTroop";
 
     public override StatsComponent DefaultStats => BuildStats();
-    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override ResourceCost Cost => new ResourceCost
+        {
+            Metal = 120,
+            Wood = 30
+        };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
     private static StatsComponent BuildStats() => new StatsComponent

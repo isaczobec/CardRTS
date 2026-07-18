@@ -8,12 +8,9 @@ public class BuildingCard : SpawnAtPointCard
     private const int MaxHealth = 900;
     private const float ActivationDelaySeconds = 2f;
 
-    private const int WoodCost = 5;
-    private const int StoneCost = 3;
-
     // A bit more generous than troops — buildings are how you expand toward new
     // territory, so they shouldn't be stuck only ever hugging existing ones.
-    private const float MaxDistanceFromBuilding = 30f;
+    private const float MaxDistanceFromBuilding = 45f;
 
     public override CardType Type => CardType.Building;
     public override string Title => "Building";
@@ -23,7 +20,7 @@ public class BuildingCard : SpawnAtPointCard
 
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
-    public override int ShopGoldCost => 10; 
+    public override int ShopGoldCost => 100; 
 
     // Speed/Range/Damage/AttackSpeed are STAT_NA (not just 0) here — buildings don't move
     // or attack, so those rows shouldn't be shown on the card face at all.
@@ -38,7 +35,11 @@ public class BuildingCard : SpawnAtPointCard
         SpellResist = BuildingSpawnHelper.SpellResist,
     };
 
-    public override ResourceCost Cost => new ResourceCost { Wood = WoodCost, Stone = StoneCost };
+    public override ResourceCost Cost => new ResourceCost
+        {
+            Wood = 45,
+            Stone = 45
+        };
 
     public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {

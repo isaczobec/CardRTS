@@ -22,8 +22,6 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     private const int ProjectilePoolSize = 64;
     private const int ProjectileSpeedMilliTilesPerSecond = 15000; // 15 tiles/sec
 
-    private const int GoldCost = 4;
-
     private const float MaxDistanceFromBuilding = 20f;
 
     public override CardType Type => CardType.BasicRangedTroop;
@@ -33,10 +31,14 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "BasicRangedTroop";
 
     public override StatsComponent DefaultStats => BuildStats();
-    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override ResourceCost Cost => new ResourceCost
+        {
+            Stone = 120,
+            Metal = 30
+        };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
-    public override int ShopGoldCost => 10; 
+    public override int ShopGoldCost => 100; 
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

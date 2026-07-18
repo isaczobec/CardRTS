@@ -951,6 +951,8 @@ MonoBehaviour:
     Prefab: {fileID: 9167927058125610618, guid: 9d1ea0b315dfd3f4fa9f8f9a8160b309, type: 3}
   - Type: 15
     Prefab: {fileID: 9167927058125610618, guid: 9d1ea0b315dfd3f4fa9f8f9a8160b309, type: 3}
+  - Type: 11
+    Prefab: {fileID: 9167927058125610618, guid: bb7635db207e81949b261ed9e2214ec7, type: 3}
   _friendlyColor: {r: 0, g: 1, b: 0, a: 1}
   _neutralColor: {r: 1, g: 1, b: 1, a: 1}
   _enemyColor: {r: 1, g: 0, b: 0, a: 1}
@@ -3814,6 +3816,8 @@ MonoBehaviour:
     renderer: {fileID: 1664291890}
   - type: 16
     renderer: {fileID: 700742498}
+  - type: 11
+    renderer: {fileID: 1661341882}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -3863,11 +3867,11 @@ MonoBehaviour:
   _aliveVariants: []
   _respawningVariants: []
   _randomRotation: 1
-  _minScale: 1
-  _maxScale: 1
-  _takeDamageSoundName: 
-  _diedSoundName: 
-  _respawnedSoundName: 
+  _minScale: 0.9
+  _maxScale: 1.1
+  _takeDamageSoundName: StoneTakeDamage
+  _diedSoundName: DefaultDeath
+  _respawnedSoundName: Revive
 --- !u!1 &701629107
 GameObject:
   m_ObjectHideFlags: 0
@@ -7573,6 +7577,7 @@ Transform:
   - {fileID: 920356594}
   - {fileID: 1439762914}
   - {fileID: 868344196}
+  - {fileID: 1661341881}
   - {fileID: 251304929}
   - {fileID: 1449116595}
   - {fileID: 73635955}
@@ -8328,6 +8333,15 @@ MonoBehaviour:
   - Type: 3
     Texture: {fileID: 2800000, guid: 32514e31dd675a2e99c358ee15bd090a, type: 3}
     MapColor: {r: 0.6509434, g: 0.6509434, b: 0.6509434, a: 1}
+  - Type: 4
+    Texture: {fileID: 2800000, guid: 3b895b75ef306d9c7b7ae3a2685220aa, type: 3}
+    MapColor: {r: 0.9150943, g: 0.9150943, b: 0.9150943, a: 1}
+  - Type: 5
+    Texture: {fileID: 2800000, guid: af4f1dd4e4cdf6e2caaac5d2e138ffe7, type: 3}
+    MapColor: {r: 0.5153306, g: 0.4305358, b: 0.7075472, a: 1}
+  - Type: 6
+    Texture: {fileID: 2800000, guid: 1159b2ee303dd239fb069e98b96fce1f, type: 3}
+    MapColor: {r: 0.63759345, g: 0.91144705, b: 0.9386792, a: 1}
 --- !u!114 &1537083957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8368,6 +8382,12 @@ MonoBehaviour:
     HasCollision: 0
   - Type: 3
     HasCollision: 1
+  - Type: 4
+    HasCollision: 0
+  - Type: 5
+    HasCollision: 0
+  - Type: 6
+    HasCollision: 0
 --- !u!114 &1537083959
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9075,6 +9095,60 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1661341880
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1661341881}
+  - component: {fileID: 1661341882}
+  m_Layer: 0
+  m_Name: OreRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1661341881
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1661341880}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1661341882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1661341880}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca7dba02c032810449824a90d3770060, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RespawnableBuildingRenderer
+  _alivePrefab: {fileID: 4365161727771487577, guid: edb4168d00b14434ea827cfca7618bd5, type: 3}
+  _respawningPrefab: {fileID: 4365161727771487577, guid: 765449efd8b58f847a1daa8e0efa1562, type: 3}
+  _aliveVariants: []
+  _respawningVariants: []
+  _randomRotation: 1
+  _minScale: 0.9
+  _maxScale: 1.1
+  _takeDamageSoundName: StoneTakeDamage
+  _diedSoundName: DefaultDeath
+  _respawnedSoundName: Revive
 --- !u!1 &1664291888
 GameObject:
   m_ObjectHideFlags: 0
@@ -9126,9 +9200,9 @@ MonoBehaviour:
   _randomRotation: 1
   _minScale: 1
   _maxScale: 1
-  _takeDamageSoundName: 
-  _diedSoundName: 
-  _respawnedSoundName: 
+  _takeDamageSoundName: StoneTakeDamage
+  _diedSoundName: DefaultDeath
+  _respawnedSoundName: Revive
 --- !u!1 &1671680052
 GameObject:
   m_ObjectHideFlags: 0

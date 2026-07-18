@@ -228,7 +228,10 @@ public enum TileType : byte
     Water = 0,
     Sand = 1,
     Grass = 2,
-    Mountain = 3
+    Mountain = 3,
+    Snow = 4,
+    Gravel = 5,
+    Ice = 6,
 }
 
 /// <summary>

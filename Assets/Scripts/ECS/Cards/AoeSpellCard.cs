@@ -12,7 +12,6 @@ using UnityEngine;
 // the server, once its duration runs out).
 public class AoeSpellCard : SpawnAtPointCard
 {
-    private const int GoldCost = 4;
     private const float ActivationDelaySeconds = 2f;
     private const float MaxDistanceFromBuilding = 25f;
     private const float MaxDistanceFromTroop = 15f;
@@ -32,7 +31,7 @@ public class AoeSpellCard : SpawnAtPointCard
     // How long the aura keeps pulsing after it activates, before LifetimeSystem expires it.
     private const float DurationSeconds = 5f;
 
-    public override int ShopGoldCost => 10; 
+    public override int ShopGoldCost => 100; 
 
 
     public override CardType Type => CardType.AoeSpell;
@@ -42,7 +41,11 @@ public class AoeSpellCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "AoeSpell";
 
     public override StatsComponent DefaultStats => BuildStats();
-    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override ResourceCost Cost => new ResourceCost
+        {
+            Gems = 5,
+            Metal = 80
+        };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
     public override bool AllowsFriendlyTroopRange() => true;

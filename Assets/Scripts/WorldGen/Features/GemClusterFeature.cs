@@ -8,14 +8,15 @@ using UnityEngine;
 // exactly halfway between two adjacent base directions — then place a cluster at
 // ClusterOffsetFromCenter along each rotated line. Half of the clusters (rounded down, by
 // index order after rotation) get SmallClusterEntityCount objects, the rest get
-// LargeClusterEntityCount.
+// LargeClusterEntityCount. A GravelRadius disc around each object is repainted Gravel, so
+// the ground itself marks where a gem deposit is even while it's down on cooldown.
 //
 // Requires SpawnPlayerBasesFeature to have already run (see WorldManager.SetupWorldGen) —
 // reads its Bases list via GetPreviousFeature, mirroring RemapTilesNearPointsFeature.
 public class GemClusterFeature : WorldGenFeature
 {
     // Distance from the exact map center each cluster's own center is placed.
-    public float ClusterOffsetFromCenter = 80f;
+    public float ClusterOffsetFromCenter = 150f;
 
     // How far individual objects within a cluster scatter around that cluster's center.
     public float ClusterRadius = 6f;
@@ -25,6 +26,11 @@ public class GemClusterFeature : WorldGenFeature
 
     public int SmallClusterEntityCount = 3;
     public int LargeClusterEntityCount = 7;
+
+    // Radius (in tiles) of the Gravel patch painted around each individual gem deposit —
+    // wide enough that adjacent objects' patches typically overlap into one continuous
+    // gravel area covering the cluster, rather than a dot under each object.
+    public float GravelRadius = 3f;
 
     private const int MaxPlacementAttempts = 30;
 
@@ -68,7 +74,32 @@ public class GemClusterFeature : WorldGenFeature
                 continue;
 
             placed.Add((x, y));
+            PaintGravelAround(handler, x, y, maxCoord);
             handler.EnqueueAction(new EntitySpawnAction { X = x, Y = y, Spawner = EntitySpawnAction.SpawnGemDeposit });
+        }
+    }
+
+    // Fills every tile within GravelRadius of (x, y) with Gravel — a filled disc, not just
+    // the object's own single tile.
+    private void PaintGravelAround(WorldGenHandler handler, float x, float y, float maxCoord)
+    {
+        int centerX = Mathf.RoundToInt(x);
+        int centerY = Mathf.RoundToInt(y);
+        int radius = Mathf.CeilToInt(GravelRadius);
+        float radius2 = GravelRadius * GravelRadius;
+
+        for (int dy = -radius; dy <= radius; dy++)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                if (dx * dx + dy * dy > radius2) continue;
+
+                int px = centerX + dx;
+                int py = centerY + dy;
+                if (px < 0 || py < 0 || px > maxCoord || py > maxCoord) continue;
+
+                handler.SetTileType((ushort)px, (ushort)py, TileType.Gravel);
+            }
         }
     }
 

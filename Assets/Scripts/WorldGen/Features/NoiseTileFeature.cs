@@ -34,19 +34,35 @@ public class NoiseTileFeature : WorldGenFeature
     /// </summary>
     public float NoiseMinThreshold = 0f;
 
+    /// <summary>
+    /// Optional second noise generator that gates whether a tile is painted at all — sampled
+    /// first, and if it's below <see cref="MaskMinThreshold"/> the tile is skipped entirely
+    /// (NoiseResourceKey/Thresholds are never even sampled). Typically a coarser/lower-
+    /// frequency noise than the primary one, so e.g. a fine ridged-vein noise only shows up
+    /// within scattered patches of the map instead of forming one continuous network. Left
+    /// null/empty (default) to disable — every tile passes the mask.
+    /// </summary>
+    public string MaskNoiseResourceKey;
+
+    /// <summary>Range [0, 1]; only used when MaskNoiseResourceKey is set.</summary>
+    public float MaskMinThreshold = 0f;
+
     public override void Generate(WorldGenHandler handler)
     {
         var noise = handler.GetWorldGenResource<NoiseGenerator>(NoiseResourceKey);
+        var mask = string.IsNullOrEmpty(MaskNoiseResourceKey)
+            ? null
+            : handler.GetWorldGenResource<NoiseGenerator>(MaskNoiseResourceKey);
         var preserve = new HashSet<TileType>(PreserveTileTypes);
         var biome = handler.GetPreviousFeature<BiomeFeature>();
 
         if (biome != null)
-            GenerateBiome(handler, noise, biome, preserve);
+            GenerateBiome(handler, noise, mask, biome, preserve);
         else
-            GenerateGlobal(handler, noise, preserve);
+            GenerateGlobal(handler, noise, mask, preserve);
     }
 
-    void GenerateGlobal(WorldGenHandler handler, NoiseGenerator noise, HashSet<TileType> preserve)
+    void GenerateGlobal(WorldGenHandler handler, NoiseGenerator noise, NoiseGenerator mask, HashSet<TileType> preserve)
     {
         ushort size = (ushort)(WorldGenHandler.CHUNK_SIZE_TILES * WorldGenHandler.WorldSizeChunks);
         for (ushort x = 0; x < size; x++)
@@ -54,13 +70,13 @@ public class NoiseTileFeature : WorldGenFeature
             {
                 if (preserve.Contains(handler.GetTileType(x, y)))
                     continue;
-                var type = Sample(noise, x, y);
+                var type = Sample(noise, mask, x, y);
                 if (type.HasValue)
                     handler.SetTileType(x, y, type.Value);
             }
     }
 
-    void GenerateBiome(WorldGenHandler handler, NoiseGenerator noise, BiomeFeature biome, HashSet<TileType> preserve)
+    void GenerateBiome(WorldGenHandler handler, NoiseGenerator noise, NoiseGenerator mask, BiomeFeature biome, HashSet<TileType> preserve)
     {
         var biomeNoiseX = handler.GetWorldGenResource<NoiseGenerator>(biome.NoiseKeyX);
         var biomeNoiseY = handler.GetWorldGenResource<NoiseGenerator>(biome.NoiseKeyY);
@@ -78,16 +94,20 @@ public class NoiseTileFeature : WorldGenFeature
                     continue;
                 if (preserve.Contains(handler.GetTileType(tx, ty)))
                     continue;
-                var type = Sample(noise, tx, ty);
+                var type = Sample(noise, mask, tx, ty);
                 if (type.HasValue)
                     handler.SetTileType(tx, ty, type.Value);
             }
         }
     }
 
-    // Returns null when the noise value is below NoiseMinThreshold, leaving the tile untouched.
-    TileType? Sample(NoiseGenerator noise, ushort x, ushort y)
+    // Returns null when the mask (if any) is below MaskMinThreshold, or the primary noise
+    // value is below NoiseMinThreshold, leaving the tile untouched either way.
+    TileType? Sample(NoiseGenerator noise, NoiseGenerator mask, ushort x, ushort y)
     {
+        if (mask != null && mask.Sample(x, y) < MaskMinThreshold)
+            return null;
+
         float value = noise.Sample(x, y);
         if (value < NoiseMinThreshold)
             return null;

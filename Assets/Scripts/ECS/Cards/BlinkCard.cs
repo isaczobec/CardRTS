@@ -9,7 +9,6 @@ using UnityEngine;
 // TroopComponent.IsPhysicalTroop).
 public class BlinkCard : MultiPointCard
 {
-    private const int GoldCost = 4;
     private const float ActivationDelaySeconds = 2f;
     private const float MaxDistanceFromBuilding = 25f;
     private const float MaxDistanceFromTroop = 15f;
@@ -23,7 +22,7 @@ public class BlinkCard : MultiPointCard
     // MultiPointCard.ClampToPreviousPoint) and re-checked server-side (MultiPointCardPlaySystem).
     private const float MaxBlinkDistance = 20f;
 
-    public override int ShopGoldCost => 10;
+    public override int ShopGoldCost => 100;
 
     public override CardType Type => CardType.Blink;
     public override string Title => "Blink";
@@ -45,7 +44,10 @@ public class BlinkCard : MultiPointCard
         SpellResist = StatsComponent.STAT_NA,
     };
 
-    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override ResourceCost Cost => new ResourceCost
+        {
+            Gems = 10
+        };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
     public override bool AllowsFriendlyTroopRange() => true;

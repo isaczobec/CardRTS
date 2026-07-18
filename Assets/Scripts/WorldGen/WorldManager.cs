@@ -170,6 +170,26 @@ public class WorldManager : Singleton<WorldManager>
             OffsetY = 700f,
         });
 
+        // Ridged (thin, winding vein) noise for TundraBiome's tunnel-like mountain
+        // formations — a different offset from "terrain" so the veins don't line up with
+        // Wetland's own Mountain-patch noise.
+        handler.AddResource(new RidgedNoiseGenerator("tundraRidges")
+        {
+            Scale   = 0.06f,
+            OffsetX = 900f,
+            OffsetY = 900f,
+        });
+
+        // Coarse, low-frequency mask gating where the ridged vein noise above is even
+        // allowed to paint Mountain — without this the veins form one continuous network
+        // across the whole biome; masked, they only show up within scattered patches.
+        handler.AddResource(new PerlinNoiseGenerator("tundraMountainPatchMask")
+        {
+            Scale   = 0.02f,
+            OffsetX = 1300f,
+            OffsetY = 1300f,
+        });
+
         // Desert biome: hot (high temp) and dry (low humidity).
         handler.features.Add(new BiomeFeature
         {
@@ -182,16 +202,55 @@ public class WorldManager : Singleton<WorldManager>
                 // Repaint interior terrain with arid thresholds (more sand, no grass).
                 // Water is preserved so existing lakes/rivers remain as oases.
                 new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Sand },
+                // Stones are the desert's dominant resource — a bit more common here than
+                // trees/ore, which still both appear.
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnRock,
+                    ClusterCountMin       = 12,
+                    ClusterCountMax       = 18,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 5,
+                    ClusterRadius         = 5f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 1.5f,
+                    AllowedTileTypes      = new[] { TileType.Sand },
+                },
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnTree,
+                    ClusterCountMin       = 8,
+                    ClusterCountMax       = 12,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 4,
+                    ClusterRadius         = 15f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 6f,
+                    AllowedTileTypes      = new[] { TileType.Sand },
+                },
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnOre,
+                    ClusterCountMin       = 8,
+                    ClusterCountMax       = 12,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 5,
+                    ClusterRadius         = 5f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 1.5f,
+                    AllowedTileTypes      = new[] { TileType.Sand },
+                },
             }
         });
 
-        // Wetland biome: cold (low temp) and humid (high humidity).
+        // Wetland biome: cold (low temp) and humid (high humidity) — shares the cold half of
+        // the temperature axis with TundraBiome below, split by humidity (dry -> tundra).
         handler.features.Add(new BiomeFeature
         {
             NoiseKeyX = "biomeTemp",
             NoiseKeyY = "biomeHumidity",
             MinX = 0.00f, MaxX = 0.60f,
-            MinY = 0.00f, MaxY = 1.00f,
+            MinY = 0.50f, MaxY = 1.00f,
             ChildFeatures = new WorldGenFeature[]
             {
                 // Repaint interior terrain with lush thresholds (more grass, less sand).
@@ -206,11 +265,13 @@ public class WorldManager : Singleton<WorldManager>
                         new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
                     },
                 },
+                // Trees are the wetland's dominant resource — a bit more common here than
+                // stones/ore, which still both appear.
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnTree,
-                    ClusterCountMin       = 25,
-                    ClusterCountMax       = 35,
+                    ClusterCountMin       = 12,
+                    ClusterCountMax       = 18,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 4,
                     ClusterRadius         = 15f,
@@ -221,15 +282,105 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnRock,
-                    ClusterCountMin       = 25,
-                    ClusterCountMax       = 35,
+                    ClusterCountMin       = 8,
+                    ClusterCountMax       = 12,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
-                
+                },
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnOre,
+                    ClusterCountMin       = 8,
+                    ClusterCountMax       = 12,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 5,
+                    ClusterRadius         = 5f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 1.5f,
+                    AllowedTileTypes      = new[] { TileType.Grass },
+                },
+            }
+        });
+
+        // Tundra biome: cold (low temp) and dry (low humidity) — mainly snow, with scattered
+        // ice patches (both walkable) and ridged-noise mountain formations that read as thin,
+        // winding tunnels/corridors rather than round blobs, for interesting chase gameplay.
+        handler.features.Add(new BiomeFeature
+        {
+            NoiseKeyX = "biomeTemp",
+            NoiseKeyY = "biomeHumidity",
+            MinX = 0.00f, MaxX = 0.60f,
+            MinY = 0.00f, MaxY = 0.50f,
+            ChildFeatures = new WorldGenFeature[]
+            {
+                // Base terrain: mostly snow.
+                new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Snow },
+                // Scattered ice spots — also walkable, just visually/thematically distinct.
+                new NoiseTileFeature
+                {
+                    NoiseResourceKey = "terrain",
+                    NoiseMinThreshold = 0.7f,
+                    Thresholds = new List<NoiseThreshold>
+                    {
+                        new NoiseThreshold { MaxValue = 1f, Type = TileType.Ice },
+                    },
+                },
+                // Thin, winding mountain veins (see RidgedNoiseGenerator), masked down to
+                // small scattered patches (see tundraMountainPatchMask above) instead of one
+                // continuous network — the gaps within/around each patch form natural
+                // corridors for chasing/fleeing troops to funnel through.
+                new NoiseTileFeature
+                {
+                    NoiseResourceKey = "tundraRidges",
+                    NoiseMinThreshold = 0.85f,
+                    MaskNoiseResourceKey = "tundraMountainPatchMask",
+                    MaskMinThreshold = 0.7f,
+                    Thresholds = new List<NoiseThreshold>
+                    {
+                        new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
+                    },
+                },
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnTree,
+                    ClusterCountMin       = 8,
+                    ClusterCountMax       = 12,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 4,
+                    ClusterRadius         = 15f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 6f,
+                    AllowedTileTypes      = new[] { TileType.Snow },
+                },
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnRock,
+                    ClusterCountMin       = 8,
+                    ClusterCountMax       = 12,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 5,
+                    ClusterRadius         = 5f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 1.5f,
+                    AllowedTileTypes      = new[] { TileType.Snow },
+                },
+                // Ore is the tundra's dominant resource — a bit more common here than
+                // trees/stones, which still both appear.
+                new EntityClusterFeature
+                {
+                    Spawner               = EntitySpawnAction.SpawnOre,
+                    ClusterCountMin       = 12,
+                    ClusterCountMax       = 18,
+                    EntitiesPerClusterMin = 3,
+                    EntitiesPerClusterMax = 5,
+                    ClusterRadius         = 5f,
+                    MinDistanceToOtherEntities = 20f,
+                    MinEntitySpacing = 1.5f,
+                    AllowedTileTypes      = new[] { TileType.Snow },
                 },
             }
         });

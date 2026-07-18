@@ -6,8 +6,6 @@
 // has no PositionComponent of its own).
 public class SpeedBoostCard : TargetEntityCard
 {
-    private const int GoldCost = 2;
-
     private const float SpeedBoostRatio = 0.4f;
     private const float SpeedBoostDurationSeconds = 11f;
     private const float ActivationDelaySeconds = 1f;
@@ -17,7 +15,7 @@ public class SpeedBoostCard : TargetEntityCard
     public override string ImageName => "SpeedBoost";
     public override string Description => "Gives a friendly troop a temporary movement speed boost.";
 
-    public override int ShopGoldCost => 10; 
+    public override int ShopGoldCost => 100; 
 
     public override StatsComponent DefaultStats => new StatsComponent
     {
@@ -30,7 +28,10 @@ public class SpeedBoostCard : TargetEntityCard
         SpellResist = StatsComponent.STAT_NA,
     };
 
-    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override ResourceCost Cost => new ResourceCost
+        {
+            Metal = 40
+        };
 
     // No range requirement at all — playable on any friendly troop anywhere on the map.
     public override bool RequiresFriendlyBuildingRange() => false;

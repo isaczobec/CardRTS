@@ -23,14 +23,13 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     private const float ChaseRangeMultiplier = 24f;
     private const float AttackRangeMultiplier = 1.5f;
 
-    private const int GoldCost = 3;
 
     private const float MaxDistanceFromBuilding = 20f;
 
     // Cooldown for the troop's test ability (see AbilityManager.MeleeStrikeAbilityId).
     private const float MeleeStrikeCooldownSeconds = 4f;
 
-    public override int ShopGoldCost => 10; 
+    public override int ShopGoldCost => 100; 
 
     public override CardType Type => CardType.BasicMeleeTroop;
     public override string Title => "Melee Troop";
@@ -39,7 +38,11 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "BasicTroop";
 
     public override StatsComponent DefaultStats => BuildStats();
-    public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
+    public override ResourceCost Cost => new ResourceCost 
+        { 
+            Wood = 120, 
+            Stone = 30 
+        };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
     private static StatsComponent BuildStats() => new StatsComponent
