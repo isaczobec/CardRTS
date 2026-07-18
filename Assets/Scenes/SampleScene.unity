@@ -6587,6 +6587,8 @@ MonoBehaviour:
     prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
   - name: SkillshotRangedTroop
     prefab: {fileID: 6472282922783299243, guid: d2e438824aa35d04eaadc1d098b344ac, type: 3}
+  - name: Blink
+    prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
 --- !u!1 &1244099535
 GameObject:
   m_ObjectHideFlags: 0
@@ -7800,6 +7802,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 4b5c3887b0bad8548a4414947f05a7ba, type: 3}
   - name: SpeedBoost
     sprite: {fileID: 21300000, guid: 00fbb4588136cde4fbf9001df788bcfb, type: 3}
+  - name: Blink
+    sprite: {fileID: 21300000, guid: 4637953d65a24364aab3372a525b9ed2, type: 3}
 --- !u!1 &1467796127
 GameObject:
   m_ObjectHideFlags: 0

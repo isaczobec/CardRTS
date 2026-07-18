@@ -168,6 +168,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<StatModifierComponent>(26);
         _componentTypeRegistry.Register<RenderableModifierComponent>(27);
         _componentTypeRegistry.Register<AIModeComponent>(28);
+        _componentTypeRegistry.Register<TeleportingModifierComponent>(29);
+        _componentTypeRegistry.Register<BlinkComponent>(30);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -181,6 +183,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<SpawnAtEntityInput>(9);
         _inputTypeRegistry.Register<BuyCardInput>(10);
         _inputTypeRegistry.Register<SetAIModeInput>(11);
+        _inputTypeRegistry.Register<MultiPointInput>(12);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -254,6 +257,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RenderableModifierComponent>>(69);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<AIModeComponent>>(70);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<AIModeComponent>>(71);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<TeleportingModifierComponent>>(72);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<TeleportingModifierComponent>>(73);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BlinkComponent>>(74);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BlinkComponent>>(75);
 
         ECS = CreateSimulationECS();
     }
@@ -455,12 +462,16 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<AIModeComponent>());
+        ecs.AddComponentStore(new ComponentStore<TeleportingModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
         ecs.RegisterSystem(LifetimeSystem.Instance);
         ecs.RegisterSystem(ModifierSystem.Instance);
         ecs.RegisterSystem(StatModifierSystem.Instance);
+        ecs.RegisterSystem(TeleportingModifierSystem.Instance);
+        ecs.RegisterSystem(BlinkSystem.Instance);
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
         // ecs.RegisterSystem(RandomWalkSystem.Instance);
         ecs.RegisterSystem(new TargetingSystem());
@@ -474,6 +485,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(DamageAuraSystem.Instance);
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(TargetEntityCardPlaySystem.Instance);
+        ecs.RegisterSystem(MultiPointCardPlaySystem.Instance);
         ecs.RegisterSystem(BuyCardSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
@@ -522,6 +534,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<StatModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<RenderableModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<AIModeComponent>());
+        ecs.AddComponentStore(new ComponentStore<TeleportingModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
 
         return ecs;
     }

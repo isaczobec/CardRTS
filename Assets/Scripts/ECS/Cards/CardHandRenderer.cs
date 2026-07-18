@@ -62,6 +62,17 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     private ulong _selectedCardId;
     private ulong _draggingCardId;
 
+    // In-progress point sequence for a MultiPointCard (see TryPlayCard) — _multiPointCardId
+    // is which card the points below belong to (0 = no sequence in progress). Reset whenever
+    // a different card becomes selected, on Escape/deselect, and once the sequence completes
+    // and its input is sent.
+    private ulong _multiPointCardId;
+    private readonly List<Vector2> _multiPointPoints = new List<Vector2>();
+
+    // Read by CardPlacementIndicatorManager to show a frozen indicator per point already
+    // placed, alongside its own live one for the point not yet clicked.
+    public IReadOnlyList<Vector2> ArmedMultiPointPoints => _multiPointPoints;
+
     // Non-positional (spatialBlend 0) UI audio source shared by every hover/select/draw/play
     // feedback sound — these are hand-UI cues, not tied to any world position. Sound keys are
     // resolved through SoundRegistry, so each of "CardHover"/"CardSelect"/"CardDraw"/
@@ -255,7 +266,10 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     private void HandleKeyboardInput()
     {
         if (_selectedCardId != 0 && Input.GetKeyDown(KeyCode.Escape))
+        {
             _selectedCardId = 0;
+            ClearMultiPointSequence();
+        }
 
         for (int i = 0; i < _handOrder.Count && i < 9; i++)
         {
@@ -263,12 +277,23 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
             {
                 ulong id = _handOrder[i];
                 if (_selectedCardId == id)
+                {
                     _selectedCardId = 0; // pressing the selected card's own number deselects it
+                    ClearMultiPointSequence();
+                }
                 else
+                {
                     SelectCard(id);
+                }
                 break;
             }
         }
+    }
+
+    private void ClearMultiPointSequence()
+    {
+        _multiPointCardId = 0;
+        _multiPointPoints.Clear();
     }
 
     // While a card is selected (not dragging), a left-click anywhere in the world plays
@@ -289,6 +314,14 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     {
         if (_draggingCardId != 0) return; // don't fight an active drag
         if (!CanAfford(cardEntityId)) return; // can't select a card the player can't play
+
+        // Selecting a genuinely different card than whatever MultiPointCard sequence was
+        // mid-flight abandons that sequence — re-selecting the SAME card (e.g. after
+        // switching away and back) is left alone below, since TryPlayCard already restarts
+        // the sequence itself once a click actually lands.
+        if (_multiPointCardId != 0 && _multiPointCardId != cardEntityId)
+            ClearMultiPointSequence();
+
         _selectedCardId = cardEntityId;
         PlayCardSound("CardSelect");
     }
@@ -317,9 +350,10 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // _selectedCardId/_draggingCardId) — false leaves the card as-is (still selected, or
     // falling back into the hand) for the caller to decide what to do. SpawnAtPointCard
     // plays at a ground point; TargetEntityCard plays on the closest matching selectable
-    // entity to the cursor (see EntityTargeting.FindClosestSelectable) — a future card kind
-    // needing a different targeting shape gets its own branch here (and its own InputBase
-    // subtype/play system, see Card.cs).
+    // entity to the cursor (see EntityTargeting.FindClosestSelectable); MultiPointCard
+    // accumulates one ground point per call until it has PointCount of them (see
+    // TryAddMultiPointClick) — a future card kind needing a different targeting shape gets
+    // its own branch here too (and its own InputBase subtype/play system, see Card.cs).
     //
     // Takes cardEntityId explicitly rather than reading ActiveCardEntityId, since
     // OnCardDragEnded already clears _draggingCardId before calling this — by then
@@ -350,7 +384,46 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
             return true;
         }
 
+        if (definition is MultiPointCard multiPointCard)
+            return TryAddMultiPointClick(cardEntityId, multiPointCard);
+
         return false;
+    }
+
+    // Accumulates ground clicks for a MultiPointCard across however many calls to
+    // TryPlayCard it takes to gather PointCount of them (each click/drag-release routes
+    // through TryPlayCard exactly like a single-point card, so this works whether the
+    // player clicks each point individually or drags for one of them) — only once the last
+    // point is placed does this actually enqueue MultiPointInput and return true. A false
+    // return here mid-sequence still re-arms _selectedCardId itself (below), since unlike
+    // SpawnAtPointCard/TargetEntityCard's false-means-try-again, here it means "still
+    // waiting on more clicks," not "that click didn't land on anything valid."
+    private bool TryAddMultiPointClick(ulong cardEntityId, MultiPointCard multiPointCard)
+    {
+        if (!TileSpaceMouse.TryGetPosition(out float x, out float y)) return false;
+
+        if (_multiPointCardId != cardEntityId)
+        {
+            _multiPointCardId = cardEntityId;
+            _multiPointPoints.Clear();
+        }
+
+        _multiPointPoints.Add(new Vector2(x, y));
+
+        if (_multiPointPoints.Count < multiPointCard.PointCount)
+        {
+            // Stay armed for the next click even if this one came from a drag-release,
+            // which would otherwise leave both _selectedCardId and _draggingCardId at 0
+            // with nothing left to keep the sequence alive.
+            _selectedCardId = cardEntityId;
+            return false;
+        }
+
+        SelectionManager.instance?.SuppressNextClickSelect();
+        InputBuffer.EnqueueInput(new MultiPointInput { CardEntityId = cardEntityId, Points = new List<Vector2>(_multiPointPoints) });
+
+        ClearMultiPointSequence();
+        return true;
     }
 
     // While below the lift threshold the dragged card sticks exactly to the cursor
