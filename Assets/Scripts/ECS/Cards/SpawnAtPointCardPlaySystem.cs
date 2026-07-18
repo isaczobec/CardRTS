@@ -96,7 +96,7 @@ public static class SpawnAtPointCardPlaySystem
             return;
         }
 
-        ResourceHelper.Spend(ecs, resourceEntityId, definition.Cost);
+        ecs.Requests.Process(new ResourcesDeductedRequest(resourceEntityId, definition.Cost), ecs);
 
         spawnAtPointCard.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.X, input.Y);
         ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });

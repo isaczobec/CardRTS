@@ -40,6 +40,8 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
 
     private const int GoldCost = 4;
 
+    public override int ShopGoldCost => 10; 
+
     private const float MaxDistanceFromBuilding = 20f;
 
     public override CardType Type => CardType.SkillshotRangedTroop;

@@ -31,6 +31,8 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     public override ResourceCost Cost => new ResourceCost { Gold = GoldCost };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
+    public override int ShopGoldCost => 10; 
+
     private static StatsComponent BuildStats() => new StatsComponent
     {
         MaxHealth   = MaxHealth,

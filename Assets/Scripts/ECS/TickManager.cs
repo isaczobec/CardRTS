@@ -178,6 +178,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<AbilityUsedAtLocationInput>(7);
         _inputTypeRegistry.Register<AbilityUsedOnEntityInput>(8);
         _inputTypeRegistry.Register<SpawnAtEntityInput>(9);
+        _inputTypeRegistry.Register<BuyCardInput>(10);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -467,6 +468,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(DamageAuraSystem.Instance);
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(TargetEntityCardPlaySystem.Instance);
+        ecs.RegisterSystem(BuyCardSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(DamageResolutionSystem.Instance);

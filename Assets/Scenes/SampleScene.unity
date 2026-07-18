@@ -7442,6 +7442,10 @@ MonoBehaviour:
   _shopWindow: {fileID: 254259542}
   _closeButton: {fileID: 1451500597}
   _hoverPreviewCard: {fileID: 1585825894}
+  _hoverSoundName: CardHover
+  _openSoundName: CardSelect
+  _closeSoundName: CardSelect
+  _buySoundName: BuySound
 --- !u!1 &1320367413
 GameObject:
   m_ObjectHideFlags: 0
@@ -11300,6 +11304,12 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
     minPitch: 1.1
     maxPitch: 0.9
+    defaultVolume: 1
+  - name: BuySound
+    clips:
+    - {fileID: 8300000, guid: abdbbfd33a46f4549987385f85c536b5, type: 3}
+    minPitch: 1.05
+    maxPitch: 0.95
     defaultVolume: 1
 --- !u!114 &1985718171
 MonoBehaviour:

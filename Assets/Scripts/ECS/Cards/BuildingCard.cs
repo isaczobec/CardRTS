@@ -21,6 +21,8 @@ public class BuildingCard : SpawnAtPointCard
 
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
+    public override int ShopGoldCost => 10; 
+
     // Speed/Range/Damage/AttackSpeed are STAT_NA (not just 0) here — buildings don't move
     // or attack, so those rows shouldn't be shown on the card face at all.
     public override StatsComponent DefaultStats => new StatsComponent

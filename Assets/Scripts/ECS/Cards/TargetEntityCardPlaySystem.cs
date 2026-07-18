@@ -129,7 +129,7 @@ public static class TargetEntityCardPlaySystem
             return;
         }
 
-        ResourceHelper.Spend(ecs, resourceEntityId, definition.Cost);
+        ecs.Requests.Process(new ResourcesDeductedRequest(resourceEntityId, definition.Cost), ecs);
 
         targetEntityCard.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.TargetEntityId);
         ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });

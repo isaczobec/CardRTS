@@ -17,6 +17,8 @@ public class SpeedBoostCard : TargetEntityCard
     public override string ImageName => "SpeedBoost";
     public override string Description => "Gives a friendly troop a temporary movement speed boost.";
 
+    public override int ShopGoldCost => 10; 
+
     public override StatsComponent DefaultStats => new StatsComponent
     {
         MaxHealth   = StatsComponent.STAT_NA,

@@ -35,8 +35,15 @@ public class ShopUIManager : Singleton<ShopUIManager>
     // first hover.
     [SerializeField] private CardGameObject _hoverPreviewCard;
 
+    [Header("Audio")]
+    [SerializeField] private string _hoverSoundName = "ShopCardHover";
+    [SerializeField] private string _openSoundName = "ShopOpen";
+    [SerializeField] private string _closeSoundName = "ShopClose";
+    [SerializeField] private string _buySoundName = "ShopBuy";
+
     private ECS _ecs;
     private ulong _localPlayerResourceEntityId;
+    private CardRTSAudioSource _audioSource;
 
     private readonly List<CardGameObject> _shopCards = new List<CardGameObject>();
     private readonly Dictionary<CardGameObject, Card> _shopCardDefinitions = new Dictionary<CardGameObject, Card>();
@@ -44,6 +51,9 @@ public class ShopUIManager : Singleton<ShopUIManager>
     public void Initialize()
     {
         _ecs = TickManager.instance.ActiveECS;
+
+        if (AudioManager.instance != null)
+            _audioSource = AudioManager.instance.CreateAudioSource(Vector3.zero, spatialBlend: 0f);
 
         PopulateGrid();
         RefreshAffordability();
@@ -57,6 +67,8 @@ public class ShopUIManager : Singleton<ShopUIManager>
         TickManager.instance.ServerFlagEvents.Subscribe<ResourcesChangedEvent>(OnResourcesChanged);
     }
 
+    private void PlayShopSound(string soundName) => _audioSource?.PlaySound(soundName);
+
     void Update()
     {
         if (TickManager.instance == null || !TickManager.instance.IsGameStarted) return;
@@ -68,13 +80,18 @@ public class ShopUIManager : Singleton<ShopUIManager>
     private void ToggleShop()
     {
         if (_shopWindow == null) return;
-        _shopWindow.SetActive(!_shopWindow.activeSelf);
+
+        bool willBeOpen = !_shopWindow.activeSelf;
+        _shopWindow.SetActive(willBeOpen);
+        PlayShopSound(willBeOpen ? _openSoundName : _closeSoundName);
     }
 
     private void CloseShop()
     {
-        if (_shopWindow == null) return;
+        if (_shopWindow == null || !_shopWindow.activeSelf) return;
+
         _shopWindow.SetActive(false);
+        PlayShopSound(_closeSoundName);
     }
 
     private void PopulateGrid()
@@ -97,16 +114,42 @@ public class ShopUIManager : Singleton<ShopUIManager>
 
             go.HoverEntered += OnShopCardHovered;
             go.HoverExited += OnShopCardUnhovered;
+            go.Clicked += OnShopCardClicked;
 
             _shopCards.Add(go);
             _shopCardDefinitions[go] = card;
         }
     }
 
+    // Mirrors CardHandRenderer.SelectCard's own affordability guard — blocks sending a
+    // BuyCardInput that BuyCardSystem would just reject anyway, same as clicking an
+    // unaffordable hand card never selects it.
+    private void OnShopCardClicked(CardGameObject clickedCard)
+    {
+        if (!_shopCardDefinitions.TryGetValue(clickedCard, out Card card)) return;
+        if (!CanAffordShopCard(card)) return;
+
+        InputBuffer.EnqueueInput(new BuyCardInput { CardType = card.Type });
+        PlayShopSound(_buySoundName);
+    }
+
+    private bool CanAffordShopCard(Card card)
+    {
+        ulong resourceEntityId = ResolveLocalPlayerResourceEntity();
+        if (resourceEntityId == 0) return false;
+
+        ComponentStore<PlayerResourcesComponent> resourceStore = _ecs.GetComponentStore<PlayerResourcesComponent>();
+        if (resourceStore == null || !resourceStore.HasComponent(resourceEntityId)) return false;
+
+        return resourceStore.GetComponent(resourceEntityId).GoldFloor >= card.ShopGoldCost;
+    }
+
     private void OnShopCardHovered(CardGameObject hoveredCard)
     {
-        if (_hoverPreviewCard == null) return;
         if (!_shopCardDefinitions.TryGetValue(hoveredCard, out Card card)) return;
+        PlayShopSound(_hoverSoundName);
+
+        if (_hoverPreviewCard == null) return;
 
         Sprite artwork = null;
         if (ImageRegistry.instance != null)

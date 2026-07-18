@@ -21,6 +21,8 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     // Cooldown for the troop's test ability (see AbilityManager.MeleeStrikeAbilityId).
     private const float MeleeStrikeCooldownSeconds = 4f;
 
+    public override int ShopGoldCost => 10; 
+
     public override CardType Type => CardType.BasicMeleeTroop;
     public override string Title => "Melee Troop";
     public override string ImageName => "BasicMeleeTroop";

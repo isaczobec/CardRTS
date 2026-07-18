@@ -31,6 +31,9 @@ public class AoeSpellCard : SpawnAtPointCard
     // How long the aura keeps pulsing after it activates, before LifetimeSystem expires it.
     private const float DurationSeconds = 5f;
 
+    public override int ShopGoldCost => 10; 
+
+
     public override CardType Type => CardType.AoeSpell;
     public override string Title => "AOE Spell";
     public override string ImageName => "AoeSpell";
