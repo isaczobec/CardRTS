@@ -344,7 +344,7 @@ public class NetworkManager : Singleton<NetworkManager>
         // Tree/Rock/Ore entities) instead of a flat starting rate — only Gold keeps its
         // baseline passive income.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
-            GoldPerSecond = 25.0f / 60.0f,
+            GoldPerSecond = 0f,
             Gold = 50,
             Wood = 150,
             Stone = 150,

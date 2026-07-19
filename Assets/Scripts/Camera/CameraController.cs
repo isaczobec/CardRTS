@@ -5,8 +5,13 @@ using UnityEngine;
 ///
 /// Controls:
 ///   Cursor near screen edge       — pan
-///   Space + Left Mouse drag       — pan
-///   Space + Right Mouse drag      — rotate around world Y axis
+///   Left Alt + Left Mouse drag    — pan
+///   Left Alt + Right Mouse drag   — rotate around world Y axis
+///   Tab                           — jump to the next entity the local player owns (see
+///                                    SelectionManager.TryGetNextOwnedEntityPosition)
+///   Space (held)                  — continuously follows the current selection every
+///                                    frame (see SelectionManager.TryGetFocusPositionForSelection),
+///                                    suppressing edge-scroll while it's actively tracking
 /// </summary>
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
@@ -79,15 +84,50 @@ public class CameraController : MonoBehaviour
         // else) move the camera out from under an in-progress drag.
         if (SelectionManager.instance != null && SelectionManager.instance.IsDragActive) return;
 
-        bool spacePressed = Input.GetKey(KeyCode.Space);
-        bool dragPanning  = spacePressed && Input.GetMouseButton(0);
-        bool rotating     = spacePressed && Input.GetMouseButton(1);
+        bool altPressed = Input.GetKey(KeyCode.LeftAlt);
+        bool dragPanning = altPressed && Input.GetMouseButton(0);
+        bool rotating    = altPressed && Input.GetMouseButton(1);
 
-        if (!spacePressed) HandleEdgeScroll();
-        if (dragPanning)  HandleDragPan();
-        if (rotating)     HandleRotation();
+        bool following = HandleFollowSelection();
+
+        // Edge-scroll would otherwise fight the follow every frame (re-centering, then
+        // immediately getting nudged back off-center by the cursor sitting near an edge).
+        if (!altPressed && !following) HandleEdgeScroll();
+        if (dragPanning) HandleDragPan();
+        if (rotating)    HandleRotation();
+
+        HandleTabHotkey();
 
         ApplyTransform();
+    }
+
+    // Held Space: re-centers the camera on the current selection every frame it's held,
+    // tracking a moving troop instead of just jumping to wherever it was once. Guarded
+    // against the dev console the same way Tab is (a message containing a space shouldn't
+    // yank the camera around while typing). Returns whether it actually followed this
+    // frame, so LateUpdate knows to suppress edge-scroll.
+    bool HandleFollowSelection()
+    {
+        if (DevConsole.IsOpen) return false;
+        if (!Input.GetKey(KeyCode.Space)) return false;
+        if (SelectionManager.instance == null) return false;
+        if (!SelectionManager.instance.TryGetFocusPositionForSelection(out Vector3 pos)) return false;
+
+        JumpTo(pos);
+        return true;
+    }
+
+    // Tab is a one-shot GetKeyDown trigger (unlike held Space above) — same dev-console
+    // guard reasoning, though Tab itself can't be typed into the console's text field.
+    void HandleTabHotkey()
+    {
+        if (DevConsole.IsOpen) return;
+
+        if (Input.GetKeyDown(KeyCode.Tab) && SelectionManager.instance != null
+            && SelectionManager.instance.TryGetNextOwnedEntityPosition(out Vector3 nextOwnedPos))
+        {
+            JumpTo(nextOwnedPos);
+        }
     }
 
     void HandleEdgeScroll()

@@ -843,8 +843,8 @@ MonoBehaviour:
   _deckPickerWindow: {fileID: 1564428565}
   _deckPickerCardPrefab: {fileID: 6489080255067186424, guid: 1167f02e6afbe6c4692400d2fa3b2a35, type: 3}
   _deckPickerContainer: {fileID: 1419371007}
-  _hoverSoundName: ShopCardHover
-  _buySoundName: ShopBuy
+  _hoverSoundName: CardHover
+  _buySoundName: BuySound
 --- !u!1 &73635954
 GameObject:
   m_ObjectHideFlags: 0
@@ -9679,7 +9679,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -525, y: 269}
+  m_AnchoredPosition: {x: -368, y: 269}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1459217985

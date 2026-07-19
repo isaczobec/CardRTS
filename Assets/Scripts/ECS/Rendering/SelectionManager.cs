@@ -41,6 +41,14 @@ public class SelectionManager : Singleton<SelectionManager>
     private readonly HashSet<ulong> _selectedEntityIds = new();
     public IReadOnlyCollection<ulong> SelectedEntityIds => _selectedEntityIds;
 
+    // Most recently added-to-selection entity still actually in _selectedEntityIds — see
+    // TryGetFocusPositionForSelection (CameraController's Space hotkey).
+    private ulong _lastSelectedEntityId;
+
+    // Last entity CameraController's Tab hotkey jumped to — see TryGetNextOwnedEntityPosition.
+    private ulong _lastCycledOwnedEntityId;
+    private readonly List<ulong> _ownedEntityCycleBuffer = new();
+
     // True while a selection or targeting drag box is actively being dragged. CameraController
     // checks this to suppress edge-scroll — otherwise dragging a box near the screen edge
     // would also pan the camera out from under you.
@@ -198,14 +206,14 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // ── Input ────────────────────────────────────────────────────────────────
 
-    // Held Space is reserved for camera pan/rotate (see CameraController) — while it's
+    // Held Left Alt is reserved for camera pan/rotate (see CameraController) — while it's
     // down, no selection box may appear and no selection (drag or point) can be made.
     private void HandleSelectionInput()
     {
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKey(KeyCode.LeftAlt))
         {
-            // Cancel any drag that was already in progress before Space was pressed,
-            // rather than leaving it to resolve once Space is released.
+            // Cancel any drag that was already in progress before Alt was pressed, rather
+            // than leaving it to resolve once Alt is released.
             if (_isDragging && _dragSelectionBox != null)
                 _dragSelectionBox.gameObject.SetActive(false);
             _isDragging = false;
@@ -278,11 +286,11 @@ public class SelectionManager : Singleton<SelectionManager>
     // TargetHotkeyRadius, for the currently selected friendly troops — same effect as
     // right-clicking directly on that troop (SendSetTargets), just without needing the
     // cursor to be right on top of it. No-ops with nothing selected, the console open, or
-    // Space held (camera pan), matching every other selection input's own guards.
+    // Left Alt held (camera pan), matching every other selection input's own guards.
     private void HandleTargetHotkeyInput()
     {
         if (DevConsole.IsOpen) return;
-        if (Input.GetKey(KeyCode.Space)) return;
+        if (Input.GetKey(KeyCode.LeftAlt)) return;
         if (!Input.GetKeyDown(KeyCode.A)) return;
         if (_selectedEntityIds.Count == 0) return;
 
@@ -296,15 +304,15 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // Right click either sets targets (cursor is over a selectable enemy/neutral troop
     // with a HealthComponent) or issues a move command (anywhere else) for the
-    // currently selected friendly troops. Held Space suppresses both, matching the
+    // currently selected friendly troops. Held Left Alt suppresses both, matching the
     // existing move-command convention. Held Shift makes a target command additive
     // instead of replacing the friendly troops' current targets.
     private void HandleRightClickInput()
     {
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKey(KeyCode.LeftAlt))
         {
-            // Cancel any drag that was already in progress before Space was pressed,
-            // rather than leaving the box stuck on screen until Space is released.
+            // Cancel any drag that was already in progress before Alt was pressed, rather
+            // than leaving the box stuck on screen until Alt is released.
             if (_isRightDragging && _dragSelectionBox != null)
                 _dragSelectionBox.gameObject.SetActive(false);
             _isRightDragging = false;
@@ -563,6 +571,7 @@ public class SelectionManager : Singleton<SelectionManager>
     private void Select(ulong entityId, Color color)
     {
         if (!_selectedEntityIds.Add(entityId)) return;
+        _lastSelectedEntityId = entityId;
         if (_selectionObjects.TryGetValue(entityId, out var prefab))
             prefab.SetSelected(color);
     }
@@ -573,6 +582,71 @@ public class SelectionManager : Singleton<SelectionManager>
             if (_selectionObjects.TryGetValue(entityId, out var prefab))
                 prefab.SetUnselected(GetUnselectedColor(entityId));
         _selectedEntityIds.Clear();
+        _lastSelectedEntityId = 0;
+    }
+
+    // ── Camera hotkeys (Tab/Space — see CameraController) ───────────────────────
+
+    // Space (held): continuously follows the current selection — the one selected entity's
+    // position if exactly one is selected, or the most recently selected one's position if
+    // there are several. False (no follow) if nothing is selected.
+    //
+    // Routed through _interpolator (the same one ApplySelectionPosition uses for this same
+    // entity's own selection ring) rather than the entity's raw PositionComponent, which
+    // only changes once per simulation tick — reusing it means the camera glides smoothly
+    // frame-to-frame in step with the ring instead of visibly stepping once per tick.
+    public bool TryGetFocusPositionForSelection(out Vector3 worldPos)
+    {
+        worldPos = default;
+        if (_selectedEntityIds.Count == 0 || _positionStore == null) return false;
+
+        ulong targetId = (_lastSelectedEntityId != 0 && _selectedEntityIds.Contains(_lastSelectedEntityId))
+            ? _lastSelectedEntityId
+            : FirstSelectedId();
+
+        if (targetId == 0 || !_positionStore.HasComponent(targetId)) return false;
+
+        Vector3 rawWorldPos = WorldPositionFor(_positionStore.GetComponent(targetId));
+        worldPos = _interpolator.Update(targetId, rawWorldPos, IsMoving(targetId), IsTeleported(targetId));
+        return true;
+    }
+
+    private ulong FirstSelectedId()
+    {
+        foreach (ulong id in _selectedEntityIds) return id;
+        return 0;
+    }
+
+    // Tab: cycles the camera through every entity the local player owns (independent of
+    // the current selection), advancing to the next one each call and wrapping back to the
+    // first once the last is reached. Ordered by ascending entity id, which is stable as
+    // long as the set of owned entities doesn't change between calls.
+    public bool TryGetNextOwnedEntityPosition(out Vector3 worldPos)
+    {
+        worldPos = default;
+        if (_selectableStore == null || _positionStore == null) return false;
+
+        _ownedEntityCycleBuffer.Clear();
+        _selectableStore.ForEach((ulong entityId) =>
+        {
+            if (IsFriendly(entityId))
+                _ownedEntityCycleBuffer.Add(entityId);
+        });
+
+        if (_ownedEntityCycleBuffer.Count == 0) return false;
+        _ownedEntityCycleBuffer.Sort();
+
+        int nextIndex = 0;
+        int lastIndex = _ownedEntityCycleBuffer.IndexOf(_lastCycledOwnedEntityId);
+        if (lastIndex >= 0)
+            nextIndex = (lastIndex + 1) % _ownedEntityCycleBuffer.Count;
+
+        ulong nextId = _ownedEntityCycleBuffer[nextIndex];
+        _lastCycledOwnedEntityId = nextId;
+
+        if (!_positionStore.HasComponent(nextId)) return false;
+        worldPos = WorldPositionFor(_positionStore.GetComponent(nextId));
+        return true;
     }
 
     // ── Drag box ─────────────────────────────────────────────────────────────

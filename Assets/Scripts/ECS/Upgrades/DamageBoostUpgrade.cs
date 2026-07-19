@@ -19,7 +19,7 @@ public class DamageBoostUpgrade : CardUpgrade
     public override string Title => "Damage Boost";
     public override string Description => $"+{DamageRatioBonus * 100f:0}% damage.";
     public override string ImageName => "DamageBoost";
-    public override int ShopGoldCost => 50;
+    public override int ShopGoldCost => 200;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>
     {
