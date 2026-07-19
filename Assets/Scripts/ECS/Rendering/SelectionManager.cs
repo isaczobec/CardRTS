@@ -550,23 +550,93 @@ public class SelectionManager : Singleton<SelectionManager>
         });
     }
 
+    // How far (world/tile units) a selected troop's position may be from the group's
+    // centroid for its offset from it to still be preserved when a move command is issued.
+    // Beyond this it's treated as a straggler, not really part of the same cluster as the
+    // rest of the selection, and is just sent straight to the click point instead.
+    private const float MaxFormationOffsetFromCentroid = 15f;
+
+    // Step size (world/tile units) used to ray-march a formation offset destination out
+    // from the click point, to find where (if anywhere) it first crosses a non-walkable tile.
+    private const float FormationClampStep = 0.5f;
+
+    // Sends each selected troop to its own destination, offset from the click point by the
+    // same offset it currently has from the selection's centroid — so a multi-troop move
+    // command preserves the group's relative formation instead of collapsing everyone onto
+    // the exact same point. A single selected troop (the overwhelmingly common case) always
+    // just goes straight to (tx, ty), same as before.
     private void SendMoveCommand(float tx, float ty)
     {
         if (_selectedEntityIds.Count == 0) return;
 
+        Vector2 clickPoint = new Vector2(tx, ty);
+        Vector2 centroid = _selectedEntityIds.Count > 1 ? ComputeSelectionCentroid() : clickPoint;
+
         List<MoveTroopInput.EntityDestination> moves = new List<MoveTroopInput.EntityDestination>();
         foreach (ulong entityId in _selectedEntityIds)
         {
+            Vector2 destination = clickPoint;
+
+            if (_selectedEntityIds.Count > 1 && _positionStore.HasComponent(entityId))
+            {
+                PositionComponent pos = _positionStore.GetComponent(entityId);
+                Vector2 offset = new Vector2(pos.X, pos.Y) - centroid;
+
+                if (offset.sqrMagnitude <= MaxFormationOffsetFromCentroid * MaxFormationOffsetFromCentroid)
+                    destination = ClampFormationDestination(clickPoint, offset);
+            }
+
             moves.Add(new MoveTroopInput.EntityDestination
             {
                 EntityId     = entityId,
-                DestinationX = tx,
-                DestinationY = ty,
+                DestinationX = destination.x,
+                DestinationY = destination.y,
             });
         }
 
         InputBuffer.EnqueueInput(new MoveTroopInput { Moves = moves });
     }
+
+    private Vector2 ComputeSelectionCentroid()
+    {
+        Vector2 sum = Vector2.zero;
+        int count = 0;
+        foreach (ulong entityId in _selectedEntityIds)
+        {
+            if (!_positionStore.HasComponent(entityId)) continue;
+            PositionComponent pos = _positionStore.GetComponent(entityId);
+            sum += new Vector2(pos.X, pos.Y);
+            count++;
+        }
+        return count > 0 ? sum / count : Vector2.zero;
+    }
+
+    // Marches outward from center toward center+offset in FormationClampStep increments,
+    // stopping at the last tile confirmed walkable before (if anywhere) the ray first
+    // crosses a non-walkable one — so a troop's formation slot never sends it into a
+    // mountain/water tile just because that's where its relative position happened to land.
+    private static Vector2 ClampFormationDestination(Vector2 center, Vector2 offset)
+    {
+        float distance = offset.magnitude;
+        if (distance <= 0f) return center;
+
+        Vector2 direction = offset / distance;
+        Vector2 lastWalkable = center;
+
+        int steps = Mathf.CeilToInt(distance / FormationClampStep);
+        for (int i = 1; i <= steps; i++)
+        {
+            float d = Mathf.Min(i * FormationClampStep, distance);
+            Vector2 candidate = center + direction * d;
+            if (!IsWalkable(candidate)) break;
+            lastWalkable = candidate;
+        }
+
+        return lastWalkable;
+    }
+
+    private static bool IsWalkable(Vector2 point)
+        => NavMeshHandler.instance == null || NavMeshHandler.instance.GetNodeAtWorldCoords(point.x, point.y) != null;
 
     private void Select(ulong entityId, Color color)
     {
