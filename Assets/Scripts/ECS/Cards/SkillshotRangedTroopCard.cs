@@ -26,6 +26,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     private const float DetectionRangeMultiplier = 3f;
     private const float ChaseRangeMultiplier = 5f;
     private const float AttackRangeMultiplier = 1.5f;
+    private const float WindDownMultiplier = 3f;
 
     private const int ProjectilePoolSize = 32;
     private const int ProjectileSpeedMilliTilesPerSecond = 20000; // 20 tiles/sec
@@ -83,6 +84,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
+                WindDownMultiplier       = WindDownMultiplier,
             }),
             (e, id) =>
             {

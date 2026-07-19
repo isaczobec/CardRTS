@@ -7,6 +7,7 @@ public enum CardType : byte
     SkillshotRangedTroop = 4,
     SpeedBoost = 5,
     Blink = 6,
+    IronKnight = 7,
 }
 
 public enum CardLocation : byte

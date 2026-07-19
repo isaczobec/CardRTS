@@ -24,6 +24,7 @@ public static class SpawnTroopSystem
     private const float DefaultDetectionRangeMultiplier = 3f;
     private const float DefaultChaseRangeMultiplier = 5f;
     private const float DefaultAttackRangeMultiplier = 1.5f;
+    private const float DefaultCooldownMultiplier = 3f;
 
     private const int MeleeDefaultRange = 5;
     private const float MeleeDefaultAttackSpeedMilliseconds = 333f;
@@ -124,6 +125,7 @@ public static class SpawnTroopSystem
                 DetectionRangeMultiplier   = DefaultDetectionRangeMultiplier,
                 ChaseRangeMultiplier       = DefaultChaseRangeMultiplier,
                 AttackRangeMultiplier      = DefaultAttackRangeMultiplier,
+                WindDownMultiplier         = DefaultCooldownMultiplier,
             });
 
             SpawnProjectilePool(ecs, entity.Id, RangedProjectilePoolSize);
@@ -135,6 +137,7 @@ public static class SpawnTroopSystem
                 DetectionRangeMultiplier   = DefaultDetectionRangeMultiplier,
                 ChaseRangeMultiplier       = DefaultChaseRangeMultiplier,
                 AttackRangeMultiplier      = DefaultAttackRangeMultiplier,
+                CooldownMultiplier         = DefaultCooldownMultiplier,
             });
         }
     }

@@ -13,6 +13,7 @@ public static class CardRegistry
         { CardType.SkillshotRangedTroop, new SkillshotRangedTroopCard() },
         { CardType.SpeedBoost, new SpeedBoostCard() },
         { CardType.Blink, new BlinkCard() },
+        { CardType.IronKnight, new IronKnightCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

@@ -24,6 +24,12 @@ public struct BasicRangedAIComponent : IComponent
     // attack) — see BasicRangedAISystem.Tick.
     public int WindDownTicksRemaining;
 
+    // Multiple of the attack windup (AttackSpeed ticks) that WindDownTicksRemaining is set
+    // to once a shot fires — see BasicRangedAISystem.ResolveAttack. 3 reproduces every
+    // existing troop's original hardcoded behavior; a card can set this lower to give a
+    // proportionally shorter recovery relative to its (possibly slower) windup.
+    public float WindDownMultiplier;
+
     // Target + position the last chase path was computed for. A moving target's
     // position changes almost every tick; repathing on every single one of those
     // changes is wasteful, so we only do it once the target has drifted more than the

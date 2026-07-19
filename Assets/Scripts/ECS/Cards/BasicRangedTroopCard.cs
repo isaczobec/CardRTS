@@ -18,6 +18,7 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     private const float DetectionRangeMultiplier = 3f;
     private const float ChaseRangeMultiplier = 5f;
     private const float AttackRangeMultiplier = 1.5f;
+    private const float WindDownMultiplier = 3f;
 
     private const int ProjectilePoolSize = 64;
     private const int ProjectileSpeedMilliTilesPerSecond = 15000; // 15 tiles/sec
@@ -62,6 +63,7 @@ public class BasicRangedTroopCard : SpawnAtPointCard
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
+                WindDownMultiplier       = WindDownMultiplier,
             }),
             (e, id) =>
             {
