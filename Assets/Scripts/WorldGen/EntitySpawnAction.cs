@@ -10,26 +10,26 @@ public class EntitySpawnAction : IWorldGenAction
     // Scaled to match BasicMeleeTroopCard's rebalance baseline (3x health) — preserves
     // Tree/Rock/Ore's old relative hardiness vs. a troop (Tree was exactly as tanky as a
     // troop, Rock/Ore 1.5x as tanky; both ratios are unchanged here).
-    private const int   TreeMaxHealth     = 300;
+    private const int   TreeMaxHealth     = 250;
     private const float TreeBlockRadius   = 1f;
-    private const float TreeRespawnSeconds = 120f;
+    private const float TreeRespawnSeconds = 300f;
     private const float TreeSelectionScale = 2f;
 
-    private const int   RockMaxHealth      = 450;
+    private const int   RockMaxHealth      = 270;
     private const float RockBlockRadius    = 1f;
-    private const float RockRespawnSeconds = 120f;
+    private const float RockRespawnSeconds = 300f;
     private const float RockSelectionScale = 2f;
 
-    private const int   OreMaxHealth       = 450;
+    private const int   OreMaxHealth       = 270;
     private const float OreBlockRadius     = 1f;
-    private const float OreRespawnSeconds  = 150f;
+    private const float OreRespawnSeconds  = 300f;
     private const float OreSelectionScale  = 2f;
 
     // Neutral soulstone resource nodes (see SoulstoneClusterFeature) — dead from the moment
     // they're spawned, each with its own long "grace period" respawn timer, ramping down to
     // a shared shorter steady-state timer after each one's first respawn (see
     // RespawnCooldownRampComponent/RespawnCooldownRampSystem).
-    private const int   SoulstoneSmallMaxHealth  = 400;
+    private const int   SoulstoneSmallMaxHealth  = 800;
     private const int   SoulstoneMediumMaxHealth = 550;
     private const int   SoulstoneLargeMaxHealth  = 700;
     private const float SoulstoneBlockRadius     = 1f;
@@ -42,7 +42,7 @@ public class EntitySpawnAction : IWorldGenAction
 
     // Neutral gem deposit (see GemClusterFeature) — spawned alive, same shape as
     // Tree/Rock/Ore, just dropping Gems instead.
-    private const int   GemMaxHealth      = 400;
+    private const int   GemMaxHealth      = 700;
     private const float GemBlockRadius    = 1f;
     private const float GemRespawnSeconds = 3f * 60f + 30f; // 3:30
     private const float GemSelectionScale = 2f;
@@ -74,12 +74,13 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Wood = 20
+            Wood = 12
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent { MainResourceType = ResourceType.Wood });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(TreeRespawnSeconds),
+            ShowTimer = true,
         });
     };
 
@@ -103,12 +104,13 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = RockBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Stone = 20
+            Stone = 12
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent { MainResourceType = ResourceType.Stone });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(RockRespawnSeconds),
+            ShowTimer = true,
         });
     };
 
@@ -132,12 +134,13 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = OreBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Metal = 20
+            Metal = 12
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent { MainResourceType = ResourceType.Metal });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(OreRespawnSeconds),
+            ShowTimer = true,
         });
     };
 
@@ -174,6 +177,7 @@ public class EntitySpawnAction : IWorldGenAction
         {
             CooldownTicks     = initialCooldownTicks,
             TicksUntilRespawn = initialCooldownTicks,
+            ShowTimer         = true,
         });
         ecs.AddComponent(id, new RespawnCooldownRampComponent
         {
@@ -218,6 +222,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(GemRespawnSeconds),
+            ShowTimer = true,
         });
     };
 

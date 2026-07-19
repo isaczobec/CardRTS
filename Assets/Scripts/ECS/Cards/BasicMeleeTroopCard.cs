@@ -10,7 +10,7 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     // health and damage value in this rebalance is scaled proportionally off this pair (3x
     // health, 2.8x damage vs. the old 100 HP / 10 damage baseline, then damage further
     // scaled 1.2x to compensate for 20 armor).
-    private const int MaxHealth = 300;
+    private const int MaxHealth = 250;
     private const int Speed = 5;
     private const int Range = 5;
     private const int Armor = 20;

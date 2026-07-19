@@ -345,10 +345,10 @@ public class NetworkManager : Singleton<NetworkManager>
         // baseline passive income.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
             GoldPerSecond = 25.0f / 60.0f,
-            Gold = 500,
-            Wood = 200,
-            Stone = 200,
-            Metal = 200,
+            Gold = 50,
+            Wood = 150,
+            Stone = 150,
+            Metal = 150,
             });
 
         DeckHelper.SeedStartingDeck(ecs, playerId);

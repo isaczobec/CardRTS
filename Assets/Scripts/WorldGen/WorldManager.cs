@@ -207,8 +207,8 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnRock,
-                    ClusterCountMin       = 12,
-                    ClusterCountMax       = 18,
+                    ClusterCountMin       = 6,
+                    ClusterCountMax       = 8,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
@@ -219,10 +219,10 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnTree,
-                    ClusterCountMin       = 8,
-                    ClusterCountMax       = 12,
+                    ClusterCountMin       = 4,
+                    ClusterCountMax       = 6,
                     EntitiesPerClusterMin = 3,
-                    EntitiesPerClusterMax = 4,
+                    EntitiesPerClusterMax = 5,
                     ClusterRadius         = 15f,
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
@@ -231,8 +231,8 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnOre,
-                    ClusterCountMin       = 8,
-                    ClusterCountMax       = 12,
+                    ClusterCountMin       = 4,
+                    ClusterCountMax       = 6,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
@@ -270,10 +270,10 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnTree,
-                    ClusterCountMin       = 12,
-                    ClusterCountMax       = 18,
+                    ClusterCountMin       = 6,
+                    ClusterCountMax       = 8,
                     EntitiesPerClusterMin = 3,
-                    EntitiesPerClusterMax = 4,
+                    EntitiesPerClusterMax = 5,
                     ClusterRadius         = 15f,
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
@@ -282,8 +282,8 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnRock,
-                    ClusterCountMin       = 8,
-                    ClusterCountMax       = 12,
+                    ClusterCountMin       = 4,
+                    ClusterCountMax       = 6,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
@@ -294,8 +294,8 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnOre,
-                    ClusterCountMin       = 8,
-                    ClusterCountMax       = 12,
+                    ClusterCountMin       = 4,
+                    ClusterCountMax       = 6,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
@@ -347,10 +347,10 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnTree,
-                    ClusterCountMin       = 8,
-                    ClusterCountMax       = 12,
+                    ClusterCountMin       = 4,
+                    ClusterCountMax       = 6,
                     EntitiesPerClusterMin = 3,
-                    EntitiesPerClusterMax = 4,
+                    EntitiesPerClusterMax = 5,
                     ClusterRadius         = 15f,
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
@@ -359,8 +359,8 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnRock,
-                    ClusterCountMin       = 8,
-                    ClusterCountMax       = 12,
+                    ClusterCountMin       = 4,
+                    ClusterCountMax       = 6,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
@@ -373,8 +373,8 @@ public class WorldManager : Singleton<WorldManager>
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnOre,
-                    ClusterCountMin       = 12,
-                    ClusterCountMax       = 18,
+                    ClusterCountMin       = 6,
+                    ClusterCountMax       = 8,
                     EntitiesPerClusterMin = 3,
                     EntitiesPerClusterMax = 5,
                     ClusterRadius         = 5f,
