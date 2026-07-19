@@ -8,6 +8,10 @@ public class BuildingCard : SpawnAtPointCard
     private const int MaxHealth = 900;
     private const float ActivationDelaySeconds = 2f;
 
+    // Gold dropped to whoever kills this building (see OnDeathResourceDropComponent/
+    // OnDeathResourceDropSystem).
+    private const int GoldDropOnDeath = 20;
+
     // A bit more generous than troops — buildings are how you expand toward new
     // territory, so they shouldn't be stuck only ever hugging existing ones.
     private const float MaxDistanceFromBuilding = 45f;
@@ -49,6 +53,11 @@ public class BuildingCard : SpawnAtPointCard
         ecs.AddComponent(id, new PositionComponent(x, y));
         BuildingSpawnHelper.AddBuildingComponents(ecs, id, ownerPlayerId, RenderableType.BasicBuilding, MaxHealth,
             (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds));
+
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Gold = GoldDropOnDeath
+        } } );
 
         return id;
     }

@@ -25,6 +25,11 @@ public class Ability
 {
     public AbilityType Type;
 
+    // Shown by AbilityBarUI's hover tooltip (see DescriptionTooltip) — display name and a
+    // short explanation of what the ability does.
+    public string Name;
+    public string Description;
+
     // World/tile units. Only consulted for AbilityType.TargetLocation — AbilitySystem
     // rejects an AbilityUsedAtLocationInput whose point is further than this from the
     // casting entity's own position before ExecuteAtLocation runs (a server-side safety

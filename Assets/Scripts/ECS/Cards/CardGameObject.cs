@@ -157,7 +157,7 @@ public class CardGameObject : MonoBehaviour,
     // ImageRegistry itself, matching how artwork is always handed to BuildCard pre-resolved
     // rather than looked up in here. No-ops (leaves any existing icons as-is) if this
     // prefab variant has no container/prefab wired.
-    public void SetUpgradeIcons(IReadOnlyList<(Sprite icon, int shopGoldCost)> upgrades)
+    public void SetUpgradeIcons(IReadOnlyList<(Sprite icon, int shopGoldCost, string title, string description)> upgrades)
     {
         if (_upgradeIconContainer == null || _upgradeIconPrefab == null) return;
 
@@ -167,10 +167,10 @@ public class CardGameObject : MonoBehaviour,
 
         if (upgrades == null) return;
 
-        foreach ((Sprite icon, int shopGoldCost) in upgrades)
+        foreach ((Sprite icon, int shopGoldCost, string title, string description) in upgrades)
         {
             UpgradeGameObject go = Instantiate(_upgradeIconPrefab, _upgradeIconContainer);
-            go.BuildUpgrade(icon, shopGoldCost);
+            go.BuildUpgrade(icon, shopGoldCost, title, description);
             _upgradeIcons.Add(go);
         }
     }

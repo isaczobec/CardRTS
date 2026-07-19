@@ -80,7 +80,7 @@ public class UpgradeShopUIManager : ShopWindowBase<UpgradeShopUIManager>
             if (ImageRegistry.instance != null)
                 ImageRegistry.instance.TryGet(upgrade.ImageName, out artwork);
 
-            go.BuildUpgrade(artwork, upgrade.ShopGoldCost);
+            go.BuildUpgrade(artwork, upgrade.ShopGoldCost, upgrade.Title, upgrade.Description);
 
             go.HoverEntered += OnUpgradeHovered;
             go.HoverExited += OnUpgradeUnhovered;

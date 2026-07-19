@@ -3,7 +3,11 @@ using UnityEngine;
 
 // Spawns a world-space health bar for every troop as it activates, keeps it positioned
 // above its entity, and updates its fill amount off DamageDealtEvent. Bars are torn down
-// on TroopDiedEvent/EntityDeletedEvent. Mirrors SelectionManager's lifecycle pattern.
+// on EntityDeletedEvent only — NOT TroopDiedEvent, which fires on every death including a
+// respawnable entity's (RespawnSystem vetoes deletion for those, so IsDead flips but the
+// entity survives to be revived in place — see RespawnableEntityDiedEvent/
+// RespawnableEntityRespawnedEvent, which hide/show the bar for exactly that case). Mirrors
+// SelectionManager's lifecycle pattern.
 public class HealthBarManager : Singleton<HealthBarManager>
 {
     [SerializeField] private GameObject _healthBarPrefab;
@@ -20,7 +24,6 @@ public class HealthBarManager : Singleton<HealthBarManager>
     public void Initialize()
     {
         TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnTroopActivated);
-        TickManager.instance.ServerFlagEvents.Subscribe<TroopDiedEvent>(OnTroopRemoved);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
         TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnRespawnableEntityDied);
@@ -70,7 +73,6 @@ public class HealthBarManager : Singleton<HealthBarManager>
             bar.gameObject.SetActive(false);
     }
 
-    private void OnTroopRemoved(TroopDiedEvent e) => DestroyHealthBar(e.EntityId);
     private void OnEntityDeleted(EntityDeletedEvent e) => DestroyHealthBar(e.EntityId);
 
     private void OnDamageDealt(DamageDealtEvent e)

@@ -16,4 +16,8 @@ public struct ModifierComponent : IComponent
     // ModifierSystem), which deletes the entity on the server once it reaches 0.
     // int.MaxValue means the modifier never expires on its own (removed some other way).
     public int TicksRemaining;
+
+    // Which icon/name/description ModifierIconManager should render for this modifier while
+    // it's active — see ModifierID's own doc comment. Defaults to None (no icon).
+    public ModifierID ModifierID;
 }

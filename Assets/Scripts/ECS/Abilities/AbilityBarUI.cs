@@ -28,6 +28,10 @@ public class AbilityBarUI : Singleton<AbilityBarUI>
         // Filled-type Image (radial/wipe) drawn over the icon while on cooldown — fillAmount
         // goes from 1 (just used) down to 0 (ready) over the course of the cooldown.
         public Image CooldownOverlay;
+        // Optional — attach a HoverEventForwarder to the icon to show a DescriptionTooltip
+        // (name + description) while this slot's ability is hovered. Left unwired, the slot
+        // just has no hover tooltip.
+        public HoverEventForwarder HoverForwarder;
     }
 
     [SerializeField] private GameObject _root;
@@ -42,6 +46,27 @@ public class AbilityBarUI : Singleton<AbilityBarUI>
         _abilityStore = _ecs.GetComponentStore<AbilityComponent>();
 
         SetRootActive(false);
+
+        for (int slot = 0; slot < _slots.Length; slot++)
+        {
+            HoverEventForwarder forwarder = _slots[slot]?.HoverForwarder;
+            if (forwarder == null) continue;
+
+            int capturedSlot = slot;
+            forwarder.HoverEntered += () => OnSlotHovered(capturedSlot);
+            forwarder.HoverExited += () => DescriptionTooltip.instance?.Hide();
+        }
+    }
+
+    private void OnSlotHovered(int slot)
+    {
+        ulong casterId = GetOnlySelected();
+        if (casterId == 0 || _abilityStore == null || !_abilityStore.HasComponent(casterId)) return;
+
+        int abilityId = _abilityStore.GetComponent(casterId).GetAbilityId(slot);
+        if (abilityId == 0 || !AbilityManager.TryGet(abilityId, out Ability ability)) return;
+
+        DescriptionTooltip.instance?.Show(ability.Name, ability.Description);
     }
 
     void Update()

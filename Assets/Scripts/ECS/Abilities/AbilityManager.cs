@@ -55,6 +55,8 @@ public static class AbilityManager
     private static Ability BuildRingOfProjectilesAbility() => new Ability
     {
         Type = AbilityType.Instant,
+        Name = "Ring of Projectiles",
+        Description = "Fires a ring of projectiles outward in every direction and grants a brief speed boost.",
         Range = RingOfProjectilesRange,
         ImageName = "RingOfProjectiles",
         // No cast location for an Instant ability, so this is just the plain range-circle
@@ -86,6 +88,7 @@ public static class AbilityManager
             {
                 TargetEntityId = input.CastingEntityId,
                 TicksRemaining = TickManager.SecondsToTicks(RingOfProjectilesSpeedBoostSeconds),
+                ModifierID     = ModifierID.StatChange,
             });
             ecs.AddComponent(modifier.Id, new StatModifierComponent
             {
@@ -97,6 +100,8 @@ public static class AbilityManager
     private static Ability BuildAoeSpellCloneAbility() => new Ability
     {
         Type = AbilityType.TargetLocation,
+        Name = "AOE Blast",
+        Description = "Creates an area-of-effect blast at the targeted point.",
         Range = AoeSpellCloneRange,
         ImageName = "AoeSpellClone",
         ShowRangeCircle = true,
@@ -136,6 +141,8 @@ public static class AbilityManager
     private static Ability BuildSkillshotAbility() => new Ability
     {
         Type = AbilityType.TargetLocation,
+        Name = "Piercing Shot",
+        Description = "Fires a piercing shot straight toward the targeted point, hitting everything in its path.",
         Range = SkillshotAbilityRange,
         ImageName = "SkillshotAbility",
         ShowRangeCircle = true,
@@ -164,6 +171,8 @@ public static class AbilityManager
     private static Ability BuildMeleeStrikeAbility() => new Ability
     {
         Type = AbilityType.TargetEntity,
+        Name = "Melee Strike",
+        Description = "Deals direct damage to a nearby enemy.",
         Range = MeleeStrikeRange,
         ImageName = "MeleeStrike",
         CanTargetFriendly = false,

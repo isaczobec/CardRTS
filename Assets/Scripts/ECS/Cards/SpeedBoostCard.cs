@@ -60,6 +60,7 @@ public class SpeedBoostCard : TargetEntityCard
         {
             TargetEntityId = targetEntityId,
             TicksRemaining = TickManager.SecondsToTicks(SpeedBoostDurationSeconds),
+            ModifierID     = ModifierID.StatChange,
         });
 
         ecs.AddComponent(modifier.Id, new StatModifierComponent

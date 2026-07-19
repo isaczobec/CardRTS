@@ -28,6 +28,7 @@ public class DamageBoostUpgrade : CardUpgrade
         {
             TargetEntityId = entityId,
             TicksRemaining = int.MaxValue,
+            ModifierID     = ModifierID.StatChange,
         });
         ecs.AddComponent(modifier.Id, new StatModifierComponent
         {

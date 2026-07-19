@@ -15,6 +15,10 @@ public static class TroopCardHelper
     private const float DefaultActivationDelaySeconds = 2f;
     private const float SelectionScale = 1f;
 
+    // Every troop card drops this much Gold to whoever kills it (see
+    // OnDeathResourceDropComponent/OnDeathResourceDropSystem).
+    private const int GoldDropOnDeath = 40;
+
     public static ulong SpawnTroop(
         ECS ecs,
         ushort ownerPlayerId,
@@ -56,6 +60,11 @@ public static class TroopCardHelper
 
         ecs.AddComponent(id, stats);
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = stats.MaxHealth });
+
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Gold = GoldDropOnDeath
+        } } );
 
         if (extraComponents != null)
             foreach (Action<ECS, ulong> addComponent in extraComponents)
