@@ -128,6 +128,7 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         TickManager.instance.ServerFlagEvents.Subscribe<CardDrawnEvent>(OnCardDrawn);
         TickManager.instance.ServerFlagEvents.Subscribe<CardPlayedEvent>(OnCardPlayed);
         TickManager.instance.ServerFlagEvents.Subscribe<ResourcesChangedEvent>(OnResourcesChanged);
+        TickManager.instance.ServerFlagEvents.Subscribe<ComponentAddedEvent<UpgradeComponent>>(OnUpgradeAdded);
 
         _ecs = TickManager.instance.ActiveECS;
 
@@ -208,22 +209,12 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
 
         ComponentStore<CardComponent> cardStore = _ecs.GetComponentStore<CardComponent>();
         if (cardStore == null || !cardStore.HasComponent(e.EntityId)) return;
-
-        CardComponent card = cardStore.GetComponent(e.EntityId);
-        if (card.OwnerPlayerId != LocalPlayerId()) return; // only render our own hand
-
-        if (!CardRegistry.TryGet(card.Type, out Card definition)) return;
+        if (cardStore.GetComponent(e.EntityId).OwnerPlayerId != LocalPlayerId()) return; // only render our own hand
 
         CardGameObject go = Instantiate(_cardPrefab, _handContainer);
         go.CardEntityId = e.EntityId;
 
-        Sprite artwork = null;
-        if (ImageRegistry.instance != null)
-            ImageRegistry.instance.TryGet(definition.ImageName, out artwork);
-
-        go.BuildCard(definition.Title, definition.Description, artwork, definition.DefaultStats, definition.Cost);
-        if (TryGetLocalPlayerResources(out PlayerResourcesComponent resources))
-            go.RefreshAffordability(resources);
+        BuildCardVisual(e.EntityId, go);
 
         go.Clicked      += OnCardClicked;
         go.DragStarted  += OnCardDragStarted;
@@ -233,6 +224,44 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         _handOrder.Add(e.EntityId);
 
         PlayCardSound("CardDraw");
+    }
+
+    // Populates go's face from cardEntityId's current CardComponent/upgrades — shared by
+    // OnCardDrawn (first build) and OnUpgradeAdded (rebuild once a purchased upgrade attaches
+    // to a card already sitting in hand).
+    private void BuildCardVisual(ulong cardEntityId, CardGameObject go)
+    {
+        ComponentStore<CardComponent> cardStore = _ecs.GetComponentStore<CardComponent>();
+        if (cardStore == null || !cardStore.HasComponent(cardEntityId)) return;
+
+        CardComponent card = cardStore.GetComponent(cardEntityId);
+        if (!CardRegistry.TryGet(card.Type, out Card definition)) return;
+
+        Sprite artwork = null;
+        if (ImageRegistry.instance != null)
+            ImageRegistry.instance.TryGet(definition.ImageName, out artwork);
+
+        go.BuildCard(definition.Title, definition.Description, artwork, definition.DefaultStats, definition.Cost);
+        go.SetUpgradeIcons(UpgradeIconResolver.Resolve(_ecs, cardEntityId));
+
+        if (TryGetLocalPlayerResources(out PlayerResourcesComponent resources))
+            go.RefreshAffordability(resources);
+    }
+
+    // The new entity here is the UPGRADE entity BuyUpgradeSystem just created, not the card
+    // itself — its UpgradeComponent.TargetCardEntityId says which card to rebuild, if that
+    // card happens to be currently rendered in hand at all.
+    private void OnUpgradeAdded(ComponentAddedEvent<UpgradeComponent> e)
+    {
+        if (_ecs == null) return;
+
+        ComponentStore<UpgradeComponent> upgradeStore = _ecs.GetComponentStore<UpgradeComponent>();
+        if (upgradeStore == null || !upgradeStore.HasComponent(e.EntityId)) return;
+
+        ulong targetCardEntityId = upgradeStore.GetComponent(e.EntityId).TargetCardEntityId;
+        if (!_handCards.TryGetValue(targetCardEntityId, out CardGameObject go)) return;
+
+        BuildCardVisual(targetCardEntityId, go);
     }
 
     private void OnCardPlayed(CardPlayedEvent e)

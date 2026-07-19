@@ -21,6 +21,8 @@ public abstract class SpawnAtPointCard : Card
     // Called by SpawnAtPointCardPlaySystem when a player plays this card at (x, y).
     // cardEntityId is the card entity that was played (recycled back into the deck
     // afterwards, not deleted), in case an implementation ever needs to read more off it
-    // than SpawnAtPointCardPlaySystem already validated.
-    public abstract void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y);
+    // than SpawnAtPointCardPlaySystem already validated. Returns the id of the entity this
+    // play created — SpawnAtPointCardPlaySystem uses it to run any equipped UpgradeComponent's
+    // effect (see ECS/Upgrades/CardUpgrade.cs) against the thing that was actually spawned.
+    public abstract ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y);
 }

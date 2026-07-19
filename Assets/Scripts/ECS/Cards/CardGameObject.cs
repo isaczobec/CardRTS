@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -81,6 +82,16 @@ public class CardGameObject : MonoBehaviour,
     // ShopUIManager's hover-preview card). Null-checked same as every other field above.
     [SerializeField] private TMP_Text _shopGoldCostText;
 
+    [Header("Upgrades")]
+    // Optional — only wired on prefab variants that show which upgrades are equipped (e.g.
+    // CardHandRenderer's hand cards, UpgradeShopUIManager's deck-picker cards). Null-checked
+    // same as every other field above; a catalog card with no real entity behind it (e.g.
+    // ShopUIManager's shop-grid/hover-preview cards) just never has SetUpgradeIcons called.
+    [SerializeField] private Transform _upgradeIconContainer;
+    [SerializeField] private UpgradeGameObject _upgradeIconPrefab;
+
+    private readonly List<UpgradeGameObject> _upgradeIcons = new List<UpgradeGameObject>();
+
     private ResourceCost _cost;
     private int _shopGoldCost;
 
@@ -137,6 +148,31 @@ public class CardGameObject : MonoBehaviour,
         SetResourceRowAmount(_goldCostRow, cost.Gold);
 
         SetPanelsVisible(false);
+    }
+
+    // Rebuilds the upgrade-icon row from a caller-resolved (icon, shopGoldCost) pair per
+    // equipped upgrade — the caller (CardHandRenderer for hand cards, UpgradeShopUIManager
+    // for deck-picker cards) is expected to have already walked
+    // UpgradeQuery.ForEachUpgradeOnCard and looked each upgrade's ImageName up in
+    // ImageRegistry itself, matching how artwork is always handed to BuildCard pre-resolved
+    // rather than looked up in here. No-ops (leaves any existing icons as-is) if this
+    // prefab variant has no container/prefab wired.
+    public void SetUpgradeIcons(IReadOnlyList<(Sprite icon, int shopGoldCost)> upgrades)
+    {
+        if (_upgradeIconContainer == null || _upgradeIconPrefab == null) return;
+
+        foreach (UpgradeGameObject icon in _upgradeIcons)
+            if (icon != null) Destroy(icon.gameObject);
+        _upgradeIcons.Clear();
+
+        if (upgrades == null) return;
+
+        foreach ((Sprite icon, int shopGoldCost) in upgrades)
+        {
+            UpgradeGameObject go = Instantiate(_upgradeIconPrefab, _upgradeIconContainer);
+            go.BuildUpgrade(icon, shopGoldCost);
+            _upgradeIcons.Add(go);
+        }
     }
 
     // Called by CardHandRenderer whenever this card's hover/selection state changes

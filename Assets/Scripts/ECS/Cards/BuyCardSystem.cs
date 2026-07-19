@@ -44,11 +44,12 @@ public static class BuyCardSystem
             return;
         }
 
-        ResourceCost shopCost = new ResourceCost { Gold = definition.ShopGoldCost };
+        int shopGoldCost = ShopPricingHelper.GetEffectiveShopGoldCost(ecs, input.ClientId, definition);
+        ResourceCost shopCost = new ResourceCost { Gold = shopGoldCost };
         PlayerResourcesComponent resources = resourceStore.GetComponent(resourceEntityId);
         if (!shopCost.CanAfford(resources))
         {
-            DebugLogger.LogWarning($"[BuyCardSystem] Rejected: player {input.ClientId} can't afford {input.CardType} (shop cost {definition.ShopGoldCost} gold, has {resources.GoldFloor}).", "cards");
+            DebugLogger.LogWarning($"[BuyCardSystem] Rejected: player {input.ClientId} can't afford {input.CardType} (shop cost {shopGoldCost} gold, has {resources.GoldFloor}).", "cards");
             return;
         }
 
@@ -66,5 +67,13 @@ public static class BuyCardSystem
         });
 
         DeckHelper.EnqueueToDeck(ecs, input.ClientId, entity.Id);
+
+        ComponentStore<ShopPurchaseHistoryComponent> historyStore = ecs.GetComponentStore<ShopPurchaseHistoryComponent>();
+        if (historyStore != null && historyStore.HasComponent(resourceEntityId))
+        {
+            ref ShopPurchaseHistoryComponent history = ref historyStore.GetComponent(resourceEntityId);
+            history.CardsPurchased++;
+            ecs.Delta.MarkComponentDirty(resourceEntityId, typeof(ShopPurchaseHistoryComponent));
+        }
     }
 }

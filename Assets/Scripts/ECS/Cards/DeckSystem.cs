@@ -13,7 +13,7 @@ public class DeckSystem : ISystem
 {
     public Type[] ComponentTypes => Array.Empty<Type>();
 
-    private const int MaxHandSize = 6;
+    private const int MaxHandSize = 5;
     private const float DrawCooldownSeconds = 3f;
 
     public void Setup(ECS ecs) { }

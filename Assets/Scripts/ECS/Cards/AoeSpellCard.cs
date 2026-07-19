@@ -75,7 +75,7 @@ public class AoeSpellCard : SpawnAtPointCard
         indicator.transform.localScale = new Vector3(diameter, 1f, diameter);
     }
 
-    public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
+    public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
         EntityHandle entity = ecs.CreateEntity();
         ulong id = entity.Id;
@@ -112,5 +112,7 @@ public class AoeSpellCard : SpawnAtPointCard
             TicksRemaining        = lifetimeTicks,
             InitialTicksRemaining = lifetimeTicks,
         });
+
+        return id;
     }
 }

@@ -72,11 +72,11 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
         SpellResist = SpellResist,
     };
 
-    public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
+    public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
         StatsComponent stats = BuildStats();
 
-        TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.BasicRanged, stats, new List<Action<ECS, ulong>>
+        return TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.BasicRanged, stats, new List<Action<ECS, ulong>>
         {
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {

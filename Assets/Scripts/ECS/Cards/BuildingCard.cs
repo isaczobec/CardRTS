@@ -41,7 +41,7 @@ public class BuildingCard : SpawnAtPointCard
             Stone = 45
         };
 
-    public override void OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
+    public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
     {
         EntityHandle entity = ecs.CreateEntity();
         ulong id = entity.Id;
@@ -49,5 +49,7 @@ public class BuildingCard : SpawnAtPointCard
         ecs.AddComponent(id, new PositionComponent(x, y));
         BuildingSpawnHelper.AddBuildingComponents(ecs, id, ownerPlayerId, RenderableType.BasicBuilding, MaxHealth,
             (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds));
+
+        return id;
     }
 }

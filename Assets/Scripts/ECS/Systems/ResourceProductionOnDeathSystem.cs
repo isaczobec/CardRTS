@@ -2,10 +2,9 @@
 // "executed" notification (see RequestManager.SubscribeExecuted / DeathRequest.Execute) and,
 // if the dying entity carries a ResourceProductionOnDeathComponent, permanently increases the
 // passive production (PlayerResourcesComponent.*PerSecond) of whichever player owns
-// HealthComponent.LastDamageDealer — MainBoostPerMinute added to the component's
-// MainResourceType, SecondaryBoostPerMinute added to each of the other two of Wood/Stone/
-// Metal. Mirrors OnDeathResourceDropSystem's "read LastDamageDealer, resolve owner, credit
-// them" shape.
+// HealthComponent.LastDamageDealer, by that component's own flat per-resource fields
+// (converted from per-minute to per-second). Mirrors OnDeathResourceDropSystem's "read
+// LastDamageDealer, resolve owner, credit them" shape.
 //
 // RespawnSystem only ever sets DeathRequest.ShouldDelete = false for a respawnable entity
 // (Tree/Rock/Ore are all respawnable) — it does not cancel the request, so Execute (and this
@@ -16,10 +15,7 @@ public static class ResourceProductionOnDeathSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute, Setup);
 
-    private const float MainBoostPerMinute = 2.4f;
-    private const float SecondaryBoostPerMinute = 0.7f;
-    private const float MainBoostPerSecond = MainBoostPerMinute / 60f;
-    private const float SecondaryBoostPerSecond = SecondaryBoostPerMinute / 60f;
+    private const float MinutesToSeconds = 60f;
 
     private static void Setup(ECS ecs)
         => ecs.Requests.SubscribeExecuted<DeathRequest>(OnDeathExecuted);
@@ -47,12 +43,15 @@ public static class ResourceProductionOnDeathSystem
         ComponentStore<PlayerResourcesComponent> resourceStore = ecs.GetComponentStore<PlayerResourcesComponent>();
         if (resourceStore == null || resourceEntityId == 0 || !resourceStore.HasComponent(resourceEntityId)) return;
 
-        ResourceType mainType = boostStore.GetComponent(request.EntityId).MainResourceType;
+        ResourceProductionOnDeathComponent boost = boostStore.GetComponent(request.EntityId);
 
         ref PlayerResourcesComponent resources = ref resourceStore.GetComponent(resourceEntityId);
-        resources.WoodPerSecond  += mainType == ResourceType.Wood  ? MainBoostPerSecond : SecondaryBoostPerSecond;
-        resources.StonePerSecond += mainType == ResourceType.Stone ? MainBoostPerSecond : SecondaryBoostPerSecond;
-        resources.MetalPerSecond += mainType == ResourceType.Metal ? MainBoostPerSecond : SecondaryBoostPerSecond;
+        resources.WoodPerSecond       += boost.WoodPerMinute / MinutesToSeconds;
+        resources.StonePerSecond      += boost.StonePerMinute / MinutesToSeconds;
+        resources.MetalPerSecond      += boost.MetalPerMinute / MinutesToSeconds;
+        resources.GemsPerSecond       += boost.GemsPerMinute / MinutesToSeconds;
+        resources.SoulstonesPerSecond += boost.SoulstonesPerMinute / MinutesToSeconds;
+        resources.GoldPerSecond       += boost.GoldPerMinute / MinutesToSeconds;
         ecs.Delta.MarkComponentDirty(resourceEntityId, typeof(PlayerResourcesComponent));
     }
 }

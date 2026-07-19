@@ -30,6 +30,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         AbilityIndicatorManager.instance.Initialize();
         AudioManager.instance.Initialize();
         ShopUIManager.instance.Initialize();
+        UpgradeShopUIManager.instance.Initialize();
         AIModeUI.instance.Initialize();
     }
 }

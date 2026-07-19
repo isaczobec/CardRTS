@@ -98,8 +98,15 @@ public static class SpawnAtPointCardPlaySystem
 
         ecs.Requests.Process(new ResourcesDeductedRequest(resourceEntityId, definition.Cost), ecs);
 
-        spawnAtPointCard.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.X, input.Y);
+        ulong spawnedEntityId = spawnAtPointCard.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.X, input.Y);
         ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });
+
+        // Run every upgrade equipped on this card (see ECS/Upgrades/UpgradeComponent.cs — a
+        // card can carry any number of upgrade entities) against the entity this play just
+        // spawned. This whole system is server-only (see the isServer check in Execute
+        // above), matching the upgrade lambda's own "runs on the server" contract.
+        UpgradeQuery.ForEachUpgradeOnCard(ecs, input.CardEntityId, upgrade =>
+            upgrade.OnSpawnAtPointCardPlayed?.Invoke(spawnedEntityId, ecs));
 
         // Recycle the card back into its owner's deck (at the back) rather than
         // deleting it.

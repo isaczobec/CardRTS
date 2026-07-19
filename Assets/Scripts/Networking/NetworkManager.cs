@@ -350,8 +350,10 @@ public class NetworkManager : Singleton<NetworkManager>
             Stone = 150,
             Metal = 150,
             });
+        ecs.AddComponent(entity.Id, new ShopPurchaseHistoryComponent());
 
-        DeckHelper.SeedStartingDeck(ecs, playerId);
+        // Starting decks are intentionally empty — players buy their first cards from the
+        // shop instead (see ShopPricingHelper for the discounted early-purchase pricing).
     }
 
     // ── Message builders ──────────────────────────────────────────────────────

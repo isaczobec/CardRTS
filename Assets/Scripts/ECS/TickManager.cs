@@ -172,6 +172,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BlinkComponent>(30);
         _componentTypeRegistry.Register<RespawnCooldownRampComponent>(31);
         _componentTypeRegistry.Register<ResourceProductionOnDeathComponent>(32);
+        _componentTypeRegistry.Register<UpgradeComponent>(33);
+        _componentTypeRegistry.Register<ShopPurchaseHistoryComponent>(34);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -186,6 +188,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<BuyCardInput>(10);
         _inputTypeRegistry.Register<SetAIModeInput>(11);
         _inputTypeRegistry.Register<MultiPointInput>(12);
+        _inputTypeRegistry.Register<BuyUpgradeInput>(13);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -267,6 +270,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RespawnCooldownRampComponent>>(77);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceProductionOnDeathComponent>>(78);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceProductionOnDeathComponent>>(79);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<UpgradeComponent>>(80);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<UpgradeComponent>>(81);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ShopPurchaseHistoryComponent>>(82);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShopPurchaseHistoryComponent>>(83);
 
         ECS = CreateSimulationECS();
     }
@@ -472,6 +479,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnCooldownRampComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceProductionOnDeathComponent>());
+        ecs.AddComponentStore(new ComponentStore<UpgradeComponent>());
+        ecs.AddComponentStore(new ComponentStore<ShopPurchaseHistoryComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -495,6 +504,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(TargetEntityCardPlaySystem.Instance);
         ecs.RegisterSystem(MultiPointCardPlaySystem.Instance);
         ecs.RegisterSystem(BuyCardSystem.Instance);
+        ecs.RegisterSystem(BuyUpgradeSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(ArmorMitigationSystem.Instance);
@@ -548,6 +558,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BlinkComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnCooldownRampComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceProductionOnDeathComponent>());
+        ecs.AddComponentStore(new ComponentStore<UpgradeComponent>());
+        ecs.AddComponentStore(new ComponentStore<ShopPurchaseHistoryComponent>());
 
         return ecs;
     }
