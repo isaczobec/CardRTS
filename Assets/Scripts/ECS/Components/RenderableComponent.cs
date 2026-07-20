@@ -20,7 +20,8 @@ public enum RenderableType : byte
     SoulstoneNodeLarge = 15,
     Gem = 16,
     IronKnight = 17,
-    Ranger = 18
+    Ranger = 18,
+    FastSkillshotProjectile = 19,
 }
 
 public struct RenderableComponent : IComponent

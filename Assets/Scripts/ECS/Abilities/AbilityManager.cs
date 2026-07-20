@@ -27,7 +27,12 @@ public static class AbilityManager
 
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
-    private const float SkillshotAbilityRange = 20f;
+    // The shot always travels the caster's second projectile pool's own Range (see
+    // ProjectilePool.AimSkillshot/ResolveOwnerAtIndex) regardless of where within this
+    // circle you aim (DirectionArrowAlwaysMaxRange below) — kept in step with
+    // SkillshotRangedTroopCard.AbilityProjectileRange so the indicator circle always shows
+    // exactly as far as the shot will actually go.
+    private const float SkillshotAbilityRange = 84f;
     // Short windup before the shot actually fires — see BuildSkillshotAbility. The caster
     // can't move or act (ActionWindupComponent vetoes CanMove/CanPerform) for the duration.
     private const float SkillshotWindupSeconds = 0.4f;
@@ -146,20 +151,30 @@ public static class AbilityManager
     // AoeSpellCloneAbility — no isServer guard is needed; both server and predicting clients
     // creating "the same" modifier and firing "the same" pooled projectile off it is exactly
     // how every other pooled shot in this codebase already works.
-    private static Ability BuildSkillshotAbility() => new Ability
+    private static Ability BuildSkillshotAbility()
     {
-        Type = AbilityType.TargetLocation,
-        Name = "Piercing Shot",
-        Description = "Winds up briefly, then fires a piercing shot straight toward the targeted point, hitting everything in its path.",
-        Range = SkillshotAbilityRange,
-        ImageName = "SkillshotAbility",
-        ShowRangeCircle = true,
-        ShowDirectionArrow = true,
-        // The shot always travels the full Range regardless of where within it you aim, so
-        // the arrow should always read as the full range circle's radius, not shrink to
-        // wherever the cursor happens to be.
-        DirectionArrowAlwaysMaxRange = true,
-        ExecuteAtLocation = (ecs, input) =>
+        Ability ability = new Ability
+        {
+            Type = AbilityType.TargetLocation,
+            Name = "Piercing Shot",
+            Description = "Winds up briefly, then fires a piercing shot straight toward the targeted point, hitting everything in its path.",
+            Range = SkillshotAbilityRange,
+            ImageName = "SkillshotAbility",
+            ShowRangeCircle = true,
+            ShowDirectionArrow = true,
+            // The shot always travels the full Range regardless of where within it you aim,
+            // so the arrow should always read as the full range circle's radius, not shrink
+            // to wherever the cursor happens to be.
+            DirectionArrowAlwaysMaxRange = true,
+            // Fires from the caster's SECOND pool (index 1 — see
+            // ProjectileOwnerComponent's own doc comment) rather than its default
+            // auto-attack pool, so this ability can fire a visually/mechanically distinct
+            // (faster, longer-range) projectile — see SkillshotRangedTroopCard, which sets
+            // up that second pool.
+            ProjectileOwnerIndex = 1,
+        };
+
+        ability.ExecuteAtLocation = (ecs, input) =>
         {
             ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
             if (posStore == null || !posStore.HasComponent(input.CastingEntityId)) return;
@@ -167,6 +182,8 @@ public static class AbilityManager
             PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
             Vector2 firePosition = new Vector2(casterPos.X, casterPos.Y);
             Vector2 direction = new Vector2(input.X, input.Y) - firePosition;
+
+            ulong poolOwnerId = ProjectilePool.ResolveOwnerAtIndex(ecs, input.CastingEntityId, ability.ProjectileOwnerIndex);
 
             EntityHandle modifier = ecs.CreateEntity();
             ecs.AddComponent(modifier.Id, new ModifierComponent
@@ -179,11 +196,14 @@ public static class AbilityManager
             {
                 DirectionX = direction.x,
                 DirectionY = direction.y,
+                ProjectilePoolOwnerId = poolOwnerId,
             });
 
             ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
-        },
-    };
+        };
+
+        return ability;
+    }
 
     // Deterministic and side-effect-free like the other test abilities — a DamageRequest is
     // just enqueued and flushed the same tick by DamageResolutionSystem (which runs after

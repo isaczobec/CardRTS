@@ -94,6 +94,13 @@ public class Ability
     // ability's hotkey is held — see AbilityIndicatorManager/EntityTargetIndicator.
     public bool ShowTargetIndicator;
 
+    // Which of the casting entity's projectile pools (see ProjectileOwnerComponent's
+    // linked-list doc comment) an ability that fires a pooled projectile should draw from —
+    // 0 (default) is the caster's own primary pool, 1 is NextProjectileOwnerId, 2 is the
+    // one after that, and so on. Only meaningful for an ability whose Execute* actually
+    // fires a pooled projectile (see ProjectilePool.ResolveOwnerAtIndex); ignored otherwise.
+    public int ProjectileOwnerIndex;
+
     // Exactly one of these should be non-null, matching Type. Left null for whichever
     // input kind this ability doesn't apply to; AbilitySystem checks for that and rejects
     // an input whose matching lambda is missing instead of throwing.

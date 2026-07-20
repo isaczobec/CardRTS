@@ -81,10 +81,14 @@ public static class ProjectilePool
 
     // Same pooling scheme as CreatePool, but for skillshot (straight-line, radius-hit,
     // piercing) projectiles instead of homing ones — see SkillshotProjectileComponent.
-    public static ulong CreateSkillshotPool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond, float hitRadius)
+    // renderableType defaults to the ordinary SkillshotProjectile visual; pass a different
+    // one for a second pool of visually distinct projectiles (e.g. a faster/longer-range
+    // kind fired by an ability — see SkillshotRangedTroopCard).
+    public static ulong CreateSkillshotPool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond, float hitRadius,
+        RenderableType renderableType = RenderableType.SkillshotProjectile)
         => CreatePoolRing(ecs, ownerId, count, (e, id) =>
         {
-            e.AddComponent(id, new RenderableComponent { Type = RenderableType.SkillshotProjectile });
+            e.AddComponent(id, new RenderableComponent { Type = renderableType });
             e.AddComponent(id, new SkillshotProjectileComponent { Speed = speedMilliTilesPerSecond, HitRadius = hitRadius });
         });
 
@@ -170,6 +174,25 @@ public static class ProjectilePool
         last.NextProjectileId = firstId;
 
         return firstId;
+    }
+
+    // Walks a troop's projectile-pool-owner chain (see ProjectileOwnerComponent's own doc
+    // comment) starting from casterId — index 0 is casterId itself (its own primary pool),
+    // index 1 is casterId's NextProjectileOwnerId, and so on. Returns 0 if the chain doesn't
+    // reach that far (e.g. index 1 requested but casterId has no second pool linked).
+    public static ulong ResolveOwnerAtIndex(ECS ecs, ulong casterId, int index)
+    {
+        ComponentStore<ProjectileOwnerComponent> ownerStore = ecs.GetComponentStore<ProjectileOwnerComponent>();
+        if (ownerStore == null) return 0;
+
+        ulong currentId = casterId;
+        for (int i = 0; i < index; i++)
+        {
+            if (currentId == 0 || !ownerStore.HasComponent(currentId)) return 0;
+            currentId = ownerStore.GetComponent(currentId).NextProjectileOwnerId;
+        }
+
+        return currentId;
     }
 
     private static ulong FindAvailable(ComponentStore<ProjectileBaseComponent> projectileStore, ulong startId, int maxProjectiles)

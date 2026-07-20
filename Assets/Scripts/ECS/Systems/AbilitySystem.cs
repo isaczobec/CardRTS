@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 // Reads AbilityUsedInput/AbilityUsedAtLocationInput/AbilityUsedOnEntityInput each tick. For
 // each, validates the casting entity exists, is owned by the requesting client, can
@@ -178,6 +179,9 @@ public static class AbilitySystem
         slot = FindSlot(abilities, abilityId);
         if (slot < 0) return false;
         if (abilities.GetCooldownTicksRemaining(slot) > 0) return false;
+        // A MaxCharges <= 1 slot never consults charges at all — CooldownTicksRemaining
+        // above is the only gate, exactly as before charges existed.
+        if (abilities.GetMaxCharges(slot) > 1 && abilities.GetChargesRemaining(slot) <= 0) return false;
 
         return AbilityManager.TryGet(abilityId, out ability);
     }
@@ -194,6 +198,21 @@ public static class AbilitySystem
     {
         ref AbilityComponent abilities = ref abilityStore.GetComponent(casterId);
         abilities.SetCooldownTicksRemaining(slot, abilities.GetCooldownTicks(slot));
+
+        int maxCharges = abilities.GetMaxCharges(slot);
+        if (maxCharges > 1)
+        {
+            int chargesRemaining = abilities.GetChargesRemaining(slot);
+            bool wasFull = chargesRemaining >= maxCharges;
+            abilities.SetChargesRemaining(slot, Mathf.Max(0, chargesRemaining - 1));
+
+            // Only one charge regenerates at a time — the timer only (re)starts once a
+            // charge is spent from a full stack; if one was already recharging, it just
+            // keeps counting down uninterrupted (see AbilityChargeSystem).
+            if (wasFull)
+                abilities.SetChargeCooldownTicksRemaining(slot, abilities.GetChargeCooldownTicks(slot));
+        }
+
         ecs.Delta.MarkComponentDirty(casterId, typeof(AbilityComponent));
         ecs.FlagEvents.Add(new AbilityPerformedEvent { EntityId = casterId, Slot = slot, WorldX = worldX, WorldY = worldY });
     }

@@ -28,6 +28,10 @@ public class AbilityBarUI : Singleton<AbilityBarUI>
         // Filled-type Image (radial/wipe) drawn over the icon while on cooldown — fillAmount
         // goes from 1 (just used) down to 0 (ready) over the course of the cooldown.
         public Image CooldownOverlay;
+        // Shows AbilityComponent.GetChargesRemaining(slot) — disabled outright for a
+        // MaxCharges <= 1 slot (an ordinary ability has nothing meaningful to show here;
+        // CooldownText/CooldownOverlay already cover it).
+        public TMP_Text ChargesText;
         // Optional — attach a HoverEventForwarder to the icon to show a DescriptionTooltip
         // (name + description) while this slot's ability is hovered. Left unwired, the slot
         // just has no hover tooltip.
@@ -111,7 +115,25 @@ public class AbilityBarUI : Singleton<AbilityBarUI>
         if (uiSlot.Icon != null)
             uiSlot.Icon.sprite = ResolveIcon(ability.ImageName);
 
-        int ticksRemaining = abilities.GetCooldownTicksRemaining(slot);
+        // A charge-based slot (MaxCharges > 1) that's fully depleted needs to show the
+        // (much longer) time until its NEXT charge, not the ordinary per-cast cooldown —
+        // that one may well have already expired while still stuck at 0 charges, which
+        // would otherwise make the overlay/text disappear even though the ability still
+        // can't be cast.
+        int maxCharges = abilities.GetMaxCharges(slot);
+        int ticksRemaining;
+        int cooldownTicks;
+        if (maxCharges > 1 && abilities.GetChargesRemaining(slot) <= 0)
+        {
+            ticksRemaining = abilities.GetChargeCooldownTicksRemaining(slot);
+            cooldownTicks = abilities.GetChargeCooldownTicks(slot);
+        }
+        else
+        {
+            ticksRemaining = abilities.GetCooldownTicksRemaining(slot);
+            cooldownTicks = abilities.GetCooldownTicks(slot);
+        }
+
         bool onCooldown = ticksRemaining > 0;
 
         if (uiSlot.CooldownText != null)
@@ -123,10 +145,17 @@ public class AbilityBarUI : Singleton<AbilityBarUI>
 
         if (uiSlot.CooldownOverlay != null)
         {
-            int cooldownTicks = abilities.GetCooldownTicks(slot);
             uiSlot.CooldownOverlay.fillAmount = onCooldown && cooldownTicks > 0
                 ? (float)ticksRemaining / cooldownTicks
                 : 0f;
+        }
+
+        if (uiSlot.ChargesText != null)
+        {
+            bool hasCharges = abilities.GetMaxCharges(slot) > 1;
+            uiSlot.ChargesText.gameObject.SetActive(hasCharges);
+            if (hasCharges)
+                uiSlot.ChargesText.text = abilities.GetChargesRemaining(slot).ToString();
         }
     }
 

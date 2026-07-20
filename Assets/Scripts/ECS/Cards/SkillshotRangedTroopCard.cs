@@ -32,6 +32,18 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     private const int ProjectileSpeedMilliTilesPerSecond = 20000; // 20 tiles/sec
     private const float ProjectileHitRadius = 1f;
 
+    // Second pool, used only by the skillshot ability (see AbilityManager.
+    // BuildSkillshotAbility's ProjectileOwnerIndex = 1) — quicker and longer-range than the
+    // troop's own default auto-attack pool above. Range must be kept in step with
+    // AbilityManager.SkillshotAbilityRange, which drives the ability's indicator circle —
+    // see that constant's own comment.
+    private const int AbilityProjectilePoolSize = 8;
+    private const int AbilityProjectileSpeedMilliTilesPerSecond = 32000; // 32 tiles/sec
+    // 3x the original 28.
+    private const int AbilityProjectileRange = 84;
+    // 2.5x the primary pool's ProjectileHitRadius (1).
+    private const float AbilityProjectileHitRadius = 2.5f;
+
     // How long a target this troop's projectiles hit stays hitbox-immune afterward —
     // without this, the piercing shot would deal damage every single tick it overlaps the
     // same target instead of once per pass through it.
@@ -42,7 +54,14 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     // different troops could equip the same ability with different cooldowns.
     private const float RingOfProjectilesCooldownSeconds = 5f;
     private const float AoeSpellCloneCooldownSeconds = 8f;
-    private const float SkillshotAbilityCooldownSeconds = 3f;
+    // Minimum time between individual casts, even with charges banked ("2 second cooldown
+    // between charges").
+    private const float SkillshotAbilityCooldownSeconds = 2f;
+    // 3 shots can be banked and fired in quick succession (each still gated by the
+    // cooldown above); each spent charge takes SkillshotChargeCooldownSeconds to
+    // regenerate (see AbilityChargeSystem).
+    private const int SkillshotMaxCharges = 3;
+    private const float SkillshotChargeCooldownSeconds = 25f;
 
     public override int ShopGoldCost => 100;
 
@@ -95,6 +114,42 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
                     NextProjectileId = firstProjectileId,
                 });
             },
+            // Second, faster/longer-range pool used only by the skillshot ability instead
+            // of this troop's own default auto-attack pool above — a separate entity so it
+            // can carry its own Range stat (read by ProjectilePool.FireInDirection's
+            // AimSkillshot) independently of this troop's own Range (used for its ranged
+            // auto-attack's targeting/attack-range checks instead). Projectiles are still
+            // created with THIS troop (id) as their owner, so kill/damage attribution stays
+            // correct (see ProjectileBaseComponent.OwnerEntityId) — only the pool
+            // bookkeeping (ProjectileOwnerComponent) lives on the separate entity, linked
+            // from the troop's own primary pool via NextProjectileOwnerId.
+            (e, id) =>
+            {
+                EntityHandle abilityPoolOwner = e.CreateEntity();
+                e.AddComponent(abilityPoolOwner.Id, new StatsComponent
+                {
+                    MaxHealth   = StatsComponent.STAT_NA,
+                    Speed       = StatsComponent.STAT_NA,
+                    Range       = AbilityProjectileRange,
+                    Armor       = StatsComponent.STAT_NA,
+                    Damage      = StatsComponent.STAT_NA,
+                    AttackSpeed = StatsComponent.STAT_NA,
+                    SpellResist = StatsComponent.STAT_NA,
+                });
+
+                ulong firstAbilityProjectileId = ProjectilePool.CreateSkillshotPool(
+                    e, id, AbilityProjectilePoolSize, AbilityProjectileSpeedMilliTilesPerSecond, AbilityProjectileHitRadius,
+                    RenderableType.FastSkillshotProjectile);
+                e.AddComponent(abilityPoolOwner.Id, new ProjectileOwnerComponent
+                {
+                    MaxProjectiles   = AbilityProjectilePoolSize,
+                    NextProjectileId = firstAbilityProjectileId,
+                });
+
+                ref ProjectileOwnerComponent primaryOwner = ref e.GetComponentStore<ProjectileOwnerComponent>().GetComponent(id);
+                primaryOwner.NextProjectileOwnerId = abilityPoolOwner.Id;
+                e.Delta.MarkComponentDirty(id, typeof(ProjectileOwnerComponent));
+            },
             (e, id) =>
             {
                 ComponentStore<HealthComponent> healthStore = e.GetComponentStore<HealthComponent>();
@@ -107,6 +162,9 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
             {
                 Ability1Id = AbilityManager.SkillshotAbilityId,
                 Ability1CooldownTicks = TickManager.SecondsToTicks(SkillshotAbilityCooldownSeconds),
+                Ability1MaxCharges = SkillshotMaxCharges,
+                Ability1ChargesRemaining = SkillshotMaxCharges,
+                Ability1ChargeCooldownTicks = TickManager.SecondsToTicks(SkillshotChargeCooldownSeconds),
             }),
         });
     }

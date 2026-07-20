@@ -533,6 +533,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
+        ecs.RegisterSystem(AbilityChargeSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);
