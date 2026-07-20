@@ -345,11 +345,20 @@ public class NetworkManager : Singleton<NetworkManager>
         // baseline passive income.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
             GoldPerSecond = 0f,
-            Gold = 50,
-            Wood = 150,
-            Stone = 150,
-            Metal = 150,
+            Gold = 1000,
+            Wood = 1000,
+            Stone = 1000,
+            Metal = 1000,
+            Gems = 1000,
+            Soulstones = 1000,
             });
+        // ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
+        //     GoldPerSecond = 0f,
+        //     Gold = 50,
+        //     Wood = 150,
+        //     Stone = 150,
+        //     Metal = 150,
+        //     });
         ecs.AddComponent(entity.Id, new ShopPurchaseHistoryComponent());
 
         // Starting decks are intentionally empty — players buy their first cards from the

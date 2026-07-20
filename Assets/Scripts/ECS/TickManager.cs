@@ -174,6 +174,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ResourceProductionOnDeathComponent>(32);
         _componentTypeRegistry.Register<UpgradeComponent>(33);
         _componentTypeRegistry.Register<ShopPurchaseHistoryComponent>(34);
+        _componentTypeRegistry.Register<PeriodicDamageReductionComponent>(35);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -274,6 +275,9 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<UpgradeComponent>>(81);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ShopPurchaseHistoryComponent>>(82);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShopPurchaseHistoryComponent>>(83);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PeriodicDamageReductionComponent>>(84);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PeriodicDamageReductionComponent>>(85);
+        _flagEventTypeRegistry.Register<PeriodicDamageReductionProcEvent>(86);
 
         ECS = CreateSimulationECS();
     }
@@ -481,6 +485,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ResourceProductionOnDeathComponent>());
         ecs.AddComponentStore(new ComponentStore<UpgradeComponent>());
         ecs.AddComponentStore(new ComponentStore<ShopPurchaseHistoryComponent>());
+        ecs.AddComponentStore(new ComponentStore<PeriodicDamageReductionComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -508,6 +513,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(ArmorMitigationSystem.Instance);
+        ecs.RegisterSystem(PeriodicDamageReductionSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
@@ -560,6 +566,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ResourceProductionOnDeathComponent>());
         ecs.AddComponentStore(new ComponentStore<UpgradeComponent>());
         ecs.AddComponentStore(new ComponentStore<ShopPurchaseHistoryComponent>());
+        ecs.AddComponentStore(new ComponentStore<PeriodicDamageReductionComponent>());
 
         return ecs;
     }

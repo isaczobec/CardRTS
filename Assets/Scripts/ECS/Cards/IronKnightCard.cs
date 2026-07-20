@@ -28,6 +28,11 @@ public class IronKnightCard : SpawnAtPointCard
     // attack speed.
     private const float CooldownMultiplier = 1.8f;
 
+    // Takes 35% reduced damage on every 3rd hit it takes — see
+    // PeriodicDamageReductionComponent/System.
+    private const int PeriodicReductionHitInterval = 3;
+    private const float PeriodicReductionRatio = 0.35f;
+
     private const float MaxDistanceFromBuilding = 20f;
 
     // Cooldown for the troop's test ability (see AbilityManager.MeleeStrikeAbilityId).
@@ -80,6 +85,23 @@ public class IronKnightCard : SpawnAtPointCard
                 Ability1Id = AbilityManager.MeleeStrikeAbilityId,
                 Ability1CooldownTicks = TickManager.SecondsToTicks(MeleeStrikeCooldownSeconds),
             }),
+            // Indefinite modifier (TicksRemaining = int.MaxValue, no ActivatableComponent —
+            // see DamageBoostUpgrade for the same shape) rather than a component directly on
+            // the troop, so it composes correctly with any other modifier of this kind.
+            (e, id) =>
+            {
+                EntityHandle modifier = e.CreateEntity();
+                e.AddComponent(modifier.Id, new ModifierComponent
+                {
+                    TargetEntityId = id,
+                    TicksRemaining = int.MaxValue,
+                });
+                e.AddComponent(modifier.Id, new PeriodicDamageReductionComponent
+                {
+                    HitInterval    = PeriodicReductionHitInterval,
+                    ReductionRatio = PeriodicReductionRatio,
+                });
+            },
         });
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class RenderingSetup : Singleton<RenderingSetup>
@@ -5,6 +6,11 @@ public class RenderingSetup : Singleton<RenderingSetup>
     [SerializeField] RenderableManager _renderableManager;
     [SerializeField] RenderableModifierManager _renderableModifierManager;
     [SerializeField] Material _capsuleMaterial;
+
+    // One instance per RenderableType that should play VFX/SFX when a
+    // PeriodicDamageReductionComponent modifier on it procs — see
+    // PeriodicDamageReductionProcRenderer.
+    [SerializeField] List<PeriodicDamageReductionProcRenderer> _damageReductionProcRenderers = new List<PeriodicDamageReductionProcRenderer>();
 
     public void SetupRendering()
     {
@@ -33,5 +39,8 @@ public class RenderingSetup : Singleton<RenderingSetup>
         ShopUIManager.instance.Initialize();
         UpgradeShopUIManager.instance.Initialize();
         AIModeUI.instance.Initialize();
+
+        foreach (PeriodicDamageReductionProcRenderer renderer in _damageReductionProcRenderers)
+            renderer.Initialize(ecs);
     }
 }

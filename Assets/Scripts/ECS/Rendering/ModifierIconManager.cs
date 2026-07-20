@@ -33,6 +33,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     private ECS _ecs;
     private ComponentStore<ModifierComponent> _modifierStore;
     private ComponentStore<PositionComponent> _positionStore;
+    private ComponentStore<MovableComponent> _movableStore;
+    private readonly TickPositionInterpolator _interpolator = new();
 
     // Per target entity: its row container, and which modifier entity each currently-shown
     // icon belongs to.
@@ -50,6 +52,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         _ecs = TickManager.instance.ActiveECS;
         _modifierStore = _ecs.GetComponentStore<ModifierComponent>();
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
+        _movableStore = _ecs.GetComponentStore<MovableComponent>();
     }
 
     void Update()
@@ -157,17 +160,29 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
             _containers.Remove(targetEntityId);
         }
         _iconsByTarget.Remove(targetEntityId);
+        _interpolator.Remove(targetEntityId);
     }
 
+    // Follows the same interpolated position troop renderers/HealthBarManager show, rather
+    // than the raw per-tick PositionComponent, so icons don't visibly snap/lag behind a
+    // moving troop's smoothed-out rendered position.
     private void PositionContainers()
     {
         foreach (KeyValuePair<ulong, GameObject> kvp in _containers)
         {
-            if (!_positionStore.HasComponent(kvp.Key)) continue;
+            ulong entityId = kvp.Key;
+            if (!_positionStore.HasComponent(entityId)) continue;
 
-            PositionComponent pos = _positionStore.GetComponent(kvp.Key);
+            PositionComponent pos = _positionStore.GetComponent(entityId);
             float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
-            kvp.Value.transform.position = new Vector3(pos.X, height, pos.Y) + _worldOffset;
+            Vector3 worldPos = new Vector3(pos.X, height, pos.Y);
+
+            bool isMoving = _movableStore != null && _movableStore.HasComponent(entityId)
+                && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+            bool teleported = _movableStore != null && _movableStore.HasComponent(entityId)
+                && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
+
+            kvp.Value.transform.position = _interpolator.Update(entityId, worldPos, isMoving, teleported) + _worldOffset;
         }
     }
 

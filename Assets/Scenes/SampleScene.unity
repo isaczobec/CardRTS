@@ -20,9 +20,9 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientSkyColor: {r: 0.52200526, g: 0.5589396, b: 0.6377328, a: 1}
+  m_AmbientEquatorColor: {r: 0.228, g: 0.25, b: 0.266, a: 1}
+  m_AmbientGroundColor: {r: 0.13293608, g: 0.12162237, b: 0.09899495, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
@@ -4403,6 +4403,8 @@ MonoBehaviour:
   _renderableManager: {fileID: 695582579}
   _renderableModifierManager: {fileID: 1244099537}
   _capsuleMaterial: {fileID: 2100000, guid: 09c3ee61af37bc24483487eaae6a9b01, type: 2}
+  _damageReductionProcRenderers:
+  - {fileID: 1373427742}
 --- !u!114 &695582579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8992,6 +8994,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1373427740}
   - component: {fileID: 1373427741}
+  - component: {fileID: 1373427742}
   m_Layer: 0
   m_Name: IronKnightRenderer
   m_TagString: Untagged
@@ -9043,8 +9046,23 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
-  _runAnimationSpeedStat: 7
+  _runAnimationSpeedStat: 2.73
   _speedParamUpdateInterval: 0.25
+--- !u!114 &1373427742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1373427739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c028380391e41da4584c12df455aca8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PeriodicDamageReductionProcRenderer
+  _renderableType: 17
+  _prefab: {fileID: 3938369738910734278, guid: 1f664ac40cc61124792aba977ebbacd1, type: 3}
+  _sfxName: StoneTakeDamage
 --- !u!1 &1388428473
 GameObject:
   m_ObjectHideFlags: 0
