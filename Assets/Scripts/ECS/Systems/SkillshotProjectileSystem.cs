@@ -65,7 +65,7 @@ public static class SkillshotProjectileSystem
         pos.Y = next.y;
         ecs.Delta.MarkComponentDirty(id, typeof(PositionComponent));
 
-        HitOverlappingEnemies(ecs, id, projectile.OwnerEntityId, next, skillshot.HitRadius);
+        HitOverlappingEnemies(ecs, id, projectile.OwnerEntityId, next, skillshot.HitRadius, skillshot.DamageMultiplier);
 
         skillshot.RangeRemaining -= step;
         ecs.Delta.MarkComponentDirty(id, typeof(SkillshotProjectileComponent));
@@ -74,7 +74,7 @@ public static class SkillshotProjectileSystem
             Deactivate(ecs, id, ref projectile);
     }
 
-    private static void HitOverlappingEnemies(ECS ecs, ulong projectileId, ulong ownerId, Vector2 pos, float hitRadius)
+    private static void HitOverlappingEnemies(ECS ecs, ulong projectileId, ulong ownerId, Vector2 pos, float hitRadius, float damageMultiplier)
     {
         ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
         ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
@@ -82,7 +82,7 @@ public static class SkillshotProjectileSystem
 
         ushort ownerPlayerId = troopStore.GetComponent(ownerId).OwnerPlayerId;
         int hitboxImmunityTicksToGive = healthStore.HasComponent(ownerId) ? healthStore.GetComponent(ownerId).HitboxImmunityTicksToGive : 0;
-        int damage = StatsQuery.GetDamage(ecs, ownerId, DefaultDamage);
+        int damage = Mathf.RoundToInt(StatsQuery.GetDamage(ecs, ownerId, DefaultDamage) * damageMultiplier);
 
         _queryBuffer.Clear();
         ecs.ChunkTracker.GetEntitiesNear(pos.x, pos.y, hitRadius, _queryBuffer);

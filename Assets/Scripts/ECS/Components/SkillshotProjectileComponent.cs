@@ -23,4 +23,12 @@ public struct SkillshotProjectileComponent : IComponent
     // multiple entities over its flight, piercing through rather than stopping on the
     // first hit.
     public float HitRadius;
+
+    // Multiplies the owning troop's own Damage stat for this projectile kind specifically
+    // (see SkillshotProjectileSystem) — e.g. an ability-fired pool dealing more than the
+    // troop's ordinary auto-attack. Set via ProjectilePool.CreateSkillshotPool's own
+    // damageMultiplier param at pool-creation time (always explicitly, defaulting to 1
+    // there) rather than left to default here, since a bare 0 would silently zero out
+    // damage for anyone who forgot to set it.
+    public float DamageMultiplier;
 }

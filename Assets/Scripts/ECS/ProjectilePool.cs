@@ -83,13 +83,15 @@ public static class ProjectilePool
     // piercing) projectiles instead of homing ones — see SkillshotProjectileComponent.
     // renderableType defaults to the ordinary SkillshotProjectile visual; pass a different
     // one for a second pool of visually distinct projectiles (e.g. a faster/longer-range
-    // kind fired by an ability — see SkillshotRangedTroopCard).
+    // kind fired by an ability — see SkillshotRangedTroopCard). damageMultiplier defaults
+    // to 1 (the owning troop's plain Damage stat); pass a different one for a pool that
+    // should hit harder/softer than the troop's ordinary auto-attack.
     public static ulong CreateSkillshotPool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond, float hitRadius,
-        RenderableType renderableType = RenderableType.SkillshotProjectile)
+        RenderableType renderableType = RenderableType.SkillshotProjectile, float damageMultiplier = 1f)
         => CreatePoolRing(ecs, ownerId, count, (e, id) =>
         {
             e.AddComponent(id, new RenderableComponent { Type = renderableType });
-            e.AddComponent(id, new SkillshotProjectileComponent { Speed = speedMilliTilesPerSecond, HitRadius = hitRadius });
+            e.AddComponent(id, new SkillshotProjectileComponent { Speed = speedMilliTilesPerSecond, HitRadius = hitRadius, DamageMultiplier = damageMultiplier });
         });
 
     // Finds the next available pooled projectile, activates it, and advances the owner's

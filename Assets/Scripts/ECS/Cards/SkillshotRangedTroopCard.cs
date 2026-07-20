@@ -1,21 +1,24 @@
 using System;
 using System.Collections.Generic;
 
-// Same "ranged troop with a projectile pool" shape as BasicRangedTroopCard, but its pool
-// is skillshot-typed (straight-line, radius-hit, piercing — see SkillshotProjectileComponent)
-// instead of homing. No AI system changes needed at all: BasicRangedAISystem already just
-// calls ProjectilePool.Fire, which auto-detects which kind of projectile a troop's pool
-// holds and aims/resets it accordingly (see ProjectilePool.Fire) — this card only differs
-// from BasicRangedTroopCard in which CreatePool variant it calls and in granting its
-// troop's own HealthComponent a HitboxImmunityTicksToGive, so its piercing shot doesn't
-// restack damage on the same target every tick it overlaps it.
+// Ranged troop with TWO pools (see ProjectileOwnerComponent's linked-list doc comment): its
+// primary pool (auto-attack, fired by BasicRangedAISystem via ProjectilePool.Fire — same
+// homing shape as BasicRangedTroopCard) is seeking/homing, while its second pool (fired
+// only by the skillshot ability, see AbilityManager.BuildSkillshotAbility) is
+// skillshot-typed (straight-line, radius-hit, piercing — see SkillshotProjectileComponent).
+// Also grants its own HealthComponent a HitboxImmunityTicksToGive, so the piercing ability
+// shot doesn't restack damage on the same target every tick it overlaps it (the homing
+// auto-attack shot has no such concern — single target, single impact).
 public class SkillshotRangedTroopCard : SpawnAtPointCard
 {
     // See BasicMeleeTroopCard for the rebalance baseline this is scaled from (3x health,
     // 2.8x damage vs. the old 100 HP / 8 damage numbers, then damage 1.2x again to
     // compensate for 20 armor under ArmorMitigationSystem).
     private const int MaxHealth = 200;
-    private const int Speed = 6;
+    // Matches BasicMeleeTroopCard's own Speed.
+    private const int Speed = 5;
+    // 0.4x the previous 40 (which was itself 2.5x the original 16) — nets out to the
+    // original 16.
     private const int Range = 16;
     private const int Armor = 20;
     private const int Damage = 26;
@@ -30,7 +33,6 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
 
     private const int ProjectilePoolSize = 32;
     private const int ProjectileSpeedMilliTilesPerSecond = 20000; // 20 tiles/sec
-    private const float ProjectileHitRadius = 1f;
 
     // Second pool, used only by the skillshot ability (see AbilityManager.
     // BuildSkillshotAbility's ProjectileOwnerIndex = 1) — quicker and longer-range than the
@@ -41,8 +43,11 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     private const int AbilityProjectileSpeedMilliTilesPerSecond = 32000; // 32 tiles/sec
     // 3x the original 28.
     private const int AbilityProjectileRange = 84;
-    // 2.5x the primary pool's ProjectileHitRadius (1).
+    // 2.5x the original 1.
     private const float AbilityProjectileHitRadius = 2.5f;
+    // 1.4x the troop's plain Damage stat — the ability's piercing shot hits harder than
+    // the ordinary homing auto-attack.
+    private const float AbilityDamageMultiplier = 1.4f;
 
     // How long a target this troop's projectiles hit stays hitbox-immune afterward —
     // without this, the piercing shot would deal damage every single tick it overlaps the
@@ -70,7 +75,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     public override CardType Type => CardType.SkillshotRangedTroop;
     public override string Title => "Ranger";
     public override string ImageName => "SkillshotRangedTroop";
-    public override string Description => "A ranged troop that fires a piercing shot straight ahead, hitting everything in its path.";
+    public override string Description => "A ranged troop with a homing auto-attack, plus an ability that fires a piercing shot straight ahead, hitting everything in its path.";
     public override string IndicatorPrefabName => "Ranger";
 
     public override StatsComponent DefaultStats => BuildStats();
@@ -105,9 +110,10 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,
             }),
+            // Primary pool — the troop's ordinary homing auto-attack (BasicRangedAISystem).
             (e, id) =>
             {
-                ulong firstProjectileId = ProjectilePool.CreateSkillshotPool(e, id, ProjectilePoolSize, ProjectileSpeedMilliTilesPerSecond, ProjectileHitRadius);
+                ulong firstProjectileId = ProjectilePool.CreatePool(e, id, ProjectilePoolSize, ProjectileSpeedMilliTilesPerSecond);
                 e.AddComponent(id, new ProjectileOwnerComponent
                 {
                     MaxProjectiles   = ProjectilePoolSize,
@@ -139,7 +145,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
 
                 ulong firstAbilityProjectileId = ProjectilePool.CreateSkillshotPool(
                     e, id, AbilityProjectilePoolSize, AbilityProjectileSpeedMilliTilesPerSecond, AbilityProjectileHitRadius,
-                    RenderableType.FastSkillshotProjectile);
+                    RenderableType.FastSkillshotProjectile, AbilityDamageMultiplier);
                 e.AddComponent(abilityPoolOwner.Id, new ProjectileOwnerComponent
                 {
                     MaxProjectiles   = AbilityProjectilePoolSize,
