@@ -50,6 +50,14 @@ public class PathfindingSystem : ISystem
                 return;
             }
 
+            // Authoritative "is this entity actually allowed to move right now" gate — an
+            // AI system may have already set a destination/mode before a root landed
+            // mid-chase; checking here (rather than only where destinations are set)
+            // freezes movement immediately regardless of what set it. Leaves the cached
+            // path/destination alone so it resumes exactly where it left off once able to
+            // move again, rather than forgetting/re-pathing.
+            if (!ActivationQuery.CanMove(ecs, id)) return;
+
             float destX = mov.CurrentDestinationX;
             float destY = mov.CurrentDestinationY;
 
@@ -117,7 +125,7 @@ public class PathfindingSystem : ISystem
 
             ref TroopComponent troop = ref troopStore.GetComponent(entityId);
             if (troop.OwnerPlayerId != input.ClientId) continue;
-            if (!ActivationQuery.CanTakeActions(ecs, entityId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, entityId)) continue;
 
             ref MovableComponent mov = ref movStore.GetComponent(entityId);
             mov.playerSetDestinationX = move.DestinationX;

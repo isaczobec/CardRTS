@@ -8,7 +8,7 @@ public static class ActivationSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute, Setup);
 
-    // Owns the ActivatableComponent side of IsActiveRequest/CanTakeActionsRequest — other
+    // Owns the ActivatableComponent side of IsActiveRequest/IsActivatedRequest — other
     // orthogonal veto reasons (TroopComponent.IsDead, an expired LifetimeComponent, ...)
     // subscribe independently wherever they live (see DeathSystem, LifetimeSystem) rather
     // than here.
@@ -20,10 +20,10 @@ public static class ActivationSystem
                 req.IsActive = false;
         });
 
-        ecs.Requests.Subscribe<CanTakeActionsRequest>((req, innerEcs) =>
+        ecs.Requests.Subscribe<IsActivatedRequest>((req, innerEcs) =>
         {
             if (!IsActiveByComponent(innerEcs, req.EntityId))
-                req.CanTakeActions = false;
+                req.IsActivated = false;
         });
     }
 

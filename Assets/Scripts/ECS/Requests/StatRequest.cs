@@ -7,7 +7,7 @@
 // bonus) and rounds to the nearest int. See StatModifierComponent/StatModifierSystem for
 // the actual bonus contributors.
 //
-// Fields are mutable (unlike IsActiveRequest/CanTakeActionsRequest's readonly-after-
+// Fields are mutable (unlike IsActiveRequest/IsActivatedRequest's readonly-after-
 // construction EntityId) so StatsQuery.Resolve can build one generically via `new T()` +
 // object initializer for any of the six stat kinds below, instead of duplicating the same
 // resolve logic six times over.

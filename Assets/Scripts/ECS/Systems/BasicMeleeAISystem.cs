@@ -84,7 +84,7 @@ public class BasicMeleeAISystem : ISystem
         if (!_posStore.HasComponent(id) || !_movStore.HasComponent(id) || !_troopStore.HasComponent(id)) return;
 
         TroopComponent troop = _troopStore.GetComponent(id);
-        if (!ActivationQuery.CanTakeActions(_ecs, id)) return;
+        if (!ActivationQuery.IsActivated(_ecs, id)) return;
 
         ref BasicMeleeAIComponent ai = ref aiStore.GetComponent(id);
         ref MovableComponent mov = ref _movStore.GetComponent(id);
@@ -162,6 +162,15 @@ public class BasicMeleeAISystem : ISystem
         float dist = DistanceTo(activeTarget, myPos);
         if (dist <= range)
         {
+            // In range but can't currently initiate an attack (e.g. silenced) — hold
+            // position near the target instead of starting a windup or wastefully chasing.
+            if (!ActivationQuery.CanPerform(_ecs, id))
+            {
+                mov.currentMovementMode = MovementMode.NotMoving;
+                _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
+                return;
+            }
+
             mov.currentMovementMode = MovementMode.NotMoving;
             ai.AttackTargetId = activeTarget;
             ai.AttackTicksRemaining = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
@@ -187,7 +196,12 @@ public class BasicMeleeAISystem : ISystem
         ulong targetId = ai.AttackTargetId;
         int range = StatsQuery.GetRange(_ecs, id, DefaultRange);
 
-        if (IsValidTarget(targetId) && DistanceTo(targetId, myPos) <= range * ai.AttackRangeMultiplier)
+        // Finishing the attack (landing the hit) needs its own CanPerform check — a
+        // silence landing mid-windup should whiff the swing, same as the target having
+        // stepped out of range, rather than still connecting because the windup already
+        // started.
+        if (IsValidTarget(targetId) && DistanceTo(targetId, myPos) <= range * ai.AttackRangeMultiplier
+            && ActivationQuery.CanPerform(_ecs, id))
         {
             int damage = StatsQuery.GetDamage(_ecs, id, DefaultDamage);
             _ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = id });
@@ -228,7 +242,7 @@ public class BasicMeleeAISystem : ISystem
 
         TroopComponent other = _troopStore.GetComponent(entityId);
         if (other.OwnerPlayerId == myOwnerId) return false;
-        return ActivationQuery.CanTakeActions(_ecs, entityId);
+        return ActivationQuery.IsActivated(_ecs, entityId);
     }
 
     // A target is still worth chasing/attacking if it still exists, still has a
@@ -283,6 +297,8 @@ public class BasicMeleeAISystem : ISystem
 
     private void GoHome(ulong id, ref MovableComponent mov, Vector2 myPos)
     {
+        if (!ActivationQuery.CanMove(_ecs, id)) return;
+
         float hdx = myPos.x - mov.LeashX, hdy = myPos.y - mov.LeashY;
         bool atHome = (hdx * hdx + hdy * hdy) < HomeRadius * HomeRadius;
 
@@ -311,6 +327,8 @@ public class BasicMeleeAISystem : ISystem
     // PathfindingSystem's cached path), always forces a fresh one.
     private void MoveToward(ulong id, ref MovableComponent mov, ref BasicMeleeAIComponent ai, ulong targetId, int range)
     {
+        if (!ActivationQuery.CanMove(_ecs, id)) return;
+
         PositionComponent targetPos = _posStore.GetComponent(targetId);
         Vector2 targetVec = new Vector2(targetPos.X, targetPos.Y);
 

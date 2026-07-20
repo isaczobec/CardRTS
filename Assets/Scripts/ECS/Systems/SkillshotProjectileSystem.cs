@@ -93,7 +93,7 @@ public static class SkillshotProjectileSystem
             if (!troopStore.HasComponent(targetId)) continue;
             if (troopStore.GetComponent(targetId).OwnerPlayerId == ownerPlayerId) continue;
             if (!healthStore.HasComponent(targetId)) continue;
-            if (!ActivationQuery.CanTakeActions(ecs, targetId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, targetId)) continue;
 
             ref HealthComponent targetHealth = ref healthStore.GetComponent(targetId);
             if (targetHealth.HitboxImmunityTicksRemaining > 0) continue;

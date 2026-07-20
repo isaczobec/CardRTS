@@ -29,7 +29,7 @@ public static class SetAIModeSystem
         if (!aiModeStore.HasComponent(entityId)) return;
         if (!troopStore.HasComponent(entityId)) return;
         if (troopStore.GetComponent(entityId).OwnerPlayerId != input.ClientId) return;
-        if (!ActivationQuery.CanTakeActions(ecs, entityId)) return;
+        if (!ActivationQuery.IsActivated(ecs, entityId)) return;
 
         ref AIModeComponent aiMode = ref aiModeStore.GetComponent(entityId);
         if (aiMode.Mode == input.Mode) return;

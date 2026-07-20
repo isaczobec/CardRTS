@@ -23,7 +23,7 @@ using UnityEngine;
 // Separate from the ECS architecture, like CardRangeIndicatorManager — never registered as
 // an ISystem, just polls the live ECS each frame to update each indicator's fill. Deploying
 // troops/buildings never move (TroopCardHelper/BuildingSpawnHelper both leave a fresh
-// entity's destination equal to its spawn position, and ActivationQuery.CanTakeActions —
+// entity's destination equal to its spawn position, and ActivationQuery.IsActivated —
 // which gates PathfindingSystem's player-order handling — is false until activation
 // finishes), so like CardRangeIndicatorManager's building rings, each of THOSE indicators'
 // position is only ever set once, at creation.

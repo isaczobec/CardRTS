@@ -4419,7 +4419,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RenderableManager
   _rendererEntries:
   - type: 2
-    renderer: {fileID: 1914037912}
+    renderer: {fileID: 1631565997}
   - type: 3
     renderer: {fileID: 1671680054}
   - type: 4
@@ -8127,7 +8127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndicatorPrefabRegistry
   _entries:
   - name: BasicTroop
-    prefab: {fileID: 6472282922783299243, guid: 9dc2afea966cee64a9cebc92fbbe0e92, type: 3}
+    prefab: {fileID: 6472282922783299243, guid: 684ae309e370a094a9587958efa47f97, type: 3}
   - name: BasicRangedTroop
     prefab: {fileID: 6472282922783299243, guid: 3ed22e2c4cbcfa14582110c357d666aa, type: 3}
   - name: Building
@@ -8138,6 +8138,8 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: d2e438824aa35d04eaadc1d098b344ac, type: 3}
   - name: Blink
     prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
+  - name: IronKnight
+    prefab: {fileID: 6472282922783299243, guid: 9dc2afea966cee64a9cebc92fbbe0e92, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -9578,6 +9580,7 @@ Transform:
   m_Children:
   - {fileID: 1914037911}
   - {fileID: 1373427740}
+  - {fileID: 1631565995}
   - {fileID: 1671680053}
   - {fileID: 509328319}
   - {fileID: 982359450}
@@ -10578,7 +10581,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22, y: 11}
+  m_AnchoredPosition: {x: -22.000122, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567
@@ -11233,6 +11236,66 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1613201464}
   m_CullTransparentMesh: 1
+--- !u!1 &1631565994
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1631565995}
+  - component: {fileID: 1631565997}
+  m_Layer: 0
+  m_Name: WarriorRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1631565995
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1631565994}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1631565997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1631565994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 684ae309e370a094a9587958efa47f97, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.167
+    TimeUntilImpact: 0.5
+  - TriggerName: Attack2
+    Duration: 2.4
+    TimeUntilImpact: 0.5
+  _selectionMode: 1
+  _attackWindupSoundName: DefaultTroopWindup
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _runAnimationSpeedStat: 7
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &1644759785
 GameObject:
   m_ObjectHideFlags: 0

@@ -158,7 +158,10 @@ public static class AbilitySystem
         if (abilityStore == null || troopStore == null) return false;
         if (!abilityStore.HasComponent(casterId) || !troopStore.HasComponent(casterId)) return false;
         if (troopStore.GetComponent(casterId).OwnerPlayerId != clientId) return false;
-        if (!ActivationQuery.CanTakeActions(ecs, casterId)) return false;
+        if (!ActivationQuery.IsActivated(ecs, casterId)) return false;
+        // Casting an ability is itself an "action" a silence (or similar) can veto,
+        // independently of whether the caster is activated/alive at all.
+        if (!ActivationQuery.CanPerform(ecs, casterId)) return false;
 
         AbilityComponent abilities = abilityStore.GetComponent(casterId);
         slot = FindSlot(abilities, abilityId);

@@ -5,7 +5,7 @@
 // entity is allowed to be spawned client-side (e.g. predicted instantly on a projectile
 // hit) even though the server will later create its own copy under a different entity ID —
 // that's fine, since a modifier's actual effect is expected to act through systems that
-// subscribe to requests (the same veto pattern as IsActiveRequest/CanTakeActionsRequest),
+// subscribe to requests (the same veto pattern as IsActiveRequest/IsActivatedRequest),
 // not through anything that depends on the modifier entity's own identity matching across
 // client and server. See ModifierQuery.IsActive and ModifierSystem.
 public struct ModifierComponent : IComponent

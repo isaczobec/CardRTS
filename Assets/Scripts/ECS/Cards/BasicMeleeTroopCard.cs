@@ -70,12 +70,6 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,
             }),
-            // Test ability (Q) — see AbilityManager. Slots 2-4 (W/E/R) are left empty (0).
-            (e, id) => e.AddComponent(id, new AbilityComponent
-            {
-                Ability1Id = AbilityManager.MeleeStrikeAbilityId,
-                Ability1CooldownTicks = TickManager.SecondsToTicks(MeleeStrikeCooldownSeconds),
-            }),
         });
     }
 }

@@ -10,7 +10,7 @@ using System.Collections.Generic;
 // mirrors LifetimeSystem/DeathRequest: predicted-only deletion would desync a client from
 // the server's authoritative entity set, so the server's delta stream is what actually
 // removes it everywhere else. Unlike LifetimeComponent, an expired modifier doesn't need to
-// be flagged inactive first via IsActiveRequest/CanTakeActionsRequest — nothing outside a
+// be flagged inactive first via IsActiveRequest/IsActivatedRequest — nothing outside a
 // modifier's own entity depends on ITS activation state; whatever effect a modifier kind
 // implements is expected to check ModifierQuery.IsActive itself before applying anything,
 // so once TicksRemaining hits 0 there's nothing left to veto.

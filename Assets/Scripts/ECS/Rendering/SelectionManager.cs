@@ -115,7 +115,7 @@ public class SelectionManager : Singleton<SelectionManager>
         // which also vetoes entities currently on a respawn cooldown.
         _ecs.Requests.Subscribe<IsSelectableRequest>((req, ecs) =>
         {
-            if (!ActivationQuery.CanTakeActions(ecs, req.EntityId))
+            if (!ActivationQuery.IsActivated(ecs, req.EntityId))
                 req.IsSelectable = false;
         });
 

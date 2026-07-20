@@ -7,9 +7,10 @@ using UnityEngine;
 // owner if applicable; add filtering here if a specific spell needs it. The pulse interval
 // is StatsComponent.AttackSpeed * AttackSpeedMultiplier ticks, the same ticks-based unit
 // every other card's AttackSpeed already uses (see StatsQuery/
-// TickManager.MillisecondsToTicks). Only pulses while the entity CanTakeActions (see
+// TickManager.MillisecondsToTicks). Only pulses while the entity IsActivated (see
 // ActivationQuery) — an aura entity that's still mid-deploy, or past its LifetimeComponent
-// countdown, deals no damage.
+// countdown, deals no damage — and CanPerform, same as an attack/ability (e.g. a silence
+// stops the pulse without needing its own bespoke veto).
 public static class DamageAuraSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
@@ -31,7 +32,8 @@ public static class DamageAuraSystem
     private static void Tick(ECS ecs, ulong id, ComponentStore<DamageAuraComponent> auraStore, ComponentStore<PositionComponent> posStore)
     {
         if (!posStore.HasComponent(id)) return;
-        if (!ActivationQuery.CanTakeActions(ecs, id)) return;
+        if (!ActivationQuery.IsActivated(ecs, id)) return;
+        if (!ActivationQuery.CanPerform(ecs, id)) return;
 
         ref DamageAuraComponent aura = ref auraStore.GetComponent(id);
 

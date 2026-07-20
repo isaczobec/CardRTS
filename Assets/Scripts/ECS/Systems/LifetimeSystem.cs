@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 // Counts each LifetimeComponent entity's TicksRemaining down by one tick. Once it reaches
 // zero the entity is flagged inactive/unable to act — via Setup's IsActiveRequest/
-// CanTakeActionsRequest subscriptions, the same veto mechanism ActivationSystem uses for
+// IsActivatedRequest subscriptions, the same veto mechanism ActivationSystem uses for
 // ActivatableComponent and DeathSystem uses for TroopComponent.IsDead — and, on the server
 // only, deleted outright. Mirrors DeathRequest, which likewise only ever calls
 // ecs.DeleteEntity when isServer: predicted-only deletion would desync a client from the
@@ -22,10 +22,10 @@ public static class LifetimeSystem
                 req.IsActive = false;
         });
 
-        ecs.Requests.Subscribe<CanTakeActionsRequest>((req, innerEcs) =>
+        ecs.Requests.Subscribe<IsActivatedRequest>((req, innerEcs) =>
         {
             if (IsExpired(innerEcs, req.EntityId))
-                req.CanTakeActions = false;
+                req.IsActivated = false;
         });
     }
 

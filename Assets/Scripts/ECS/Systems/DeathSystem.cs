@@ -9,16 +9,16 @@ public static class DeathSystem
 
     private static readonly List<ulong> _dead = new List<ulong>();
 
-    // Owns the "dead troops can't act" veto for CanTakeActionsRequest — orthogonal to
+    // Owns the "dead troops can't act" veto for IsActivatedRequest — orthogonal to
     // ActivationSystem's ActivatableComponent veto and LifetimeSystem's expiry veto, each
     // subscribing independently for its own reason.
     private static void Setup(ECS ecs)
     {
-        ecs.Requests.Subscribe<CanTakeActionsRequest>((req, innerEcs) =>
+        ecs.Requests.Subscribe<IsActivatedRequest>((req, innerEcs) =>
         {
             var troopStore = innerEcs.GetComponentStore<TroopComponent>();
             if (troopStore != null && troopStore.HasComponent(req.EntityId) && troopStore.GetComponent(req.EntityId).IsDead)
-                req.CanTakeActions = false;
+                req.IsActivated = false;
         });
     }
 

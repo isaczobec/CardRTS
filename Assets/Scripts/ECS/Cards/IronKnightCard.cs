@@ -45,7 +45,7 @@ public class IronKnightCard : SpawnAtPointCard
     public override string Title => "Iron Knight";
     public override string ImageName => "IronKnight";
     public override string Description => "A heavily armored knight that hits hard and slow.";
-    public override string IndicatorPrefabName => "BasicTroop";
+    public override string IndicatorPrefabName => "IronKnight";
 
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
@@ -78,12 +78,6 @@ public class IronKnightCard : SpawnAtPointCard
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,
-            }),
-            // Test ability (Q) — see AbilityManager. Slots 2-4 (W/E/R) are left empty (0).
-            (e, id) => e.AddComponent(id, new AbilityComponent
-            {
-                Ability1Id = AbilityManager.MeleeStrikeAbilityId,
-                Ability1CooldownTicks = TickManager.SecondsToTicks(MeleeStrikeCooldownSeconds),
             }),
             // Indefinite modifier (TicksRemaining = int.MaxValue, no ActivatableComponent —
             // see DamageBoostUpgrade for the same shape) rather than a component directly on
