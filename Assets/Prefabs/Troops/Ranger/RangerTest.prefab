@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 365906620560485522}
   - component: {fileID: 9082625173468486924}
   m_Layer: 0
-  m_Name: Sword Man
+  m_Name: RangerTest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -235,7 +235,11 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: 2faa610713d3b3c439473daa55e8c60a, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: b71750d6c99418447a31d6ccd0907be0, type: 2}
+      objectReference: {fileID: 9100000, guid: c747427d15abf4f4a85a8cab98d029a2, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 2faa610713d3b3c439473daa55e8c60a, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:

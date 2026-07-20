@@ -38,7 +38,7 @@ public static class AbilitySystem
         List<AbilityUsedInput> instantInputs = ecs.GetInputsForTick<AbilityUsedInput>();
         if (instantInputs != null)
             foreach (AbilityUsedInput input in instantInputs)
-                ExecuteInstant(ecs, input, abilityStore, troopStore);
+                ExecuteInstant(ecs, input, abilityStore, troopStore, posStore);
 
         List<AbilityUsedAtLocationInput> locationInputs = ecs.GetInputsForTick<AbilityUsedAtLocationInput>();
         if (locationInputs != null)
@@ -53,7 +53,7 @@ public static class AbilitySystem
     }
 
     private static void ExecuteInstant(ECS ecs, AbilityUsedInput input,
-        ComponentStore<AbilityComponent> abilityStore, ComponentStore<TroopComponent> troopStore)
+        ComponentStore<AbilityComponent> abilityStore, ComponentStore<TroopComponent> troopStore, ComponentStore<PositionComponent> posStore)
     {
         if (!TryBeginCast(ecs, input.CastingEntityId, input.AbilityId, input.ClientId, abilityStore, troopStore, out Ability ability, out int slot))
             return;
@@ -65,7 +65,18 @@ public static class AbilitySystem
         }
 
         ability.ExecuteInstant(ecs, input);
-        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore);
+
+        // No click point exists for an Instant ability — falls back to the caster's own
+        // position (see AbilityPerformedEvent's own doc comment).
+        float worldX = 0f, worldY = 0f;
+        if (posStore != null && posStore.HasComponent(input.CastingEntityId))
+        {
+            PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
+            worldX = casterPos.X;
+            worldY = casterPos.Y;
+        }
+
+        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore, worldX, worldY);
     }
 
     private static void ExecuteAtLocation(ECS ecs, AbilityUsedAtLocationInput input,
@@ -92,7 +103,7 @@ public static class AbilitySystem
         }
 
         ability.ExecuteAtLocation(ecs, input);
-        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore);
+        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore, input.X, input.Y);
     }
 
     private static void ExecuteOnEntity(ECS ecs, AbilityUsedOnEntityInput input,
@@ -143,7 +154,7 @@ public static class AbilitySystem
         }
 
         ability.ExecuteOnEntity(ecs, input);
-        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore);
+        CommitCooldown(ecs, input.CastingEntityId, slot, abilityStore, targetPos.X, targetPos.Y);
     }
 
     // Shared validation for both input kinds. Out params are only meaningful when this
@@ -179,10 +190,11 @@ public static class AbilitySystem
         return -1;
     }
 
-    private static void CommitCooldown(ECS ecs, ulong casterId, int slot, ComponentStore<AbilityComponent> abilityStore)
+    private static void CommitCooldown(ECS ecs, ulong casterId, int slot, ComponentStore<AbilityComponent> abilityStore, float worldX, float worldY)
     {
         ref AbilityComponent abilities = ref abilityStore.GetComponent(casterId);
         abilities.SetCooldownTicksRemaining(slot, abilities.GetCooldownTicks(slot));
         ecs.Delta.MarkComponentDirty(casterId, typeof(AbilityComponent));
+        ecs.FlagEvents.Add(new AbilityPerformedEvent { EntityId = casterId, Slot = slot, WorldX = worldX, WorldY = worldY });
     }
 }

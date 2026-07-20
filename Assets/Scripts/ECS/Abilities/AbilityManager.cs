@@ -28,6 +28,9 @@ public static class AbilityManager
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     private const float SkillshotAbilityRange = 20f;
+    // Short windup before the shot actually fires — see BuildSkillshotAbility. The caster
+    // can't move or act (ActionWindupComponent vetoes CanMove/CanPerform) for the duration.
+    private const float SkillshotWindupSeconds = 0.4f;
     private const float MeleeStrikeRange = 6f;
     private const int MeleeStrikeDamage = 25;
     // Not used for any cast validation (RingOfProjectilesAbility is Instant — no location
@@ -132,17 +135,22 @@ public static class AbilityManager
         },
     };
 
-    // Fires one of the caster's own pooled projectiles (ProjectilePool.FireInDirection —
-    // aims whatever kind the pool holds; a skillshot troop's pool is skillshot-typed, see
-    // SkillshotRangedTroopCard) in a straight line toward the cast point. Deterministic and
-    // side-effect-free like RingOfProjectilesAbility, so — unlike AoeSpellCloneAbility — no
-    // isServer guard is needed; both server and predicting clients activating "the same"
-    // pooled projectile is exactly how every other pooled shot in this codebase already works.
+    // Winds up for SkillshotWindupSeconds (ActionWindupComponent — blocks the caster's own
+    // CanMove/CanPerform for the duration, so it can't move, auto-attack, or cast another
+    // ability while winding up), then fires one of the caster's own pooled projectiles
+    // (FireProjectileOnExpireComponent — ProjectilePool.FireInDirection under the hood;
+    // aims whatever kind the pool holds, a skillshot troop's pool is skillshot-typed, see
+    // SkillshotRangedTroopCard) in a straight line toward the cast point, captured once at
+    // cast time so it still fires exactly where aimed regardless of what happens during the
+    // windup. Deterministic and side-effect-free like RingOfProjectilesAbility, so — unlike
+    // AoeSpellCloneAbility — no isServer guard is needed; both server and predicting clients
+    // creating "the same" modifier and firing "the same" pooled projectile off it is exactly
+    // how every other pooled shot in this codebase already works.
     private static Ability BuildSkillshotAbility() => new Ability
     {
         Type = AbilityType.TargetLocation,
         Name = "Piercing Shot",
-        Description = "Fires a piercing shot straight toward the targeted point, hitting everything in its path.",
+        Description = "Winds up briefly, then fires a piercing shot straight toward the targeted point, hitting everything in its path.",
         Range = SkillshotAbilityRange,
         ImageName = "SkillshotAbility",
         ShowRangeCircle = true,
@@ -160,7 +168,20 @@ public static class AbilityManager
             Vector2 firePosition = new Vector2(casterPos.X, casterPos.Y);
             Vector2 direction = new Vector2(input.X, input.Y) - firePosition;
 
-            ProjectilePool.FireInDirection(ecs, input.CastingEntityId, direction, firePosition);
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = Mathf.Max(1, TickManager.SecondsToTicks(SkillshotWindupSeconds)),
+            });
+            ecs.AddComponent(modifier.Id, new ActionWindupComponent());
+            ecs.AddComponent(modifier.Id, new FireProjectileOnExpireComponent
+            {
+                DirectionX = direction.x,
+                DirectionY = direction.y,
+            });
+
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
         },
     };
 

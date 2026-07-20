@@ -165,7 +165,7 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
             if (!posStore.HasComponent(id)) continue;
 
             bool isMoving = movStore != null && movStore.HasComponent(id)
-                && movStore.GetComponent(id).currentMovementMode != MovementMode.NotMoving;
+                && movStore.GetComponent(id).IsMoving;
             bool teleported = movStore != null && movStore.HasComponent(id)
                 && movStore.GetComponent(id).TeleportedTick == _ecs.CurrentSimulationTick;
 

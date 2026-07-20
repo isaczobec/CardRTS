@@ -213,6 +213,7 @@ public class BasicMeleeAISystem : ISystem
         ai.AttackTargetId = 0;
         ai.AttackTicksRemaining = 0;
         _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+        _ecs.FlagEvents.Add(new AttackWindupFinishedEvent { EntityId = id });
     }
 
     private void CancelAttack(ulong id, ref BasicMeleeAIComponent ai)

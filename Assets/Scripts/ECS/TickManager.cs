@@ -175,6 +175,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<UpgradeComponent>(33);
         _componentTypeRegistry.Register<ShopPurchaseHistoryComponent>(34);
         _componentTypeRegistry.Register<PeriodicDamageReductionComponent>(35);
+        _componentTypeRegistry.Register<ActionWindupComponent>(36);
+        _componentTypeRegistry.Register<FireProjectileOnExpireComponent>(37);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -278,6 +280,13 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PeriodicDamageReductionComponent>>(84);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<PeriodicDamageReductionComponent>>(85);
         _flagEventTypeRegistry.Register<PeriodicDamageReductionProcEvent>(86);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ActionWindupComponent>>(87);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ActionWindupComponent>>(88);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<FireProjectileOnExpireComponent>>(89);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<FireProjectileOnExpireComponent>>(90);
+        _flagEventTypeRegistry.Register<AbilityPerformedEvent>(91);
+        _flagEventTypeRegistry.Register<AttackWindupBeganEvent>(92);
+        _flagEventTypeRegistry.Register<AttackWindupFinishedEvent>(93);
 
         ECS = CreateSimulationECS();
     }
@@ -486,12 +495,19 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<UpgradeComponent>());
         ecs.AddComponentStore(new ComponentStore<ShopPurchaseHistoryComponent>());
         ecs.AddComponentStore(new ComponentStore<PeriodicDamageReductionComponent>());
+        ecs.AddComponentStore(new ComponentStore<ActionWindupComponent>());
+        ecs.AddComponentStore(new ComponentStore<FireProjectileOnExpireComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
         ecs.RegisterSystem(LifetimeSystem.Instance);
+        // Must run before ModifierSystem — it checks TicksRemaining <= 1 to fire on a
+        // modifier's very last active tick, before ModifierSystem decrements it to 0 and
+        // deletes the entity (see FireProjectileOnExpireSystem's own doc comment).
+        ecs.RegisterSystem(FireProjectileOnExpireSystem.Instance);
         ecs.RegisterSystem(ModifierSystem.Instance);
         ecs.RegisterSystem(StatModifierSystem.Instance);
+        ecs.RegisterSystem(ActionWindupSystem.Instance);
         ecs.RegisterSystem(new TeleportingModifierSystem());
         ecs.RegisterSystem(new BlinkSystem());
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
@@ -567,6 +583,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<UpgradeComponent>());
         ecs.AddComponentStore(new ComponentStore<ShopPurchaseHistoryComponent>());
         ecs.AddComponentStore(new ComponentStore<PeriodicDamageReductionComponent>());
+        ecs.AddComponentStore(new ComponentStore<ActionWindupComponent>());
+        ecs.AddComponentStore(new ComponentStore<FireProjectileOnExpireComponent>());
 
         return ecs;
     }

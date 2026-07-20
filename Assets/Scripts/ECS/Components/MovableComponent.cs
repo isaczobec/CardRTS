@@ -16,6 +16,18 @@ public struct MovableComponent : IComponent
     public bool playerDestinationSet;
     public MovementMode currentMovementMode;
 
+    // Whether PathfindingSystem actually advanced this entity's position on the most
+    // recent tick it ran — NOT the same thing as currentMovementMode != NotMoving, which
+    // only reflects movement INTENT (there's still a destination to resume once able) and
+    // stays MoveToDestination/MoveToPlayerSetDestination even while e.g. an
+    // ActionWindupComponent modifier is blocking CanMove. Renderers/interpolation-following
+    // managers (BasicTroopRenderer, VariedAttackTroopRenderer, HealthBarManager,
+    // ModifierIconManager) must key their "is this entity moving" check off THIS field, not
+    // currentMovementMode — TickPositionInterpolator explicitly re-plays the last step
+    // every tick interval for as long as isMoving stays true while the fed position stops
+    // changing, which reads as jittering back and forth in place (see its own doc comment).
+    public bool IsMoving;
+
     // "Leash" point an AI-driven troop returns to once it has no targets left (see
     // BasicMeleeAISystem/BasicRangedAISystem's GoHome). Lives here — shared by every
     // movable troop — rather than duplicated on each AI component, so code that just

@@ -23,6 +23,35 @@ public class AttackAnimation
     public float TimeUntilImpact = 0.5f;
 }
 
+// One entry in _abilityAnimationTriggers — fires TriggerName whenever the troop performs
+// whichever ability it has equipped in AbilitySlot. AbilitySlot is 0-3 (Q/W/E/R, same
+// convention as AbilityComponent.GetAbilityId), not an AbilityManager ability ID, so this
+// stays correct even if a different troop equips a different ability in that slot.
+[System.Serializable]
+public class AbilityAnimationTrigger
+{
+    public int AbilitySlot;
+    public string TriggerName;
+
+    // If set, the Animator's SpeedParam float is set to SpeedMultiplier right before
+    // TriggerName fires — e.g. so a longer/shorter ability windup can stretch or compress
+    // the animation clip to match, the same way OnTroopBeginAttack does for attacks.
+    // Skipped entirely (no SetFloat call) when blank.
+    public string SpeedParam;
+    public float SpeedMultiplier = 1f;
+
+    // If true, the troop instantly turns to face AbilityPerformedEvent's WorldX/WorldY
+    // before TriggerName fires — e.g. so a cast animation faces the cursor/target even if
+    // the troop wasn't already moving that direction. Mirrors OnTroopBeginAttack's own
+    // FaceTarget snap for attacks.
+    public bool RotateTowardPosition;
+
+    // Played (one-shot, at the troop's position) alongside TriggerName — e.g. a cast/fire
+    // sound distinct per ability, as opposed to _abilityWindupSoundName's single shared
+    // sound for every ability's windup. Skipped entirely when blank.
+    public string SoundName;
+}
+
 /// <summary>
 /// Same as BasicTroopRenderer, except its attack animation is chosen from a list
 /// (_attackAnimations) each time TroopBeginAttackEvent fires, instead of a single fixed
@@ -48,8 +77,22 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private List<AttackAnimation> _attackAnimations = new List<AttackAnimation>();
     [SerializeField] private AttackAnimationSelectionMode _selectionMode = AttackAnimationSelectionMode.Random;
 
+    [Header("Ability Animations")]
+    // Fires TriggerName whenever AbilityPerformedEvent reports this troop used the
+    // matching slot — see AbilityAnimationTrigger. More than one entry can match the same
+    // slot; all of them fire.
+    [SerializeField] private List<AbilityAnimationTrigger> _abilityAnimationTriggers = new List<AbilityAnimationTrigger>();
+
     [Header("Audio")]
     [SerializeField] private string _attackWindupSoundName;
+    // Played on AttackWindupFinishedEvent — fires the instant a normal attack windup
+    // (BasicMeleeAISystem/BasicRangedAISystem) resolves, whether or not the hit/shot
+    // actually landed. Distinct from _dealDamageSoundName, which only plays on an actual
+    // hit (DamageDealtEvent).
+    [SerializeField] private string _attackWindupFinishedSoundName;
+    // Played on AttackWindupBeganEvent — shared across every ability this troop has, as
+    // opposed to AbilityAnimationTrigger.SoundName's per-ability cast/fire sound.
+    [SerializeField] private string _abilityWindupSoundName;
     [SerializeField] private string _dealDamageSoundName;
     [SerializeField] private string _takeDamageSoundName;
     [SerializeField] private string _deathSoundName;
@@ -93,6 +136,63 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
         TickManager.instance.ServerFlagEvents.Subscribe<TroopBeginAttackEvent>(OnTroopBeginAttack);
         TickManager.instance.ServerFlagEvents.Subscribe<TroopDiedEvent>(OnTroopDied);
         TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
+        TickManager.instance.ServerFlagEvents.Subscribe<AbilityPerformedEvent>(OnAbilityPerformed);
+        TickManager.instance.ServerFlagEvents.Subscribe<AttackWindupBeganEvent>(OnAttackWindupBegan);
+        TickManager.instance.ServerFlagEvents.Subscribe<AttackWindupFinishedEvent>(OnAttackWindupFinished);
+    }
+
+    private void OnAbilityPerformed(AbilityPerformedEvent e)
+    {
+        if (!_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go)) return;
+
+        foreach (AbilityAnimationTrigger trigger in _abilityAnimationTriggers)
+        {
+            if (trigger.AbilitySlot != e.Slot) continue;
+
+            if (trigger.RotateTowardPosition)
+                FacePosition(e.EntityId, e.WorldX, e.WorldY);
+
+            if (go.Animator != null)
+            {
+                if (!string.IsNullOrEmpty(trigger.SpeedParam))
+                    go.Animator.SetFloat(Animator.StringToHash(trigger.SpeedParam), trigger.SpeedMultiplier);
+
+                if (!string.IsNullOrEmpty(trigger.TriggerName))
+                    go.Animator.SetTrigger(Animator.StringToHash(trigger.TriggerName));
+            }
+
+            PlaySoundAt(trigger.SoundName, go.transform.position);
+        }
+    }
+
+    private void OnAttackWindupBegan(AttackWindupBeganEvent e)
+    {
+        if (!_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go)) return;
+        PlaySoundAt(_abilityWindupSoundName, go.transform.position);
+    }
+
+    // Fires for both BasicMeleeAISystem and BasicRangedAISystem — both raise the exact same
+    // AttackWindupFinishedEvent from their own ResolveAttack once the windup's ticks reach
+    // 0, regardless of which AI component the troop has, so no branching is needed here.
+    private void OnAttackWindupFinished(AttackWindupFinishedEvent e)
+    {
+        if (!_objects.TryGetValue(e.EntityId, out BasicTroopGameObject go)) return;
+        PlaySoundAt(_attackWindupFinishedSoundName, go.transform.position);
+    }
+
+    // Snaps the troop to face a raw world point (as opposed to FaceTarget's live entity
+    // lookup) — used for AbilityAnimationTrigger.RotateTowardPosition, where
+    // AbilityPerformedEvent only ever carries a point, not a target entity id.
+    private void FacePosition(ulong entityId, float worldX, float worldY)
+    {
+        if (!_objects.TryGetValue(entityId, out BasicTroopGameObject go)) return;
+
+        Vector3 targetPos = new Vector3(worldX, go.transform.position.y, worldY);
+        Vector3 dir = targetPos - go.transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude <= 0.0001f) return;
+
+        go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
     }
 
     private void OnTroopBeginAttack(TroopBeginAttackEvent e)
@@ -220,7 +320,7 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
             if (!posStore.HasComponent(id)) continue;
 
             bool isMoving = movStore != null && movStore.HasComponent(id)
-                && movStore.GetComponent(id).currentMovementMode != MovementMode.NotMoving;
+                && movStore.GetComponent(id).IsMoving;
             bool teleported = movStore != null && movStore.HasComponent(id)
                 && movStore.GetComponent(id).TeleportedTick == _ecs.CurrentSimulationTick;
 

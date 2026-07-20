@@ -49,10 +49,10 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     private const float MaxDistanceFromBuilding = 20f;
 
     public override CardType Type => CardType.SkillshotRangedTroop;
-    public override string Title => "Skillshot Troop";
+    public override string Title => "Ranger";
     public override string ImageName => "SkillshotRangedTroop";
     public override string Description => "A ranged troop that fires a piercing shot straight ahead, hitting everything in its path.";
-    public override string IndicatorPrefabName => "SkillshotRangedTroop";
+    public override string IndicatorPrefabName => "Ranger";
 
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
@@ -77,7 +77,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     {
         StatsComponent stats = BuildStats();
 
-        return TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.BasicRanged, stats, new List<Action<ECS, ulong>>
+        return TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.Ranger, stats, new List<Action<ECS, ulong>>
         {
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
@@ -105,12 +105,8 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
             // Test abilities (Q/W/E) — see AbilityManager. Slot 4 (R) is left empty (0).
             (e, id) => e.AddComponent(id, new AbilityComponent
             {
-                Ability1Id = AbilityManager.RingOfProjectilesAbilityId,
-                Ability1CooldownTicks = TickManager.SecondsToTicks(RingOfProjectilesCooldownSeconds),
-                Ability2Id = AbilityManager.AoeSpellCloneAbilityId,
-                Ability2CooldownTicks = TickManager.SecondsToTicks(AoeSpellCloneCooldownSeconds),
-                Ability3Id = AbilityManager.SkillshotAbilityId,
-                Ability3CooldownTicks = TickManager.SecondsToTicks(SkillshotAbilityCooldownSeconds),
+                Ability1Id = AbilityManager.SkillshotAbilityId,
+                Ability1CooldownTicks = TickManager.SecondsToTicks(SkillshotAbilityCooldownSeconds),
             }),
         });
     }

@@ -47,6 +47,7 @@ public class PathfindingSystem : ISystem
             if (mov.currentMovementMode == MovementMode.NotMoving)
             {
                 _entityIdsToPaths.Remove(id);
+                SetIsMoving(ecs, id, ref mov, false);
                 return;
             }
 
@@ -56,7 +57,11 @@ public class PathfindingSystem : ISystem
             // freezes movement immediately regardless of what set it. Leaves the cached
             // path/destination alone so it resumes exactly where it left off once able to
             // move again, rather than forgetting/re-pathing.
-            if (!ActivationQuery.CanMove(ecs, id)) return;
+            if (!ActivationQuery.CanMove(ecs, id))
+            {
+                SetIsMoving(ecs, id, ref mov, false);
+                return;
+            }
 
             float destX = mov.CurrentDestinationX;
             float destY = mov.CurrentDestinationY;
@@ -79,7 +84,11 @@ public class PathfindingSystem : ISystem
             }
 
             List<Vector2> path = cached.Path;
-            if (path == null || path.Count == 0) return;
+            if (path == null || path.Count == 0)
+            {
+                SetIsMoving(ecs, id, ref mov, false);
+                return;
+            }
 
             if (Vector2.Distance(path[0], currentPos) < ArrivalRadius)
             {
@@ -91,6 +100,7 @@ public class PathfindingSystem : ISystem
                     if (mov.currentMovementMode == MovementMode.MoveToPlayerSetDestination)
                         mov.playerDestinationSet = false;
                     mov.currentMovementMode = MovementMode.NotMoving;
+                    mov.IsMoving = false;
                     ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
 
                     return;
@@ -103,7 +113,17 @@ public class PathfindingSystem : ISystem
             pos.X = nextPos.x;
             pos.Y = nextPos.y;
             ecs.Delta.MarkComponentDirty(id, typeof(PositionComponent));
+            SetIsMoving(ecs, id, ref mov, true);
         });
+    }
+
+    // Only marks MovableComponent dirty when IsMoving actually changes — every idle troop
+    // would otherwise get a dirty-marked component every single tick for no reason.
+    private void SetIsMoving(ECS ecs, ulong id, ref MovableComponent mov, bool moving)
+    {
+        if (mov.IsMoving == moving) return;
+        mov.IsMoving = moving;
+        ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
     }
 
     // Applies each requested (entity, destination) pair as a player move order,

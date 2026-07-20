@@ -178,7 +178,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
             Vector3 worldPos = new Vector3(pos.X, height, pos.Y);
 
             bool isMoving = _movableStore != null && _movableStore.HasComponent(entityId)
-                && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+                && _movableStore.GetComponent(entityId).IsMoving;
             bool teleported = _movableStore != null && _movableStore.HasComponent(entityId)
                 && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
 
