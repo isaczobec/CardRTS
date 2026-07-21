@@ -14,6 +14,7 @@ public static class CardRegistry
         { CardType.SpeedBoost, new SpeedBoostCard() },
         { CardType.Blink, new BlinkCard() },
         { CardType.IronKnight, new IronKnightCard() },
+        { CardType.IceMan, new IceManCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

@@ -4309,6 +4309,10 @@ MonoBehaviour:
     renderer: {fileID: 1036075495}
   - type: 19
     renderer: {fileID: 506840437}
+  - type: 21
+    renderer: {fileID: 1125712215}
+  - type: 20
+    renderer: {fileID: 1934511543}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -5385,7 +5389,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 76.82373, y: 18.69873}
+  m_AnchoredPosition: {x: 76.82373, y: 18.698975}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &867664181
@@ -7420,6 +7424,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Padding: {x: -8, y: -5, z: -8, w: -5}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &1125712213
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1125712214}
+  - component: {fileID: 1125712215}
+  m_Layer: 0
+  m_Name: IceBoltRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1125712214
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1125712213}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1125712215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1125712213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22e9ad967d6af0d4e95983d697271995, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
+  _prefab: {fileID: 8077043507155612275, guid: 9cb123a7a365ad7478fd59f0c057e88a, type: 3}
+  _rotationDegreesPerSecond: 1080
+  _groundOffset: 2
+  _launchSoundName: 
+  _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &1131093861
 GameObject:
   m_ObjectHideFlags: 0
@@ -8278,6 +8331,8 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: 9dc2afea966cee64a9cebc92fbbe0e92, type: 3}
   - name: Ranger
     prefab: {fileID: 6472282922783299243, guid: 2d6c103e7fd22454389a58391c254984, type: 3}
+  - name: IceMan
+    prefab: {fileID: 6472282922783299243, guid: 494c48cbb01bd9b4c95202304c2501ea, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -8522,6 +8577,7 @@ Transform:
   m_Children:
   - {fileID: 1009830072}
   - {fileID: 2130503548}
+  - {fileID: 1675926715}
   m_Father: {fileID: 1889187866}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1244099537
@@ -9517,7 +9573,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1, y: -12}
+  m_AnchoredPosition: {x: -1, y: -12.000122}
   m_SizeDelta: {x: -18.968, y: -13.929443}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1419371009
@@ -9723,8 +9779,10 @@ Transform:
   - {fileID: 1631565995}
   - {fileID: 1671680053}
   - {fileID: 1036075494}
+  - {fileID: 1934511542}
   - {fileID: 509328319}
   - {fileID: 982359450}
+  - {fileID: 1125712214}
   - {fileID: 226858188}
   - {fileID: 506840436}
   - {fileID: 920356594}
@@ -12218,6 +12276,52 @@ MonoBehaviour:
   _attackAnimationTimeUntilImpact: 0.61
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
+--- !u!1 &1675926714
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1675926715}
+  - component: {fileID: 1675926716}
+  m_Layer: 0
+  m_Name: ChilledOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1675926715
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1675926714}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1675926716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1675926714}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2dfa99c6b7de61499a18e52b14d46d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
+  _material: {fileID: 2100000, guid: 37ddf28d4ed27fe44bfcbd75482efb49, type: 2}
+  _key: ChilledOverlay
 --- !u!1 &1699900523
 GameObject:
   m_ObjectHideFlags: 0
@@ -13729,6 +13833,69 @@ MonoBehaviour:
   _targetIndicatorPrefab: {fileID: 4699926547919323133, guid: 6e0ca42641be46e4f8821aecd5679848, type: 3}
   _rangeCircleColor: {r: 0, g: 1, b: 0, a: 0.25}
   _cursorCircleColor: {r: 1, g: 0, b: 0, a: 0.25}
+--- !u!1 &1934511541
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1934511542}
+  - component: {fileID: 1934511543}
+  m_Layer: 0
+  m_Name: IceManRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1934511542
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1934511541}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1934511543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1934511541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 494c48cbb01bd9b4c95202304c2501ea, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 1.167
+    TimeUntilImpact: 0.4
+  - TriggerName: Attack2
+    Duration: 1.167
+    TimeUntilImpact: 0.4
+  _selectionMode: 0
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: DrawArrow
+  _attackWindupFinishedSoundName: ShootArrow
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: 
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _runAnimationSpeedStat: 70
+  _speedParamUpdateInterval: 0.1
 --- !u!1 &1939733692
 GameObject:
   m_ObjectHideFlags: 0

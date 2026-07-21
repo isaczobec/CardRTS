@@ -72,11 +72,19 @@ public static class ProjectilePool
     // entities for a troop. Returns the id of the first one — pass it as
     // ProjectileOwnerComponent.NextProjectileId when adding that component to the owner
     // (the caller's job, since only it knows whether the owner already has one).
-    public static ulong CreatePool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond)
+    // renderableType defaults to the ordinary SeekingProjectile visual; pass a different one
+    // for a visually distinct pool (e.g. IceManCard's chilling shots). onHit is null by
+    // default (no on-hit effect beyond the normal DamageRequest); pass a
+    // ProjectileOnHitComponent for a pool whose hits should also apply one (see
+    // ProjectileOnHitSystem).
+    public static ulong CreatePool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond,
+        RenderableType renderableType = RenderableType.SeekingProjectile, ProjectileOnHitComponent? onHit = null)
         => CreatePoolRing(ecs, ownerId, count, (e, id) =>
         {
-            e.AddComponent(id, new RenderableComponent { Type = RenderableType.SeekingProjectile });
+            e.AddComponent(id, new RenderableComponent { Type = renderableType });
             e.AddComponent(id, new SeekingProjectileComponent { Speed = speedMilliTilesPerSecond });
+            if (onHit.HasValue)
+                e.AddComponent(id, onHit.Value);
         });
 
     // Same pooling scheme as CreatePool, but for skillshot (straight-line, radius-hit,

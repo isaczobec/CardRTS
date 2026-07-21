@@ -98,7 +98,7 @@ public static class SkillshotProjectileSystem
             ref HealthComponent targetHealth = ref healthStore.GetComponent(targetId);
             if (targetHealth.HitboxImmunityTicksRemaining > 0) continue;
 
-            ecs.Requests.CreateRequest(new DamageRequest(targetId, damage) { DealerEntityId = ownerId });
+            ecs.Requests.CreateRequest(new ProjectileHitRequest(projectileId, ownerId, targetId, damage));
 
             targetHealth.HitboxImmunityTicksRemaining = hitboxImmunityTicksToGive;
             ecs.Delta.MarkComponentDirty(targetId, typeof(HealthComponent));

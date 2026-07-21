@@ -8,6 +8,7 @@ public enum CardType : byte
     SpeedBoost = 5,
     Blink = 6,
     IronKnight = 7,
+    IceMan = 8,
 }
 
 public enum CardLocation : byte

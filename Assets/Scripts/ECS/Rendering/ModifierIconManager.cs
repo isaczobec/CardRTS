@@ -28,6 +28,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         = new Dictionary<ModifierID, Func<ECS, ulong, (string name, string imageName, string description)>>
     {
         { ModifierID.StatChange, ResolveStatChange },
+        { ModifierID.Chilled, ResolveChilled },
     };
 
     private ECS _ecs;
@@ -240,6 +241,20 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         string imageName = $"{compactStat}{(isBuff ? "Boost" : "Reduction")}";
         string description = $"{FormatBonus(singleRatio, singleAdditive)} {singleStat}.";
         return (name, imageName, description);
+    }
+
+    // StatModifierComponent-carrying modifier from a ProjectileOnHitSystem Slow effect —
+    // states the percentage slow directly rather than the generic Stat Change wording,
+    // since every Chilled modifier is always exactly a Speed reduction.
+    private static (string name, string imageName, string description) ResolveChilled(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<StatModifierComponent> statStore = ecs.GetComponentStore<StatModifierComponent>();
+        float speedRatioBonus = statStore != null && statStore.HasComponent(modifierEntityId)
+            ? statStore.GetComponent(modifierEntityId).SpeedRatioBonus
+            : 0f;
+
+        int percent = Mathf.RoundToInt(-speedRatioBonus * 100f);
+        return ("Chilled", "Chilled", $"Movement speed reduced by {percent}%.");
     }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)

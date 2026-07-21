@@ -22,6 +22,8 @@ public enum RenderableType : byte
     IronKnight = 17,
     Ranger = 18,
     FastSkillshotProjectile = 19,
+    IceMan = 20,
+    IceProjectile = 21,
 }
 
 public struct RenderableComponent : IComponent
