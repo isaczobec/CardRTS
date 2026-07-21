@@ -85,6 +85,21 @@ public class BasicRangedAISystem : ISystem
         PositionComponent pos = _posStore.GetComponent(id);
         Vector2 myPos = new Vector2(pos.X, pos.Y);
 
+        // A fresh move order abandons whatever this troop was chasing/attacking, no matter
+        // which state below it's currently sitting in (mid-windup, post-shot wind-down,
+        // mid-chase) — clearing LastPathTargetId here, before any of those early-return
+        // branches, covers all of them in one place. Without this, a move order landing
+        // during e.g. WindDownTicksRemaining's return (right below) would never reach the
+        // activeTarget==0 -> Stop/GoHome path that normally clears it, leaving it stranded at
+        // the old target until Tick's LastPathTargetId fallback (see its own comment) picks it
+        // back up the instant playerDestinationSet clears at the new destination — walking
+        // back to re-attack a target the player told it to abandon.
+        if (_movedThisTick.Contains(id) && ai.LastPathTargetId != 0)
+        {
+            ai.LastPathTargetId = 0;
+            _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
+        }
+
         // Committed to a windup — ignore everything else until it resolves, unless a
         // fresh move order just came in for this troop: like an attack-move cancel in
         // League of Legends, that interrupts the windup immediately (no shot fired, no
