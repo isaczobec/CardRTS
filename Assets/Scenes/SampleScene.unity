@@ -1466,7 +1466,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillshotProjectileRenderer
   _prefab: {fileID: 8077043507155612275, guid: 739532cd11a5ae043bd61e1bd753b6a6, type: 3}
   _rotationDegreesPerSecond: 1080
-  _groundOffset: 1
+  _groundOffset: 2
   _launchSoundName: 
   _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &231996844
@@ -3203,7 +3203,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillshotProjectileRenderer
   _prefab: {fileID: 8077043507155612275, guid: 807e73bf94c52314e92a84acbf9a5fa6, type: 3}
   _rotationDegreesPerSecond: 1080
-  _groundOffset: 1
+  _groundOffset: 2
   _launchSoundName: 
   _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &507829005
@@ -3333,7 +3333,7 @@ MonoBehaviour:
   _deathSoundName: DefaultDeath
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
-  _runAnimationSpeedStat: 7
+  _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &541862059
 GameObject:
@@ -6080,7 +6080,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
   _prefab: {fileID: 8077043507155612275, guid: e563abb8e20cefe4094ab79ce9e28cce, type: 3}
   _rotationDegreesPerSecond: 1080
-  _groundOffset: 0
+  _groundOffset: 2
   _launchSoundName: 
   _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &987012150
@@ -6368,7 +6368,7 @@ GameObject:
   - component: {fileID: 1009830072}
   - component: {fileID: 1009830073}
   m_Layer: 0
-  m_Name: RenderableModifiers
+  m_Name: SpeedBoostPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6382,12 +6382,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1009830071}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1889187866}
+  m_Father: {fileID: 1244099536}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1009830073
 MonoBehaviour:
@@ -6886,7 +6886,7 @@ MonoBehaviour:
   _dealDamageSoundName: 
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
-  _runAnimationSpeedStat: 7
+  _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &1054813993
 GameObject:
@@ -8519,7 +8519,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1009830072}
+  - {fileID: 2130503548}
   m_Father: {fileID: 1889187866}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1244099537
@@ -8537,6 +8539,8 @@ MonoBehaviour:
   _rendererEntries:
   - type: 0
     renderer: {fileID: 1009830073}
+  - type: 0
+    renderer: {fileID: 2130503549}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -9109,7 +9113,7 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
-  _runAnimationSpeedStat: 2.73
+  _runAnimationSpeedStat: 27.3
   _speedParamUpdateInterval: 0.25
 --- !u!114 &1373427742
 MonoBehaviour:
@@ -10652,6 +10656,51 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_EffectDistance: {x: 3, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!1 &1526962428
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1526962429}
+  - component: {fileID: 1526962430}
+  m_Layer: 0
+  m_Name: OverlayMaterialManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1526962429
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1526962428}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1526962430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1526962428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce62ead4d3430c6469ecf4fd06d2eba4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialManager
+  _renderableManager: {fileID: 695582579}
 --- !u!1 &1537083954
 GameObject:
   m_ObjectHideFlags: 0
@@ -10910,7 +10959,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22.000244, y: 11}
+  m_AnchoredPosition: {x: -22.000122, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567
@@ -11851,7 +11900,7 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
-  _runAnimationSpeedStat: 7
+  _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.25
 --- !u!1 &1656309795
 GameObject:
@@ -12167,7 +12216,7 @@ MonoBehaviour:
   _deathSoundName: DefaultDeath
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
-  _runAnimationSpeedStat: 7
+  _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &1699900523
 GameObject:
@@ -13492,13 +13541,13 @@ Transform:
   - {fileID: 740374362}
   - {fileID: 1985718169}
   - {fileID: 1244099536}
-  - {fileID: 1009830072}
   - {fileID: 1311858400}
   - {fileID: 1354889545}
   - {fileID: 1074914390}
   - {fileID: 64686699}
   - {fileID: 1466125338}
   - {fileID: 455464678}
+  - {fileID: 1526962429}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1914037910
@@ -13553,7 +13602,7 @@ MonoBehaviour:
   _deathSoundName: DefaultDeath
   _attackAnimationDuration: 1.0666667
   _attackAnimationTimeUntilImpact: 0.61
-  _runAnimationSpeedStat: 7
+  _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &1919728739
 GameObject:
@@ -14973,6 +15022,52 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
   m_Padding: {x: -8, y: -5, z: -8, w: -5}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &2130503547
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2130503548}
+  - component: {fileID: 2130503549}
+  m_Layer: 0
+  m_Name: SpeedBoostOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2130503548
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2130503547}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2130503549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2130503547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2dfa99c6b7de61499a18e52b14d46d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
+  _material: {fileID: 2100000, guid: 02dc3c0f2885bcd4fb8906e409baae3b, type: 2}
+  _key: SpeedboostOverlay
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

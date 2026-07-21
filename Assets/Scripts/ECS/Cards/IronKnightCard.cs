@@ -11,7 +11,7 @@ public class IronKnightCard : SpawnAtPointCard
     // Slightly higher than BasicMeleeTroopCard.MaxHealth (250).
     private const int MaxHealth = 300;
     // Somewhat slower than BasicMeleeTroopCard.Speed (5).
-    private const int Speed = 4;
+    private const int Speed = 40;
     private const int Range = 5;
     // Higher than BasicMeleeTroopCard.Armor (20).
     private const int Armor = 40;

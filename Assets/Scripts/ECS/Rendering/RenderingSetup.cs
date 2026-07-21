@@ -39,6 +39,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         ShopUIManager.instance.Initialize();
         UpgradeShopUIManager.instance.Initialize();
         AIModeUI.instance.Initialize();
+        OverlayMaterialManager.instance.Initialize();
 
         foreach (PeriodicDamageReductionProcRenderer renderer in _damageReductionProcRenderers)
             renderer.Initialize(ecs);

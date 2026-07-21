@@ -177,7 +177,7 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
 
     private bool IsMoving(ulong entityId)
         => _movableStore != null && _movableStore.HasComponent(entityId)
-            && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+            && _movableStore.GetComponent(entityId).IsMoving;
 
     private static ushort LocalPlayerId()
         => NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;

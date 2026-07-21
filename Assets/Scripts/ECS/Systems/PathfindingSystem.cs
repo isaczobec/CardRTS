@@ -23,7 +23,7 @@ public class PathfindingSystem : ISystem
     private readonly Dictionary<ulong, CachedPath> _entityIdsToPaths = new Dictionary<ulong, CachedPath>();
 
     private const float ArrivalRadius = 0.05f;
-    private const int DefaultSpeed = 10;
+    private const int DefaultSpeed = 100;
 
     public void Setup(ECS ecs) { }
 
@@ -108,7 +108,9 @@ public class PathfindingSystem : ISystem
             }
 
             int speed = StatsQuery.GetSpeed(ecs, id, DefaultSpeed);
-            float step = speed * TickManager.TickInterval;
+            // Speed stat values are 10x actual world-units/second (see StatsQuery.
+            // SpeedScale) — purely a tuning-resolution scale, not a real speed change.
+            float step = (speed / StatsQuery.SpeedScale) * TickManager.TickInterval;
             Vector2 nextPos = Vector2.MoveTowards(currentPos, path[0], step);
             pos.X = nextPos.x;
             pos.Y = nextPos.y;

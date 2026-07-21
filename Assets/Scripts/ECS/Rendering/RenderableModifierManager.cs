@@ -11,7 +11,11 @@ using UnityEngine;
 /// existing visual (a 'first-best' match — no new visual is created for the replacement),
 /// and the visual is only torn down once every modifier entity currently mapped to that
 /// (type, target) is gone. Call Initialize(ecs) before use, then Register() for each
-/// RenderableModifierType you want handled.
+/// RenderableModifierType you want handled. More than one renderer can be registered for the
+/// same RenderableModifierType — e.g. a status effect needing both an overlay-material
+/// renderer and a spawned-prefab renderer, without writing a single combined script for it —
+/// all of them are notified of the same add/remove/update events (and share the same
+/// reference-counted target set) for that type.
 /// </summary>
 public class RenderableModifierManager : MonoBehaviour
 {
@@ -26,7 +30,7 @@ public class RenderableModifierManager : MonoBehaviour
 
     private ECS _ecs;
 
-    private readonly Dictionary<RenderableModifierType, IModifierRenderer> _renderers = new();
+    private readonly Dictionary<RenderableModifierType, List<IModifierRenderer>> _renderers = new();
     private readonly Dictionary<RenderableModifierType, HashSet<ulong>> _trackedModifierIds = new();
     private readonly Dictionary<RenderableModifierType, HashSet<ulong>> _currentModifierIds = new();
     private readonly Dictionary<RenderableModifierType, Dictionary<ulong, int>> _targetRefCounts = new();
@@ -63,24 +67,31 @@ public class RenderableModifierManager : MonoBehaviour
         if (modifierStore == null || !modifierStore.HasComponent(e.EntityId)) return;
 
         RenderableModifierType type = renderableStore.GetComponent(e.EntityId).Type;
-        if (!_renderers.TryGetValue(type, out IModifierRenderer renderer)) return;
+        if (!_renderers.TryGetValue(type, out List<IModifierRenderer> renderers)) return;
 
         ulong targetEntityId = modifierStore.GetComponent(e.EntityId).TargetEntityId;
-        renderer.OnEntityActivated(targetEntityId);
+        foreach (IModifierRenderer renderer in renderers)
+            renderer.OnEntityActivated(targetEntityId);
     }
 
     /// <summary>
     /// Registers a renderer to handle all modifier entities whose RenderableModifierComponent.Type
-    /// matches type. Replaces any previously registered renderer for that type.
+    /// matches type, alongside any other renderer(s) already registered for that same type
+    /// (each call adds one more rather than replacing).
     /// </summary>
     public void Register(RenderableModifierType type, IModifierRenderer renderer)
     {
-        _renderers[type]        = renderer;
-        _trackedModifierIds[type] = new HashSet<ulong>();
-        _currentModifierIds[type] = new HashSet<ulong>();
-        _targetRefCounts[type]    = new Dictionary<ulong, int>();
-        _targetLists[type]        = new List<ulong>();
+        if (!_renderers.TryGetValue(type, out List<IModifierRenderer> renderers))
+        {
+            renderers = new List<IModifierRenderer>();
+            _renderers[type]          = renderers;
+            _trackedModifierIds[type] = new HashSet<ulong>();
+            _currentModifierIds[type] = new HashSet<ulong>();
+            _targetRefCounts[type]    = new Dictionary<ulong, int>();
+            _targetLists[type]        = new List<ulong>();
+        }
 
+        renderers.Add(renderer);
         renderer.Initialize(_ecs);
     }
 
@@ -106,8 +117,9 @@ public class RenderableModifierManager : MonoBehaviour
         });
 
         // Diff each type's modifier-entity-ids against the previous frame, translate to
-        // target-entity-id add/remove via reference counting, then update.
-        foreach (var (type, renderer) in _renderers)
+        // target-entity-id add/remove via reference counting, then update. All renderers
+        // registered for a type share this same diff/ref-count pass and see identical events.
+        foreach (var (type, renderers) in _renderers)
         {
             HashSet<ulong> tracked = _trackedModifierIds[type];
             HashSet<ulong> current = _currentModifierIds[type];
@@ -129,7 +141,8 @@ public class RenderableModifierManager : MonoBehaviour
                 refCounts.TryGetValue(targetId, out int count);
                 refCounts[targetId] = count + 1;
                 if (count == 0)
-                    renderer.OnEntityAdded(targetId);
+                    foreach (IModifierRenderer renderer in renderers)
+                        renderer.OnEntityAdded(targetId);
             }
 
             foreach (ulong modifierId in _toRemove)
@@ -142,7 +155,8 @@ public class RenderableModifierManager : MonoBehaviour
                 if (count <= 0)
                 {
                     refCounts.Remove(targetId);
-                    renderer.OnEntityRemoved(targetId);
+                    foreach (IModifierRenderer renderer in renderers)
+                        renderer.OnEntityRemoved(targetId);
                 }
                 else
                 {
@@ -156,7 +170,9 @@ public class RenderableModifierManager : MonoBehaviour
             List<ulong> targetList = _targetLists[type];
             targetList.Clear();
             targetList.AddRange(refCounts.Keys);
-            renderer.UpdateRenderable(targetList);
+
+            foreach (IModifierRenderer renderer in renderers)
+                renderer.UpdateRenderable(targetList);
         }
     }
 }

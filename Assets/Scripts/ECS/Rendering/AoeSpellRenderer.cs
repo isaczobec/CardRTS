@@ -114,6 +114,9 @@ public class AoeSpellRenderer : MonoBehaviour, IComponentRenderer
         }
     }
 
+    // No renderers to expose — see IComponentRenderer.GetRenderers.
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId) => null;
+
     private static Vector3 WorldPositionFor(PositionComponent pos)
     {
         float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);

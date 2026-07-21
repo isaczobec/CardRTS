@@ -103,14 +103,14 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     // MovementSpeed param is set to (actual Speed stat) / this, so the run cycle plays back
     // at its original, non-sliding pace for a troop with exactly this Speed, and scales up/
     // down for anything faster/slower (e.g. from a StatModifierComponent buff/debuff).
-    [SerializeField] private float _runAnimationSpeedStat = 5f;
+    [SerializeField] private float _runAnimationSpeedStat = 50f;
 
     // How often (seconds) to recompute/set MovementSpeed — a troop's Speed stat only
     // changes when a modifier is applied/expires, not every frame, so this doesn't need
     // per-frame precision.
     [SerializeField] private float _speedParamUpdateInterval = 0.25f;
 
-    private const int DefaultSpeed = 10;
+    private const int DefaultSpeed = 100;
 
     private static readonly int DieTrigger = Animator.StringToHash("Die");
     private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
@@ -302,6 +302,9 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
         go.name = $"Troop_{entityId}";
         _objects[entityId] = go;
     }
+
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId)
+        => _objects.TryGetValue(entityId, out BasicTroopGameObject go) ? go.Renderers : null;
 
     public void UpdateRenderable(List<ulong> entityIds)
     {

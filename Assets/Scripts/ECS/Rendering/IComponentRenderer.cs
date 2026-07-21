@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// Handles the visual representation of entities that carry a specific RenderableType.
@@ -23,4 +24,13 @@ public interface IComponentRenderer
     /// Called every Unity Update with the full current list of entities belonging to this renderer.
     /// </summary>
     void UpdateRenderable(List<ulong> entityIds);
+
+    /// <summary>
+    /// Optional — every Renderer (MeshRenderer, SkinnedMeshRenderer, ...) that make up
+    /// entityId's visual, for anything that wants to layer extra overlay materials onto it
+    /// (see OverlayMaterialManager) — e.g. a multi-mesh or rigged prefab can expose more
+    /// than one. Null if this renderer's visuals don't expose any (most non-troop
+    /// renderers).
+    /// </summary>
+    IReadOnlyList<Renderer> GetRenderers(ulong entityId);
 }

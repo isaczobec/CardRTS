@@ -15,7 +15,7 @@ public static class SpawnTroopSystem
     // Scaled to match BasicMeleeTroopCard's rebalance baseline (3x health, 2.8x damage,
     // then damage 1.2x again to compensate for 20 armor under ArmorMitigationSystem).
     private const int DefaultMaxHealth = 300;
-    private const int DefaultSpeed = 10;
+    private const int DefaultSpeed = 100;
     private const int DefaultArmor = 20;
     private const int DefaultDamage = 34;
     private const int DefaultSpellResist = 0;

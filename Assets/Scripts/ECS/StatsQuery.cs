@@ -10,6 +10,16 @@ using UnityEngine;
 // other numeric value just because a modifier happens to be targeting it.
 public static class StatsQuery
 {
+    // The Speed stat is expressed in multiples of this relative to actual world-units-per-
+    // second movement — purely to give card authors finer-grained numbers to tune with
+    // (e.g. 50 instead of 5), not to actually change how fast anything moves. Only
+    // PathfindingSystem's own step-distance calculation needs to divide a raw Speed stat by
+    // this to get real movement; everywhere else that reads Speed (e.g. the troop
+    // renderers' MovementSpeed animator param) only ever computes a RATIO between two Speed
+    // values, which this scale cancels out of automatically — see PathfindingSystem's own
+    // comment on why only it needs to reference this constant.
+    public const float SpeedScale = 10f;
+
     public static int GetMaxHealth(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetMaxHealthRequest>(ecs, entityId, defaultValue, s => s.MaxHealth);
     public static int GetSpeed(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetSpeedRequest>(ecs, entityId, defaultValue, s => s.Speed);
     public static int GetRange(ECS ecs, ulong entityId, int defaultValue) => Resolve<GetRangeRequest>(ecs, entityId, defaultValue, s => s.Range);

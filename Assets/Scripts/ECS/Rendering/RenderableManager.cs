@@ -4,6 +4,10 @@ using UnityEngine;
 /// <summary>
 /// Drives IComponentRenderer instances by diffing the RenderableComponent store each frame.
 /// Call Initialize(ecs) before use, then Register() for each RenderableType you want handled.
+/// More than one renderer can be registered for the same RenderableType — e.g. a status
+/// effect needing both an overlay-material renderer and a spawned-prefab renderer, without
+/// writing a single combined script for it — all of them are notified of the same
+/// add/remove/update events for that type.
 /// </summary>
 public class RenderableManager : MonoBehaviour
 {
@@ -18,10 +22,10 @@ public class RenderableManager : MonoBehaviour
 
     private ECS _ecs;
 
-    private readonly Dictionary<RenderableType, IComponentRenderer> _renderers  = new();
-    private readonly Dictionary<RenderableType, HashSet<ulong>>     _tracked    = new();
-    private readonly Dictionary<RenderableType, HashSet<ulong>>     _current    = new();
-    private readonly Dictionary<RenderableType, List<ulong>>        _entityLists = new();
+    private readonly Dictionary<RenderableType, List<IComponentRenderer>> _renderers  = new();
+    private readonly Dictionary<RenderableType, HashSet<ulong>>           _tracked    = new();
+    private readonly Dictionary<RenderableType, HashSet<ulong>>           _current    = new();
+    private readonly Dictionary<RenderableType, List<ulong>>              _entityLists = new();
 
     // Scratch lists reused every frame to avoid per-frame allocation.
     private readonly List<ulong> _toAdd    = new();
@@ -45,22 +49,47 @@ public class RenderableManager : MonoBehaviour
         if (store == null || !store.HasComponent(e.EntityId)) return;
 
         RenderableType type = store.GetComponent(e.EntityId).Type;
-        if (_renderers.TryGetValue(type, out IComponentRenderer renderer))
-            renderer.OnEntityActivated(e.EntityId);
+        if (_renderers.TryGetValue(type, out List<IComponentRenderer> renderers))
+            foreach (IComponentRenderer renderer in renderers)
+                renderer.OnEntityActivated(e.EntityId);
     }
 
     /// <summary>
-    /// Registers a renderer to handle all entities whose RenderableComponent.Type matches type.
-    /// Replaces any previously registered renderer for that type.
+    /// Registers a renderer to handle all entities whose RenderableComponent.Type matches
+    /// type, alongside any other renderer(s) already registered for that same type (each
+    /// call adds one more rather than replacing).
     /// </summary>
     public void Register(RenderableType type, IComponentRenderer renderer)
     {
-        _renderers[type]    = renderer;
-        _tracked[type]      = new HashSet<ulong>();
-        _current[type]      = new HashSet<ulong>();
-        _entityLists[type]  = new List<ulong>();
+        if (!_renderers.TryGetValue(type, out List<IComponentRenderer> renderers))
+        {
+            renderers = new List<IComponentRenderer>();
+            _renderers[type]    = renderers;
+            _tracked[type]      = new HashSet<ulong>();
+            _current[type]      = new HashSet<ulong>();
+            _entityLists[type]  = new List<ulong>();
+        }
 
+        renderers.Add(renderer);
         renderer.Initialize(_ecs);
+    }
+
+    // Finds whichever registered renderer(s) currently own entityId and returns the first
+    // non-null/non-empty renderer list among them (see IComponentRenderer.GetRenderers) —
+    // null if no renderer currently tracks this entity, or none of them expose any.
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId)
+    {
+        foreach (var (type, current) in _current)
+        {
+            if (!current.Contains(entityId) || !_renderers.TryGetValue(type, out List<IComponentRenderer> renderers)) continue;
+
+            foreach (IComponentRenderer renderer in renderers)
+            {
+                IReadOnlyList<Renderer> result = renderer.GetRenderers(entityId);
+                if (result != null && result.Count > 0) return result;
+            }
+        }
+        return null;
     }
 
     void Update()
@@ -86,8 +115,9 @@ public class RenderableManager : MonoBehaviour
             _entityLists[type].Add(entityId);
         });
 
-        // Diff each type against the previous frame, fire callbacks, then update.
-        foreach (var (type, renderer) in _renderers)
+        // Diff each type against the previous frame, fire callbacks, then update — every
+        // renderer registered for a type sees the exact same add/remove/update events.
+        foreach (var (type, renderers) in _renderers)
         {
             HashSet<ulong> tracked = _tracked[type];
             HashSet<ulong> current = _current[type];
@@ -100,13 +130,17 @@ public class RenderableManager : MonoBehaviour
             foreach (ulong id in tracked)
                 if (!current.Contains(id)) _toRemove.Add(id);
 
-            foreach (ulong id in _toAdd)    renderer.OnEntityAdded(id);
-            foreach (ulong id in _toRemove) renderer.OnEntityRemoved(id);
+            foreach (IComponentRenderer renderer in renderers)
+            {
+                foreach (ulong id in _toAdd)    renderer.OnEntityAdded(id);
+                foreach (ulong id in _toRemove) renderer.OnEntityRemoved(id);
+            }
 
             tracked.Clear();
             tracked.UnionWith(current);
 
-            renderer.UpdateRenderable(_entityLists[type]);
+            foreach (IComponentRenderer renderer in renderers)
+                renderer.UpdateRenderable(_entityLists[type]);
         }
     }
 }

@@ -7,7 +7,7 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     // 2.8x damage vs. the old 100 HP / 10 damage numbers, then damage 1.2x again to
     // compensate for 20 armor under ArmorMitigationSystem).
     private const int MaxHealth = 250;
-    private const int Speed = 6;
+    private const int Speed = 60;
     private const int Range = 19;
     private const int Armor = 20;
     private const int Damage = 34;

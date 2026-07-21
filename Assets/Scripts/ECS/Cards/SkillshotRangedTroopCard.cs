@@ -14,9 +14,9 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     // See BasicMeleeTroopCard for the rebalance baseline this is scaled from (3x health,
     // 2.8x damage vs. the old 100 HP / 8 damage numbers, then damage 1.2x again to
     // compensate for 20 armor under ArmorMitigationSystem).
-    private const int MaxHealth = 200;
+    private const int MaxHealth = 150;
     // Matches BasicMeleeTroopCard's own Speed.
-    private const int Speed = 5;
+    private const int Speed = 50;
     // 0.4x the previous 40 (which was itself 2.5x the original 16) — nets out to the
     // original 16.
     private const int Range = 16;

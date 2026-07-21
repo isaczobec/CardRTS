@@ -84,6 +84,9 @@ public class BasicBuildingRenderer : MonoBehaviour, IComponentRenderer
     // Buildings don't move — nothing to do per frame.
     public void UpdateRenderable(List<ulong> entityIds) { }
 
+    // No renderers to expose — see IComponentRenderer.GetRenderers.
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId) => null;
+
     private GameObject ChoosePrefab()
     {
         if (_prefabVariants != null && _prefabVariants.Length > 0)

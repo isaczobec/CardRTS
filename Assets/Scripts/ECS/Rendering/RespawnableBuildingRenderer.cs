@@ -137,6 +137,9 @@ public class RespawnableBuildingRenderer : MonoBehaviour, IComponentRenderer
 
     public void UpdateRenderable(List<ulong> _) { }
 
+    // No renderers to expose — see IComponentRenderer.GetRenderers.
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId) => null;
+
     private static GameObject ChooseVariant(GameObject[] variants, int index, GameObject fallback)
         => variants != null && variants.Length > 0 ? variants[index % variants.Length] : fallback;
 

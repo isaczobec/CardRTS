@@ -46,6 +46,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeGameObject
   _animator: {fileID: 1817391941342798004}
+  _renderers:
+  - {fileID: 7830350401364337473}
+  - {fileID: 4313408216182283064}
 --- !u!1001 &4313408216184177500
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -119,6 +122,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 153d0659a475a114c9c22b7d7dcd5ab2, type: 3}
+--- !u!23 &4313408216182283064 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2300004, guid: 153d0659a475a114c9c22b7d7dcd5ab2, type: 3}
+  m_PrefabInstance: {fileID: 4313408216184177500}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4313408216184576474 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400006, guid: 153d0659a475a114c9c22b7d7dcd5ab2, type: 3}
@@ -225,5 +233,10 @@ Transform:
 --- !u!4 &5901849890682462957 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1852576806548013000, guid: 63d384328b5c018489e92fec8005a827, type: 3}
+  m_PrefabInstance: {fileID: 5211291484097453349}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &7830350401364337473 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2664098864995057252, guid: 63d384328b5c018489e92fec8005a827, type: 3}
   m_PrefabInstance: {fileID: 5211291484097453349}
   m_PrefabAsset: {fileID: 0}

@@ -11,7 +11,7 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     // health, 2.8x damage vs. the old 100 HP / 10 damage baseline, then damage further
     // scaled 1.2x to compensate for 20 armor).
     private const int MaxHealth = 250;
-    private const int Speed = 5;
+    private const int Speed = 50;
     private const int Range = 5;
     private const int Armor = 20;
     private const int Damage = 34;

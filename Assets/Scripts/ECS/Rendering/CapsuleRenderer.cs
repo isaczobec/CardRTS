@@ -73,4 +73,6 @@ public class CapsuleRenderer : IComponentRenderer
             go.transform.position = new Vector3(pos.X, h + GroundOffset, pos.Y);
         }
     }
+
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId) => null;
 }

@@ -97,6 +97,9 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
     // hidden directly off ProjectileActivatedEvent/ProjectileDeactivatedEvent instead.
     public void OnEntityActivated(ulong entityId) { }
 
+    // No renderers to expose — see IComponentRenderer.GetRenderers.
+    public IReadOnlyList<Renderer> GetRenderers(ulong entityId) => null;
+
     public void UpdateRenderable(List<ulong> entityIds)
     {
         var posStore = _ecs?.GetComponentStore<PositionComponent>();

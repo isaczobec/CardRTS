@@ -867,7 +867,7 @@ public class SelectionManager : Singleton<SelectionManager>
 
     private bool IsMoving(ulong entityId)
         => _movableStore != null && _movableStore.HasComponent(entityId)
-            && _movableStore.GetComponent(entityId).currentMovementMode != MovementMode.NotMoving;
+            && _movableStore.GetComponent(entityId).IsMoving;
 
     private bool IsTeleported(ulong entityId)
         => _movableStore != null && _movableStore.HasComponent(entityId)
