@@ -2,6 +2,7 @@ public enum RenderableModifierType : byte
 {
     SpeedBoost = 0,
     Chilled = 1,
+    Frozen = 2,
 }
 
 // Attached to a modifier entity (alongside its ModifierComponent) to say which visual

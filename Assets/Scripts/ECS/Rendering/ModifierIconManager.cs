@@ -29,6 +29,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     {
         { ModifierID.StatChange, ResolveStatChange },
         { ModifierID.Chilled, ResolveChilled },
+        { ModifierID.Frozen, ResolveFrozen },
     };
 
     private ECS _ecs;
@@ -256,6 +257,11 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         int percent = Mathf.RoundToInt(-speedRatioBonus * 100f);
         return ("Chilled", "Chilled", $"Movement speed reduced by {percent}%.");
     }
+
+    // StunnedComponent-carrying modifier from AbilityManager's Ice Nova ability — no
+    // payload to read (StunnedComponent has no fields), so the name/description are fixed.
+    private static (string name, string imageName, string description) ResolveFrozen(ECS ecs, ulong modifierEntityId)
+        => ("Frozen", "Frozen", "This troop is frozen solid and cannot move or act.");
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {

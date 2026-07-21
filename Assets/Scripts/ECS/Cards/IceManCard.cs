@@ -3,20 +3,22 @@ using System.Collections.Generic;
 
 // Ranged troop modeled off SkillshotRangedTroopCard's own baseline stats, but simpler: a
 // single seeking/homing pool (BasicRangedAISystem auto-attack only, same shape as
-// SkillshotRangedTroopCard's own primary pool) and no abilities at all to begin with. Its
-// projectiles carry a ProjectileOnHitComponent (EffectType = Slow), so every hit also
-// applies a Chilled modifier (ModifierComponent + StatModifierComponent, ModifierID.Chilled
-// — see ProjectileOnHitSystem.ApplySlow) alongside the normal DamageRequest.
+// SkillshotRangedTroopCard's own primary pool). Its projectiles carry a
+// ProjectileOnHitComponent (EffectType = Slow), so every hit also applies a Chilled
+// modifier (ModifierComponent + StatModifierComponent, ModifierID.Chilled — see
+// ProjectileOnHitSystem.ApplySlow) alongside the normal DamageRequest. Also equips
+// AbilityManager's Ice Nova ability (damages every chilled enemy within range), which pairs
+// with the slow this troop already applies on hit.
 public class IceManCard : SpawnAtPointCard
 {
     // See BasicMeleeTroopCard for the rebalance baseline this is scaled from — mirrors
     // SkillshotRangedTroopCard's own current values.
-    private const int MaxHealth = 150;
+    private const int MaxHealth = 220;
     private const int Speed = 40;
-    private const int Range = 16;
+    private const int Range = 13;
     private const int Armor = 20;
-    private const int Damage = 26;
-    private const float AttackSpeedMilliseconds = 900f;
+    private const int Damage = 24;
+    private const float AttackSpeedMilliseconds = 450f;
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
@@ -30,8 +32,12 @@ public class IceManCard : SpawnAtPointCard
 
     // Chilled slow applied on every hit (see ProjectileOnHitSystem.ApplySlow) — judgment
     // calls, easy to retune.
-    private const float SlowRatio = -0.3f;
-    private const float SlowDurationSeconds = 3f;
+    private const float SlowRatio = -0.35f;
+    private const float SlowDurationSeconds = 4f;
+
+    // Cooldown length lives on AbilityComponent rather than on Ability itself, so different
+    // troops could equip the same ability with different cooldowns.
+    private const float IceNovaCooldownSeconds = 8f;
 
     private const float MaxDistanceFromBuilding = 20f;
 
@@ -47,7 +53,8 @@ public class IceManCard : SpawnAtPointCard
     public override ResourceCost Cost => new ResourceCost
         {
             Metal = 120,
-            Wood = 30
+            Wood = 30,
+            Gems = 10,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -92,8 +99,12 @@ public class IceManCard : SpawnAtPointCard
                     NextProjectileId = firstProjectileId,
                 });
             },
-            // No abilities to begin with — no AbilityComponent granted at all (same as
-            // BasicRangedTroopCard).
+            // Test ability (Q) — see AbilityManager. Slots 2-4 (W/E/R) are left empty (0).
+            (e, id) => e.AddComponent(id, new AbilityComponent
+            {
+                Ability1Id = AbilityManager.IceNovaAbilityId,
+                Ability1CooldownTicks = TickManager.SecondsToTicks(IceNovaCooldownSeconds),
+            }),
         });
     }
 }

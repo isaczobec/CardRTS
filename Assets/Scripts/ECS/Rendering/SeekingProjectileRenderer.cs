@@ -51,6 +51,14 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
     {
         if (_objects.TryGetValue(e.EntityId, out GameObject go))
             go.SetActive(true);
+
+        // A pooled projectile reuses the same entity id across every shot it's fired for —
+        // without this, the interpolator's leftover sample from wherever it deactivated
+        // LAST time is still sitting there, so the first UpdateRenderable after this
+        // activation would lerp from that stale old position all the way to the new firing
+        // point instead of snapping straight there (briefly showing it far from the
+        // shooter, then rapidly sliding into place).
+        _interpolator.Remove(e.EntityId);
     }
 
     private void OnProjectileDeactivated(ProjectileDeactivatedEvent e)
@@ -60,8 +68,22 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
         _interpolator.Remove(e.EntityId);
     }
 
-    private void OnProjectileActivatedAudio(ProjectileActivatedEvent e) => PlaySoundAtEntity(_launchSoundName, e.EntityId);
-    private void OnProjectileDeactivatedAudio(ProjectileDeactivatedEvent e) => PlaySoundAtEntity(_impactSoundName, e.EntityId);
+    // ProjectileActivatedEvent/ProjectileDeactivatedEvent are raised for every projectile
+    // in the game, not just this renderer's own — every renderer instance registered for a
+    // different RenderableType/pool (e.g. IceManCard's own seeking pool) hears the exact
+    // same events, so without this ownership check every one of them would also play its
+    // own configured sound for somebody else's projectile.
+    private void OnProjectileActivatedAudio(ProjectileActivatedEvent e)
+    {
+        if (_objects.ContainsKey(e.EntityId))
+            PlaySoundAtEntity(_launchSoundName, e.EntityId);
+    }
+
+    private void OnProjectileDeactivatedAudio(ProjectileDeactivatedEvent e)
+    {
+        if (_objects.ContainsKey(e.EntityId))
+            PlaySoundAtEntity(_impactSoundName, e.EntityId);
+    }
 
     // Reads the live ECS position rather than the GameObject's transform - at the instant
     // activation fires the transform may still hold last cycle's (pre-UpdateRenderable) spot.

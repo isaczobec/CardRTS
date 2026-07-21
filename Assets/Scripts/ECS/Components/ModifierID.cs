@@ -8,4 +8,5 @@ public enum ModifierID
     None = 0,
     StatChange = 1,
     Chilled = 2,
+    Frozen = 3,
 }

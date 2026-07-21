@@ -178,6 +178,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ActionWindupComponent>(36);
         _componentTypeRegistry.Register<FireProjectileOnExpireComponent>(37);
         _componentTypeRegistry.Register<ProjectileOnHitComponent>(38);
+        _componentTypeRegistry.Register<StunnedComponent>(39);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -290,6 +291,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<AttackWindupFinishedEvent>(93);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ProjectileOnHitComponent>>(94);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ProjectileOnHitComponent>>(95);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<StunnedComponent>>(96);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<StunnedComponent>>(97);
 
         ECS = CreateSimulationECS();
     }
@@ -501,6 +504,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ActionWindupComponent>());
         ecs.AddComponentStore(new ComponentStore<FireProjectileOnExpireComponent>());
         ecs.AddComponentStore(new ComponentStore<ProjectileOnHitComponent>());
+        ecs.AddComponentStore(new ComponentStore<StunnedComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -512,6 +516,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(ModifierSystem.Instance);
         ecs.RegisterSystem(StatModifierSystem.Instance);
         ecs.RegisterSystem(ActionWindupSystem.Instance);
+        ecs.RegisterSystem(StunnedSystem.Instance);
         ecs.RegisterSystem(new TeleportingModifierSystem());
         ecs.RegisterSystem(new BlinkSystem());
         // ecs.RegisterSystem(PlayerMovementSystem.Instance);
@@ -593,6 +598,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ActionWindupComponent>());
         ecs.AddComponentStore(new ComponentStore<FireProjectileOnExpireComponent>());
         ecs.AddComponentStore(new ComponentStore<ProjectileOnHitComponent>());
+        ecs.AddComponentStore(new ComponentStore<StunnedComponent>());
 
         return ecs;
     }

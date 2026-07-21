@@ -19,7 +19,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     private const int Speed = 50;
     // 0.4x the previous 40 (which was itself 2.5x the original 16) — nets out to the
     // original 16.
-    private const int Range = 16;
+    private const int Range = 21;
     private const int Armor = 20;
     private const int Damage = 26;
     private const float AttackSpeedMilliseconds = 900f;

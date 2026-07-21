@@ -25,6 +25,11 @@ public static class AbilityManager
     // and its target-indicator preview — see AbilityIndicatorManager/EntityTargetIndicator.
     public const int MeleeStrikeAbilityId = 4;
 
+    // Instant activate, freezes (StunnedComponent, ModifierID.Frozen) every chilled enemy
+    // within IceNovaRangeMultiplier x the caster's own Range stat, consuming their Chilled
+    // debuff in the process (see IceManCard, the only troop that currently equips this).
+    public const int IceNovaAbilityId = 5;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     // The shot always travels the caster's second projectile pool's own Range (see
@@ -50,12 +55,28 @@ public static class AbilityManager
     private const float RingOfProjectilesSpeedBoostRatio = 0.5f;
     private const float RingOfProjectilesSpeedBoostSeconds = 3f;
 
+    // How far (as a multiple of the caster's own Range stat) Ice Nova reaches.
+    private const float IceNovaRangeMultiplier = 3f;
+    // IceManCard.Range (14) x IceNovaRangeMultiplier — not used for any cast validation
+    // (Instant — no location to check), only so AbilityIndicatorManager can preview roughly
+    // how far this reaches. Abilities are stateless/shared, so this can't read the caster's
+    // own Range stat dynamically for the preview the way the actual effect radius does at
+    // cast time; kept in step with IceManCard.Range, same limitation as
+    // RingOfProjectilesRange's own comment describes.
+    private const float IceNovaRange = 42f;
+    private const int IceNovaFallbackRange = 10;
+    private const float IceNovaFreezeDurationSeconds = 3f;
+
+    // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
+    private static readonly List<ulong> _queryBuffer = new List<ulong>();
+
     private static readonly Dictionary<int, Ability> _abilities = new Dictionary<int, Ability>
     {
         { RingOfProjectilesAbilityId, BuildRingOfProjectilesAbility() },
         { AoeSpellCloneAbilityId, BuildAoeSpellCloneAbility() },
         { SkillshotAbilityId, BuildSkillshotAbility() },
         { MeleeStrikeAbilityId, BuildMeleeStrikeAbility() },
+        { IceNovaAbilityId, BuildIceNovaAbility() },
     };
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
@@ -223,6 +244,67 @@ public static class AbilityManager
         ExecuteOnEntity = (ecs, input) =>
         {
             ecs.Requests.CreateRequest(new DamageRequest(input.TargetEntityId, MeleeStrikeDamage) { DealerEntityId = input.CastingEntityId });
+        },
+    };
+
+    // Freezing (creating the Frozen modifier) is harmless to duplicate across the
+    // predicting client and the server, same reasoning as RingOfProjectilesAbility — it
+    // acts through ModifierComponent.TargetEntityId, not the modifier entity's own id.
+    // Removing the target's Chilled modifier is different: that's a genuine deletion, so
+    // (mirroring ModifierSystem's own natural-expiry deletion) it's gated server-only —
+    // predicted-only deletion would desync a client from the server's authoritative entity
+    // set. The client's own Chilled icon just lingers one round-trip until the server's
+    // deletion delta lands, same latency every other server-only deletion in this codebase
+    // already has.
+    private static Ability BuildIceNovaAbility() => new Ability
+    {
+        Type = AbilityType.Instant,
+        Name = "Ice Nova",
+        Description = "Freezes every chilled enemy within range solid, consuming the chill.",
+        Range = IceNovaRange,
+        ImageName = "IceNova",
+        ShowRangeCircle = true,
+        ExecuteInstant = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+            ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+            if (posStore == null || troopStore == null || healthStore == null) return;
+            if (!posStore.HasComponent(input.CastingEntityId) || !troopStore.HasComponent(input.CastingEntityId)) return;
+
+            PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
+            ushort casterOwnerId = troopStore.GetComponent(input.CastingEntityId).OwnerPlayerId;
+            float radius = StatsQuery.GetRange(ecs, input.CastingEntityId, IceNovaFallbackRange) * IceNovaRangeMultiplier;
+            bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+
+            _queryBuffer.Clear();
+            ecs.ChunkTracker.GetEntitiesNear(casterPos.X, casterPos.Y, radius, _queryBuffer);
+
+            foreach (ulong targetId in _queryBuffer)
+            {
+                if (targetId == input.CastingEntityId) continue;
+                if (!troopStore.HasComponent(targetId)) continue;
+                if (troopStore.GetComponent(targetId).OwnerPlayerId == casterOwnerId) continue;
+                if (!healthStore.HasComponent(targetId)) continue;
+                if (!ActivationQuery.IsActivated(ecs, targetId)) continue;
+                if (!ProjectileOnHitSystem.HasActiveChilledModifier(ecs, targetId)) continue;
+
+                if (isServer)
+                    ProjectileOnHitSystem.RemoveActiveChilledModifiers(ecs, targetId);
+
+                EntityHandle modifier = ecs.CreateEntity();
+                ecs.AddComponent(modifier.Id, new ModifierComponent
+                {
+                    TargetEntityId = targetId,
+                    TicksRemaining = TickManager.SecondsToTicks(IceNovaFreezeDurationSeconds),
+                    ModifierID     = ModifierID.Frozen,
+                });
+                ecs.AddComponent(modifier.Id, new StunnedComponent());
+                ecs.AddComponent(modifier.Id, new RenderableModifierComponent
+                {
+                    Type = RenderableModifierType.Frozen,
+                });
+            }
         },
     };
 }

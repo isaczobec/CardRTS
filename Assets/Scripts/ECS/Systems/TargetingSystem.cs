@@ -24,15 +24,21 @@ public class TargetingSystem : ISystem
 
     public void Setup(ECS ecs) { }
 
+    // Fallback for StatsQuery.GetRange, matching BasicRangedAISystem's own default.
+    private const int DefaultRange = 8;
+
     public void Execute(ECS ecs)
     {
         List<SetTargetsInput> inputs = ecs.GetInputsForTick<SetTargetsInput>();
         if (inputs == null) return;
 
         ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<BasicRangedAIComponent> rangedAiStore = ecs.GetComponentStore<BasicRangedAIComponent>();
+        ComponentStore<MovableComponent> movStore = ecs.GetComponentStore<MovableComponent>();
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
 
         foreach (SetTargetsInput input in inputs)
-            Apply(ecs, input, troopStore);
+            Apply(ecs, input, troopStore, rangedAiStore, movStore, posStore);
     }
 
     // Ignores any friendly id that isn't a troop, isn't owned by the requesting client,
@@ -40,7 +46,8 @@ public class TargetingSystem : ISystem
     // move commands. A player targeting command always clears that troop's automatic
     // targets (regardless of AdditionalSelect) before applying the player's own — taking
     // explicit control supersedes whatever the AI had picked.
-    private void Apply(ECS ecs, SetTargetsInput input, ComponentStore<TroopComponent> troopStore)
+    private void Apply(ECS ecs, SetTargetsInput input, ComponentStore<TroopComponent> troopStore,
+        ComponentStore<BasicRangedAIComponent> rangedAiStore, ComponentStore<MovableComponent> movStore, ComponentStore<PositionComponent> posStore)
     {
         foreach (ulong friendlyId in input.FriendlyTroopIds)
         {
@@ -59,7 +66,48 @@ public class TargetingSystem : ISystem
             foreach (ulong targetId in input.TargetTroopIds)
                 if (ecs.HasEntity(targetId))
                     targets[targetId] = TargetKind.PlayerAssigned;
+
+            StopIfRangedTargetInRange(ecs, friendlyId, input.TargetTroopIds, rangedAiStore, movStore, posStore);
         }
+    }
+
+    // A ranged troop otherwise only stops once BasicRangedAISystem's own Tick notices the
+    // newly assigned target is in range — while still mid-chase (or mid windup/wind-down
+    // against a stale target) that reads as a brief continued slide toward wherever it was
+    // already heading before the command lands. Stopping it here instead, the instant a
+    // targeting command comes in for a target already in range, gives immediate feedback
+    // that the command was received.
+    private void StopIfRangedTargetInRange(ECS ecs, ulong friendlyId, List<ulong> targetIds,
+        ComponentStore<BasicRangedAIComponent> rangedAiStore, ComponentStore<MovableComponent> movStore, ComponentStore<PositionComponent> posStore)
+    {
+        if (rangedAiStore == null || !rangedAiStore.HasComponent(friendlyId)) return;
+        if (movStore == null || !movStore.HasComponent(friendlyId)) return;
+        if (posStore == null || !posStore.HasComponent(friendlyId)) return;
+
+        PositionComponent myPos = posStore.GetComponent(friendlyId);
+        int range = StatsQuery.GetRange(ecs, friendlyId, DefaultRange);
+
+        bool inRange = false;
+        foreach (ulong targetId in targetIds)
+        {
+            if (!posStore.HasComponent(targetId)) continue;
+
+            PositionComponent targetPos = posStore.GetComponent(targetId);
+            float dx = targetPos.X - myPos.X, dy = targetPos.Y - myPos.Y;
+            if (dx * dx + dy * dy <= range * range)
+            {
+                inRange = true;
+                break;
+            }
+        }
+
+        if (!inRange) return;
+
+        ref MovableComponent mov = ref movStore.GetComponent(friendlyId);
+        if (mov.currentMovementMode == MovementMode.NotMoving) return;
+
+        mov.currentMovementMode = MovementMode.NotMoving;
+        ecs.Delta.MarkComponentDirty(friendlyId, typeof(MovableComponent));
     }
 
     // All current targets for a friendly troop, regardless of kind.

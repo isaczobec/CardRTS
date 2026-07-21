@@ -143,6 +143,23 @@ public class RenderableModifierManager : MonoBehaviour
                 if (count == 0)
                     foreach (IModifierRenderer renderer in renderers)
                         renderer.OnEntityAdded(targetId);
+
+                // A modifier with no ActivatableComponent at all (e.g. an instant/permanent
+                // one like ProjectileOnHitSystem's Chilled) never gets an
+                // EntityActivatedEvent — ActivationSystem only ever fires that for entities
+                // that actually HAVE the component, counting down to 0. Without this, a
+                // renderer that waits for OnEntityActivated (rather than OnEntityAdded)
+                // before showing its visual — see e.g. OverlayMaterialModifierRenderer —
+                // would just never show it at all for a modifier like that. Firing it here
+                // instead, the moment we first see a modifier that's already active, covers
+                // that case (and a modifier whose delay finished before this manager's own
+                // Update() first noticed it). Safe even if EntityActivatedEvent ALSO fires
+                // for the same target — IModifierRenderer.OnEntityActivated is documented to
+                // potentially fire more than once, and implementations are expected to
+                // guard against that the same way OnEntityAdded ones do.
+                if (ActivationQuery.IsActive(_ecs, modifierId))
+                    foreach (IModifierRenderer renderer in renderers)
+                        renderer.OnEntityActivated(targetId);
             }
 
             foreach (ulong modifierId in _toRemove)
