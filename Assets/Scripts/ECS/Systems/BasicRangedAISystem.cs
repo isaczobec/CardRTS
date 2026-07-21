@@ -133,14 +133,41 @@ public class BasicRangedAISystem : ISystem
             }
         }
 
+        // Fallback for a client that doesn't own this troop, and so never received the
+        // SetTargetsInput that may have assigned its current PlayerAssigned target —
+        // TargetingSystem's _targets dict is built purely from locally-processed inputs
+        // (InputBuffer/NetworkManager.OnClientTickInput only ever forwards a client's raw
+        // inputs to the server, never to other clients), so a non-owning client's copy of
+        // this troop can go the whole fight without ever seeing that entry. LastPathTargetId
+        // is genuine, replicated component data instead — whichever target the authoritative
+        // simulation actually last chased — so fall back to it before concluding there's
+        // really no target. This matters most in Passive mode, which has no other safety net
+        // at all (AcquireTargets and the Automatic-kind fallback above are both skipped
+        // entirely for Passive), so without this a Passive troop's target is invisible to
+        // every client except its owner.
+        //
+        // _movedThisTick also gates this, same as the attack-windup cancel check above and
+        // for the same reason: PathfindingSystem (which actually writes playerDestinationSet
+        // true) runs after this system, so on the very tick a move order arrives,
+        // playerDestinationSet still reads false here. Without this guard, a "clear targets
+        // then move" cancel (SelectionManager's PerformPointTargetOrMove, both landing in the
+        // same tick) would pass the !playerDestinationSet check on that same tick, letting
+        // this fallback resurrect the just-cleared LastPathTargetId — on the authoritative
+        // simulation itself, not just an observer — before Stop/GoHome ever gets a chance to
+        // run and clear it, permanently stranding the troop chasing a target it was told to
+        // abandon (with no targeting indicator, since _targets really is empty).
+        if (activeTarget == 0 && !mov.playerDestinationSet && !_movedThisTick.Contains(id)
+            && ai.LastPathTargetId != 0 && IsValidTarget(ai.LastPathTargetId))
+            activeTarget = ai.LastPathTargetId;
+
         if (activeTarget == 0)
         {
             if (mov.playerDestinationSet) return;
 
             if (mode == AIMode.Passive)
-                Stop(id, ref mov);
+                Stop(id, ref ai, ref mov);
             else
-                GoHome(id, ref mov, myPos);
+                GoHome(id, ref ai, ref mov, myPos);
             return;
         }
 
@@ -282,16 +309,33 @@ public class BasicRangedAISystem : ISystem
         => _aiModeStore != null && _aiModeStore.HasComponent(id) ? _aiModeStore.GetComponent(id).Mode : AIMode.Guard;
 
     // Passive's "no target" resting state — just stand down in place, unlike Guard/
-    // Aggressive's GoHome, which actively walks back to the leash point.
-    private void Stop(ulong id, ref MovableComponent mov)
+    // Aggressive's GoHome, which actively walks back to the leash point. Also clears
+    // LastPathTargetId — a genuine give-up (as opposed to just not knowing) must be
+    // reflected in replicated component data, or a client observing this troop (which
+    // falls back to LastPathTargetId when it has no local record of the target — see
+    // Tick's activeTarget resolution) would keep treating the abandoned target as active
+    // forever once it's replicated to them.
+    private void Stop(ulong id, ref BasicRangedAIComponent ai, ref MovableComponent mov)
     {
+        if (ai.LastPathTargetId != 0)
+        {
+            ai.LastPathTargetId = 0;
+            _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
+        }
+
         if (mov.currentMovementMode == MovementMode.NotMoving) return;
         mov.currentMovementMode = MovementMode.NotMoving;
         _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
     }
 
-    private void GoHome(ulong id, ref MovableComponent mov, Vector2 myPos)
+    private void GoHome(ulong id, ref BasicRangedAIComponent ai, ref MovableComponent mov, Vector2 myPos)
     {
+        if (ai.LastPathTargetId != 0)
+        {
+            ai.LastPathTargetId = 0;
+            _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
+        }
+
         if (!ActivationQuery.CanMove(_ecs, id)) return;
 
         float hdx = myPos.x - mov.LeashX, hdy = myPos.y - mov.LeashY;

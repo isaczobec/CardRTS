@@ -67,6 +67,33 @@ public class TargetingSystem : ISystem
                 if (ecs.HasEntity(targetId))
                     targets[targetId] = TargetKind.PlayerAssigned;
 
+            // A fresh attack-target command supersedes a prior move order, the same way a
+            // move order already interrupts an in-progress attack windup (see
+            // BasicMeleeAISystem/BasicRangedAISystem's _movedThisTick check). Without this,
+            // playerDestinationSet stays stuck true until the stale move order's destination
+            // is reached, which blocks BasicMeleeAISystem/BasicRangedAISystem's automatic-
+            // target fallback (AcquireTargets and the Automatic-kind lookup are both gated on
+            // !playerDestinationSet). That fallback is what lets a client which doesn't own
+            // this troop (and so never sees the real SetTargetsInput that assigned this
+            // PlayerAssigned target — see InputBuffer/NetworkManager.OnClientTickInput, which
+            // only ever reaches the server) keep that troop's local prediction chasing/
+            // attacking in step with the authoritative simulation. Leaving it gated stuck
+            // true left such an observer's local replica of this troop with no active target
+            // at all, so only PathfindingSystem kept nudging it toward a destination that
+            // never got refreshed locally — fine over a long chase (never arrives before the
+            // next reconciliation correction), but at short range it would reach that stale
+            // destination and stop within a tick or two, then get corrected, then stop again,
+            // reading as the position jittering with no walk animation.
+            if (input.TargetTroopIds.Count > 0 && movStore != null && movStore.HasComponent(friendlyId))
+            {
+                ref MovableComponent mov = ref movStore.GetComponent(friendlyId);
+                if (mov.playerDestinationSet)
+                {
+                    mov.playerDestinationSet = false;
+                    ecs.Delta.MarkComponentDirty(friendlyId, typeof(MovableComponent));
+                }
+            }
+
             StopIfRangedTargetInRange(ecs, friendlyId, input.TargetTroopIds, rangedAiStore, movStore, posStore);
         }
     }
@@ -128,6 +155,17 @@ public class TargetingSystem : ISystem
         if (targets.TryGetValue(targetId, out TargetKind existing) && existing == TargetKind.PlayerAssigned)
             return;
         targets[targetId] = TargetKind.Automatic;
+    }
+
+    // Removes every automatic-kind target for a friendly troop, leaving any player-assigned
+    // one untouched — used when a troop switches into Passive mode (SetAIModeSystem). Passive
+    // never picks a new automatic target itself (AcquireTargets is skipped entirely for
+    // Passive — see BasicMeleeAISystem/BasicRangedAISystem's mode guard), but switching into
+    // it doesn't retroactively forget one already picked up under Guard/Aggressive.
+    public void ClearAutomaticTargets(ulong friendlyTroopId)
+    {
+        if (!_targets.TryGetValue(friendlyTroopId, out Dictionary<ulong, TargetKind> targets)) return;
+        RemoveAllOfKind(targets, TargetKind.Automatic);
     }
 
     // Removes a specific automatic target (e.g. it left range or died). No-ops if it
