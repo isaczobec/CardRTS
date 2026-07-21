@@ -66,6 +66,11 @@ public static class AbilityManager
     private const float IceNovaRange = 42f;
     private const int IceNovaFallbackRange = 10;
     private const float IceNovaFreezeDurationSeconds = 3f;
+    // Cast time before the nova actually resolves — see BuildIceNovaAbility. Mirrors
+    // BuildSkillshotAbility's own SkillshotWindupSeconds: an ActionWindupComponent blocks
+    // the caster's own CanMove/CanPerform for the duration, and ResolveIceNova (the actual
+    // effect) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
+    private const float IceNovaCastTimeSeconds = 1f;
 
     // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
@@ -78,6 +83,19 @@ public static class AbilityManager
         { MeleeStrikeAbilityId, BuildMeleeStrikeAbility() },
         { IceNovaAbilityId, BuildIceNovaAbility() },
     };
+
+    // Runs after the field initializers above (C# guarantees static field initializers run
+    // before an explicit static constructor's body), registering ResolveIceNova with
+    // ScheduledCallSystem so BuildIceNovaAbility's deferred call can find it. This is "at
+    // initialization time" in the sense that matters: AbilityManager can't be touched at all
+    // (e.g. via TryGet, or BuildIceNovaAbility's own ExecuteInstant below scheduling a call)
+    // without this type's static constructor having already run first, so the registration
+    // is always in place before any IceNovaResolve ScheduledCallComponent could possibly
+    // exist to look it up.
+    static AbilityManager()
+    {
+        ScheduledCallSystem.RegisterCall(ScheduledCallType.IceNovaResolve, ResolveIceNova);
+    }
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
 
@@ -247,6 +265,51 @@ public static class AbilityManager
         },
     };
 
+    // Winds up for IceNovaCastTimeSeconds (ActionWindupComponent — blocks the caster's own
+    // CanMove/CanPerform for the duration, exactly like BuildSkillshotAbility), then
+    // resolves via ResolveIceNova below. Deterministic and side-effect-free itself (the
+    // windup modifier and the scheduled call both act through TargetEntityId/ScheduledCall
+    // matching, not the entities' own ids), so — like RingOfProjectilesAbility — no
+    // isServer guard is needed here; the actual server-only deletion concerns live inside
+    // ResolveIceNova and ScheduledCallSystem instead.
+    private static Ability BuildIceNovaAbility() => new Ability
+    {
+        Type = AbilityType.Instant,
+        Name = "Ice Nova",
+        Description = "Winds up briefly, then freezes every chilled enemy within range solid, consuming the chill.",
+        Range = IceNovaRange,
+        ImageName = "IceNova",
+        ShowRangeCircle = true,
+        ExecuteInstant = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null || !posStore.HasComponent(input.CastingEntityId)) return;
+
+            int windupTicks = Mathf.Max(1, TickManager.SecondsToTicks(IceNovaCastTimeSeconds));
+
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = windupTicks,
+            });
+            ecs.AddComponent(modifier.Id, new ActionWindupComponent());
+
+            ScheduledCallSystem.Schedule(ecs, ScheduledCallType.IceNovaResolve, windupTicks, input.CastingEntityId);
+
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+        },
+    };
+
+    // The actual Ice Nova effect — deferred out of BuildIceNovaAbility's ExecuteInstant so
+    // it can be scheduled to run once the cast-time windup above ends, via
+    // ScheduledCallSystem (registered against ScheduledCallType.IceNovaResolve in the
+    // static constructor above). call.Param0 is the caster's entity id, captured at cast
+    // time by ScheduledCallSystem.Schedule's call above — everything else (the caster's
+    // current position/owner/range) is re-read live here, at resolve time, rather than also
+    // captured at cast time, so the nova is centered on where the caster actually is once it
+    // goes off rather than where it stood when the cast began.
+    //
     // Freezing (creating the Frozen modifier) is harmless to duplicate across the
     // predicting client and the server, same reasoning as RingOfProjectilesAbility — it
     // acts through ModifierComponent.TargetEntityId, not the modifier entity's own id.
@@ -256,55 +319,48 @@ public static class AbilityManager
     // set. The client's own Chilled icon just lingers one round-trip until the server's
     // deletion delta lands, same latency every other server-only deletion in this codebase
     // already has.
-    private static Ability BuildIceNovaAbility() => new Ability
+    private static void ResolveIceNova(ECS ecs, ScheduledCallComponent call)
     {
-        Type = AbilityType.Instant,
-        Name = "Ice Nova",
-        Description = "Freezes every chilled enemy within range solid, consuming the chill.",
-        Range = IceNovaRange,
-        ImageName = "IceNova",
-        ShowRangeCircle = true,
-        ExecuteInstant = (ecs, input) =>
+        ulong casterId = call.Param0;
+
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        if (posStore == null || troopStore == null || healthStore == null) return;
+        if (!posStore.HasComponent(casterId) || !troopStore.HasComponent(casterId)) return;
+
+        PositionComponent casterPos = posStore.GetComponent(casterId);
+        ushort casterOwnerId = troopStore.GetComponent(casterId).OwnerPlayerId;
+        float radius = StatsQuery.GetRange(ecs, casterId, IceNovaFallbackRange) * IceNovaRangeMultiplier;
+        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+
+        _queryBuffer.Clear();
+        ecs.ChunkTracker.GetEntitiesNear(casterPos.X, casterPos.Y, radius, _queryBuffer);
+
+        foreach (ulong targetId in _queryBuffer)
         {
-            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
-            ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
-            ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
-            if (posStore == null || troopStore == null || healthStore == null) return;
-            if (!posStore.HasComponent(input.CastingEntityId) || !troopStore.HasComponent(input.CastingEntityId)) return;
+            if (targetId == casterId) continue;
+            if (!troopStore.HasComponent(targetId)) continue;
+            if (troopStore.GetComponent(targetId).OwnerPlayerId == casterOwnerId) continue;
+            if (!healthStore.HasComponent(targetId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, targetId)) continue;
+            if (!ProjectileOnHitSystem.HasActiveChilledModifier(ecs, targetId)) continue;
 
-            PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
-            ushort casterOwnerId = troopStore.GetComponent(input.CastingEntityId).OwnerPlayerId;
-            float radius = StatsQuery.GetRange(ecs, input.CastingEntityId, IceNovaFallbackRange) * IceNovaRangeMultiplier;
-            bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+            if (isServer)
+                ProjectileOnHitSystem.RemoveActiveChilledModifiers(ecs, targetId);
 
-            _queryBuffer.Clear();
-            ecs.ChunkTracker.GetEntitiesNear(casterPos.X, casterPos.Y, radius, _queryBuffer);
-
-            foreach (ulong targetId in _queryBuffer)
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
             {
-                if (targetId == input.CastingEntityId) continue;
-                if (!troopStore.HasComponent(targetId)) continue;
-                if (troopStore.GetComponent(targetId).OwnerPlayerId == casterOwnerId) continue;
-                if (!healthStore.HasComponent(targetId)) continue;
-                if (!ActivationQuery.IsActivated(ecs, targetId)) continue;
-                if (!ProjectileOnHitSystem.HasActiveChilledModifier(ecs, targetId)) continue;
-
-                if (isServer)
-                    ProjectileOnHitSystem.RemoveActiveChilledModifiers(ecs, targetId);
-
-                EntityHandle modifier = ecs.CreateEntity();
-                ecs.AddComponent(modifier.Id, new ModifierComponent
-                {
-                    TargetEntityId = targetId,
-                    TicksRemaining = TickManager.SecondsToTicks(IceNovaFreezeDurationSeconds),
-                    ModifierID     = ModifierID.Frozen,
-                });
-                ecs.AddComponent(modifier.Id, new StunnedComponent());
-                ecs.AddComponent(modifier.Id, new RenderableModifierComponent
-                {
-                    Type = RenderableModifierType.Frozen,
-                });
-            }
-        },
-    };
+                TargetEntityId = targetId,
+                TicksRemaining = TickManager.SecondsToTicks(IceNovaFreezeDurationSeconds),
+                ModifierID     = ModifierID.Frozen,
+            });
+            ecs.AddComponent(modifier.Id, new StunnedComponent());
+            ecs.AddComponent(modifier.Id, new RenderableModifierComponent
+            {
+                Type = RenderableModifierType.Frozen,
+            });
+        }
+    }
 }
