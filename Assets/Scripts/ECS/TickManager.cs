@@ -180,6 +180,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ProjectileOnHitComponent>(38);
         _componentTypeRegistry.Register<StunnedComponent>(39);
         _componentTypeRegistry.Register<ScheduledCallComponent>(40);
+        _componentTypeRegistry.Register<DamageOverTimeComponent>(41);
+        _componentTypeRegistry.Register<StackingBurnDebuffComponent>(42);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -296,6 +298,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<StunnedComponent>>(97);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ScheduledCallComponent>>(98);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ScheduledCallComponent>>(99);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<DamageOverTimeComponent>>(100);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<DamageOverTimeComponent>>(101);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<StackingBurnDebuffComponent>>(102);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<StackingBurnDebuffComponent>>(103);
 
         ECS = CreateSimulationECS();
     }
@@ -509,6 +515,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ProjectileOnHitComponent>());
         ecs.AddComponentStore(new ComponentStore<StunnedComponent>());
         ecs.AddComponentStore(new ComponentStore<ScheduledCallComponent>());
+        ecs.AddComponentStore(new ComponentStore<DamageOverTimeComponent>());
+        ecs.AddComponentStore(new ComponentStore<StackingBurnDebuffComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -519,6 +527,10 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(FireProjectileOnExpireSystem.Instance);
         ecs.RegisterSystem(ModifierSystem.Instance);
         ecs.RegisterSystem(StatModifierSystem.Instance);
+        // Just needs to run before ArmorMitigationSystem/DamageResolutionSystem so the
+        // DamageRequests it creates get processed the same tick — no ordering dependency on
+        // anything else here (see DamageOverTimeSystem's own doc comment).
+        ecs.RegisterSystem(DamageOverTimeSystem.Instance);
         ecs.RegisterSystem(ActionWindupSystem.Instance);
         ecs.RegisterSystem(StunnedSystem.Instance);
         ecs.RegisterSystem(new ScheduledCallSystem());
@@ -605,6 +617,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ProjectileOnHitComponent>());
         ecs.AddComponentStore(new ComponentStore<StunnedComponent>());
         ecs.AddComponentStore(new ComponentStore<ScheduledCallComponent>());
+        ecs.AddComponentStore(new ComponentStore<DamageOverTimeComponent>());
+        ecs.AddComponentStore(new ComponentStore<StackingBurnDebuffComponent>());
 
         return ecs;
     }

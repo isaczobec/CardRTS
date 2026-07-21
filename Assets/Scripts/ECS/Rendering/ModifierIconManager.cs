@@ -30,6 +30,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.StatChange, ResolveStatChange },
         { ModifierID.Chilled, ResolveChilled },
         { ModifierID.Frozen, ResolveFrozen },
+        { ModifierID.Scorched, ResolveScorched },
     };
 
     private ECS _ecs;
@@ -262,6 +263,31 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     // payload to read (StunnedComponent has no fields), so the name/description are fixed.
     private static (string name, string imageName, string description) ResolveFrozen(ECS ecs, ulong modifierEntityId)
         => ("Frozen", "Frozen", "This troop is frozen solid and cannot move or act.");
+
+    // DamageOverTimeComponent/StackingBurnDebuffComponent-carrying modifier from
+    // FireManCard's projectiles (see ProjectileOnHitSystem.ApplyBurn/ApplyScorch) — states
+    // the current damage/proc and stack count directly.
+    private static (string name, string imageName, string description) ResolveScorched(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<DamageOverTimeComponent> dotStore = ecs.GetComponentStore<DamageOverTimeComponent>();
+        int damagePerProc = 0;
+        float procsPerSecond = 1f;
+        if (dotStore != null && dotStore.HasComponent(modifierEntityId))
+        {
+            DamageOverTimeComponent dot = dotStore.GetComponent(modifierEntityId);
+            damagePerProc = dot.DamagePerProc;
+            float periodSeconds = TickManager.TicksToSeconds(Mathf.Max(1, dot.PeriodTicks));
+            procsPerSecond = periodSeconds > 0f ? 1f / periodSeconds : 1f;
+        }
+
+        ComponentStore<StackingBurnDebuffComponent> stackStore = ecs.GetComponentStore<StackingBurnDebuffComponent>();
+        int stacks = stackStore != null && stackStore.HasComponent(modifierEntityId)
+            ? stackStore.GetComponent(modifierEntityId).Stacks
+            : 0;
+
+        int damagePerSecond = Mathf.RoundToInt(damagePerProc * procsPerSecond);
+        return ("Scorched", "Scorched", $"Taking {damagePerSecond} damage per second ({stacks} stacks).");
+    }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {

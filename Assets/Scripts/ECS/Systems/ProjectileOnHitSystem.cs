@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 // Dispatches a pooled projectile's on-hit effect (see ProjectileOnHitComponent) by its
 // ProjectileOnHitEffectType, mapping each type to the lambda that actually implements it.
@@ -17,7 +18,12 @@ public static class ProjectileOnHitSystem
         = new Dictionary<ProjectileOnHitEffectType, Action<ECS, ProjectileOnHitComponent, ulong, ulong>>
     {
         { ProjectileOnHitEffectType.Slow, ApplySlow },
+        { ProjectileOnHitEffectType.Burn, ApplyBurn },
     };
+
+    // Scratch for ApplyBurn's splash query, reused across every burn hit rather than
+    // reallocated per hit.
+    private static readonly List<ulong> _burnSplashBuffer = new List<ulong>();
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents) { }
 
@@ -45,7 +51,7 @@ public static class ProjectileOnHitSystem
     // indefinitely on a target hit repeatedly).
     private static void ApplySlow(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
     {
-        ulong existingModifierId = FindActiveChilledModifierId(ecs, targetId);
+        ulong existingModifierId = FindActiveModifierId(ecs, targetId, ModifierID.Chilled);
         if (existingModifierId != 0)
         {
             ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
@@ -74,7 +80,7 @@ public static class ProjectileOnHitSystem
 
     // Public so anything else that cares whether a target is chilled (e.g. AbilityManager's
     // Ice Nova ability) can reuse this instead of duplicating it.
-    public static bool HasActiveChilledModifier(ECS ecs, ulong targetId) => FindActiveChilledModifierId(ecs, targetId) != 0;
+    public static bool HasActiveChilledModifier(ECS ecs, ulong targetId) => FindActiveModifierId(ecs, targetId, ModifierID.Chilled) != 0;
 
     // Deletes every active Chilled modifier targeting targetId — server-only, mirroring
     // ModifierSystem's own natural-expiry deletion (predicted-only deletion would desync a
@@ -98,25 +104,128 @@ public static class ProjectileOnHitSystem
             ecs.DeleteEntity(modifierId);
     }
 
+    // FireManCard's burn — refreshes/stacks a Scorched debuff (ModifierComponent +
+    // StackingBurnDebuffComponent + DamageOverTimeComponent + RenderableModifierComponent)
+    // on the primary hit target, then splashes the same treatment onto every other enemy
+    // troop within onHit.BurnSplashRangeMultiplier x the shooter's own Range stat of the hit
+    // point — mirrors AbilityManager's Ice Nova AOE query, just centered on the impact
+    // rather than the caster.
+    private static void ApplyBurn(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
+    {
+        ApplyScorch(ecs, onHit, ownerId, targetId);
+
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        if (posStore == null || troopStore == null || healthStore == null) return;
+        if (!posStore.HasComponent(targetId) || !troopStore.HasComponent(ownerId)) return;
+
+        PositionComponent targetPos = posStore.GetComponent(targetId);
+        ushort casterOwnerId = troopStore.GetComponent(ownerId).OwnerPlayerId;
+        float radius = StatsQuery.GetRange(ecs, ownerId, BurnFallbackRange) * onHit.BurnSplashRangeMultiplier;
+
+        _burnSplashBuffer.Clear();
+        ecs.ChunkTracker.GetEntitiesNear(targetPos.X, targetPos.Y, radius, _burnSplashBuffer);
+
+        foreach (ulong splashTargetId in _burnSplashBuffer)
+        {
+            if (splashTargetId == targetId || splashTargetId == ownerId) continue;
+            if (!troopStore.HasComponent(splashTargetId)) continue;
+            if (troopStore.GetComponent(splashTargetId).OwnerPlayerId == casterOwnerId) continue;
+            if (!healthStore.HasComponent(splashTargetId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, splashTargetId)) continue;
+
+            ApplyScorch(ecs, onHit, ownerId, splashTargetId);
+        }
+    }
+
+    // Applies/refreshes the Scorched debuff on a single target — shared by ApplyBurn's
+    // primary hit and its splash targets, so both go through identical stacking/refresh
+    // logic. Stacks starts at 0 on a fresh application (base damage only) and increments
+    // (capped at onHit.BurnMaxStacks) on every refresh from a later hit — see
+    // StackingBurnDebuffComponent's own doc comment.
+    private static void ApplyScorch(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
+    {
+        ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
+        ComponentStore<StackingBurnDebuffComponent> stackStore = ecs.GetComponentStore<StackingBurnDebuffComponent>();
+        ComponentStore<DamageOverTimeComponent> dotStore = ecs.GetComponentStore<DamageOverTimeComponent>();
+
+        ulong modifierId = FindActiveModifierId(ecs, targetId, ModifierID.Scorched);
+        int stacks;
+
+        if (modifierId != 0)
+        {
+            ref ModifierComponent modifier = ref modifierStore.GetComponent(modifierId);
+            modifier.TicksRemaining = TickManager.SecondsToTicks(onHit.DurationSeconds);
+            ecs.Delta.MarkComponentDirty(modifierId, typeof(ModifierComponent));
+
+            ref StackingBurnDebuffComponent stack = ref stackStore.GetComponent(modifierId);
+            stack.Stacks = Math.Min(stack.Stacks + 1, stack.MaxStacks);
+            ecs.Delta.MarkComponentDirty(modifierId, typeof(StackingBurnDebuffComponent));
+            stacks = stack.Stacks;
+        }
+        else
+        {
+            EntityHandle modifier = ecs.CreateEntity();
+            modifierId = modifier.Id;
+            stacks = 0;
+
+            ecs.AddComponent(modifierId, new ModifierComponent
+            {
+                TargetEntityId = targetId,
+                TicksRemaining = TickManager.SecondsToTicks(onHit.DurationSeconds),
+                ModifierID     = ModifierID.Scorched,
+            });
+            ecs.AddComponent(modifierId, new StackingBurnDebuffComponent
+            {
+                Stacks    = stacks,
+                MaxStacks = onHit.BurnMaxStacks,
+            });
+            ecs.AddComponent(modifierId, new RenderableModifierComponent { Type = RenderableModifierType.Scorched });
+
+            int periodTicks = Math.Max(1, onHit.BurnProcPeriodTicks);
+            ecs.AddComponent(modifierId, new DamageOverTimeComponent
+            {
+                PeriodTicks        = periodTicks,
+                TicksUntilNextProc = periodTicks,
+                DealerEntityId     = ownerId,
+            });
+        }
+
+        int damagePerProc = Mathf.RoundToInt(onHit.BurnBaseDamagePerProc
+            + stacks * onHit.BurnDamagePerStackRatio * StatsQuery.GetDamage(ecs, ownerId, BurnFallbackDamage));
+
+        ref DamageOverTimeComponent dot = ref dotStore.GetComponent(modifierId);
+        dot.DamagePerProc = damagePerProc;
+        ecs.Delta.MarkComponentDirty(modifierId, typeof(DamageOverTimeComponent));
+    }
+
     // Mirrors ActionWindupSystem.IsWindingUp's "walk every ModifierComponent targeting this
-    // entity" shape.
-    private static ulong FindActiveChilledModifierId(ECS ecs, ulong targetId)
+    // entity" shape. Shared by every ModifierID this system cares about (Chilled, Scorched)
+    // rather than one copy per id.
+    private static ulong FindActiveModifierId(ECS ecs, ulong targetId, ModifierID modifierId)
     {
         ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
         if (modifierStore == null) return 0;
 
         ulong found = 0;
-        modifierStore.ForEach((ulong modifierId) =>
+        modifierStore.ForEach((ulong candidateId) =>
         {
             if (found != 0) return;
-            ModifierComponent modifier = modifierStore.GetComponent(modifierId);
-            if (modifier.ModifierID != ModifierID.Chilled) return;
+            ModifierComponent modifier = modifierStore.GetComponent(candidateId);
+            if (modifier.ModifierID != modifierId) return;
             if (modifier.TargetEntityId != targetId) return;
-            if (!ModifierQuery.IsActive(ecs, modifierId)) return;
-            found = modifierId;
+            if (!ModifierQuery.IsActive(ecs, candidateId)) return;
+            found = candidateId;
         });
         return found;
     }
+
+    // Fallbacks for StatsQuery.GetRange/GetDamage when the shooter somehow has no
+    // StatsComponent — matches ProjectilePool/AbilityManager's own small-sane-default
+    // convention rather than 0.
+    private const int BurnFallbackRange = 10;
+    private const int BurnFallbackDamage = 10;
 
     private static readonly List<ulong> _removalScratch = new List<ulong>();
 }

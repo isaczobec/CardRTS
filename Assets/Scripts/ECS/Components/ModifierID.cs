@@ -9,4 +9,5 @@ public enum ModifierID
     StatChange = 1,
     Chilled = 2,
     Frozen = 3,
+    Scorched = 4,
 }
