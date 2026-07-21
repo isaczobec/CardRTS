@@ -37,7 +37,7 @@ public class IceManCard : SpawnAtPointCard
 
     // Cooldown length lives on AbilityComponent rather than on Ability itself, so different
     // troops could equip the same ability with different cooldowns.
-    private const float IceNovaCooldownSeconds = 8f;
+    private const float IceNovaCooldownSeconds = 30f;
 
     private const float MaxDistanceFromBuilding = 20f;
 

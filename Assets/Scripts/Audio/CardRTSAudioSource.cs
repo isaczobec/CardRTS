@@ -49,6 +49,13 @@ public class CardRTSAudioSource
     /// crossfades into a fresh restart over this many seconds instead of looping natively,
     /// hiding an imperfect loop point. Clamped to at most half the clip's length.
     /// </param>
+    /// <returns>
+    /// A handle to the main clip only. If entry.overlaySounds rolls a hit (see
+    /// SoundRegistryEntry.RollOverlayClip), that layered clip starts alongside it as its own
+    /// independent one-shot voice — always non-looping regardless of loop above, since an
+    /// overlay is meant to be a one-time extra layer, not a second sustained loop — with no
+    /// handle of its own; it plays out and cleans itself up on its own.
+    /// </returns>
     public PlayingSound PlaySound(string soundName, float volume = 1f, bool loop = false, float crossfadeDuration = 0f)
     {
         if (IsDestroyed) return null;
@@ -66,18 +73,33 @@ public class CardRTSAudioSource
             return null;
         }
 
-        float pitch = entry.GetRandomPitch();
         // entry.defaultVolume compensates for a quiet clip at the registry level - deliberately
         // not clamped to 1 here so it can boost past the caller's own [0,1] volume if needed.
         float finalVolume = Mathf.Max(0f, volume) * entry.defaultVolume;
+        PlayingSound sound = StartClip($"Sound_{soundName}", clip, finalVolume, entry.GetRandomPitch(), loop, crossfadeDuration);
+
+        AudioClip overlayClip = entry.RollOverlayClip(out float overlayVolume);
+        if (overlayClip != null)
+            StartClip($"Sound_{soundName}_Overlay_{overlayClip.name}", overlayClip, Mathf.Max(0f, overlayVolume), entry.GetRandomPitch(), loop: false, crossfadeDuration: 0f);
+
+        return sound;
+    }
+
+    // Shared by PlaySound for both the main clip and an optional rolled overlay clip — spawns
+    // its own AudioSource GameObject under _root and registers the resulting PlayingSound in
+    // _activeSounds, so UpdateSounds/HasActiveSounds (and this source's own auto-destroy-when-
+    // idle logic) track it exactly like any other voice, whether or not the caller keeps its
+    // returned handle.
+    private PlayingSound StartClip(string objectName, AudioClip clip, float volume, float pitch, bool loop, float crossfadeDuration)
+    {
         float safeCrossfade = loop && crossfadeDuration > 0f ? Mathf.Min(crossfadeDuration, clip.length * 0.5f) : 0f;
 
-        GameObject soundObject = new GameObject($"Sound_{soundName}");
+        GameObject soundObject = new GameObject(objectName);
         soundObject.transform.SetParent(_root.transform, false);
 
         AudioSource audioSource = soundObject.AddComponent<AudioSource>();
         audioSource.clip = clip;
-        audioSource.volume = finalVolume;
+        audioSource.volume = volume;
         audioSource.pitch = pitch;
         audioSource.loop = loop && safeCrossfade <= 0f;
         audioSource.spatialBlend = SpatialBlend;
@@ -86,7 +108,7 @@ public class CardRTSAudioSource
         audioSource.maxDistance = _maxDistance;
         audioSource.Play();
 
-        PlayingSound sound = new PlayingSound(_root.transform, clip, audioSource, soundObject, finalVolume, loop, safeCrossfade, SpatialBlend, pitch, _minDistance, _maxDistance);
+        PlayingSound sound = new PlayingSound(_root.transform, clip, audioSource, soundObject, volume, loop, safeCrossfade, SpatialBlend, pitch, _minDistance, _maxDistance);
         _activeSounds.Add(sound);
         return sound;
     }

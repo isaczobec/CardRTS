@@ -5189,6 +5189,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 828403181}
   m_CullTransparentMesh: 1
+--- !u!1 &837013214
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 837013215}
+  - component: {fileID: 837013216}
+  m_Layer: 0
+  m_Name: FrozenPrefabAura
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &837013215
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837013214}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &837013216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837013214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efeb234d133a1d5408ebb77d7181996f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PrefabModifierRenderer
+  _prefab: {fileID: 3938369738910734278, guid: 2981546c6732a534ba9e59d4dd645bfe, type: 3}
+  _heightOffset: 0
 --- !u!1 &848258311
 GameObject:
   m_ObjectHideFlags: 0
@@ -5389,7 +5435,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 76.82373, y: 18.69873}
+  m_AnchoredPosition: {x: 76.82373, y: 18.69867}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &867664181
@@ -7139,6 +7185,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1065084874}
   m_CullTransparentMesh: 1
+--- !u!1 &1065127969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1065127971}
+  - component: {fileID: 1065127970}
+  m_Layer: 0
+  m_Name: FrozenAudio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1065127970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1065127969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ea68cc2726bb19418f7e311c2285081, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundModifierRenderer
+  _soundName: DefaultDebuff
+  _volume: 1
+  _loop: 1
+  _crossfadeDuration: 0
+  _endSoundName: IceBreak
+  _endSoundVolume: 1
+--- !u!4 &1065127971
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1065127969}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1074914389
 GameObject:
   m_ObjectHideFlags: 0
@@ -8624,7 +8720,10 @@ Transform:
   - {fileID: 1009830072}
   - {fileID: 2130503548}
   - {fileID: 1675926715}
+  - {fileID: 1799046955}
   - {fileID: 1119234913}
+  - {fileID: 837013215}
+  - {fileID: 1065127971}
   m_Father: {fileID: 1889187866}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1244099537
@@ -8646,8 +8745,14 @@ MonoBehaviour:
     renderer: {fileID: 2130503549}
   - type: 1
     renderer: {fileID: 1675926716}
+  - type: 1
+    renderer: {fileID: 1799046954}
   - type: 2
     renderer: {fileID: 1119234914}
+  - type: 2
+    renderer: {fileID: 837013216}
+  - type: 2
+    renderer: {fileID: 1065127970}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -9214,7 +9319,7 @@ MonoBehaviour:
     TimeUntilImpact: 0.867
   _selectionMode: 1
   _abilityAnimationTriggers: []
-  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupSoundName: IronKnightWindup
   _attackWindupFinishedSoundName: 
   _abilityWindupSoundName: 
   _dealDamageSoundName: DefaultTroopDealDamage
@@ -9624,7 +9729,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1, y: -12.000488}
+  m_AnchoredPosition: {x: -1, y: -12.000427}
   m_SizeDelta: {x: -18.968, y: -13.929443}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1419371009
@@ -11076,7 +11181,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22.000122, y: 11}
+  m_AnchoredPosition: {x: -22.000061, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567
@@ -13321,6 +13426,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1770501925}
   m_CullTransparentMesh: 1
+--- !u!1 &1799046953
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1799046955}
+  - component: {fileID: 1799046954}
+  m_Layer: 0
+  m_Name: ChilledPrefabAura
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1799046954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1799046953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efeb234d133a1d5408ebb77d7181996f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PrefabModifierRenderer
+  _prefab: {fileID: 3938369738910734278, guid: 7b192c81bd6605c46854752e1436dd05, type: 3}
+  _heightOffset: 0
+--- !u!4 &1799046955
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1799046953}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1809997185
 GameObject:
   m_ObjectHideFlags: 0
@@ -13952,7 +14103,7 @@ MonoBehaviour:
     SpeedParam: Ability0Speed
     SpeedMultiplier: 1
     RotateTowardPosition: 0
-    SoundName: IceBlast
+    SoundName: FreezeBegin
   _attackWindupSoundName: DefaultTroopWindup
   _attackWindupFinishedSoundName: MagicCast
   _abilityWindupSoundName: 
@@ -14365,120 +14516,168 @@ MonoBehaviour:
     minPitch: 0.9
     maxPitch: 1.1
     defaultVolume: 0.05
+    overlaySounds: []
   - name: CardSelect
     clips:
     - {fileID: 8300000, guid: 5e7bc695c1adcf0489162823f2f1c7a9, type: 3}
     minPitch: 0.95
     maxPitch: 1.05
     defaultVolume: 0.14
+    overlaySounds: []
   - name: CardDraw
     clips:
     - {fileID: 8300000, guid: a634ee6fcac89124f92b1910dacfb922, type: 3}
     minPitch: 1
     maxPitch: 1
     defaultVolume: 0.14
+    overlaySounds: []
   - name: CardPlay
     clips:
     - {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
     minPitch: 1
     maxPitch: 1
     defaultVolume: 0.14
+    overlaySounds: []
   - name: DeploySpawn
     clips:
     - {fileID: 8300000, guid: 7a9de5c4d998126449cf964a6b27a8b0, type: 3}
     minPitch: 1
     maxPitch: 1
     defaultVolume: 1
+    overlaySounds: []
   - name: DeployComplete
     clips:
     - {fileID: 8300000, guid: c5cb2ac29e89dbf43a9b644caaad45e6, type: 3}
     minPitch: 1
     maxPitch: 1
     defaultVolume: 1
+    overlaySounds: []
   - name: DefaultTroopTakeDamage
     clips:
     - {fileID: 8300000, guid: eaae8fe8d600e1f459f34aa5757fa3b8, type: 3}
     minPitch: 0.9
     maxPitch: 1.1
     defaultVolume: 1
+    overlaySounds: []
   - name: DefaultTroopWindup
     clips:
     - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
     minPitch: 1.1
     maxPitch: 0.9
     defaultVolume: 1
+    overlaySounds: []
   - name: DeafultTroopDealDamage
     clips:
     - {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
     minPitch: 1.1
     maxPitch: 0.9
     defaultVolume: 1
+    overlaySounds: []
   - name: StoneTakeDamage
     clips:
     - {fileID: 8300000, guid: b7b5a6156961bac44a67504d42ce6fcf, type: 3}
     minPitch: 1.1
     maxPitch: 0.9
     defaultVolume: 1.5
+    overlaySounds: []
   - name: WoodTakeDamage
     clips:
     - {fileID: 8300000, guid: 2352822feb4caa14ebdbc0c713289f8d, type: 3}
     minPitch: 0.9
     maxPitch: 1.1
     defaultVolume: 3
+    overlaySounds: []
   - name: Revive
     clips:
     - {fileID: 8300000, guid: cfce0cea076109f478783201b2a9f57f, type: 3}
     minPitch: 1
     maxPitch: 1
     defaultVolume: 1
+    overlaySounds: []
   - name: BloodSpellLoop
     clips:
     - {fileID: 8300000, guid: ffde96e429ba5cb409491619888d8b98, type: 3}
     minPitch: 1
     maxPitch: 1
     defaultVolume: 1
+    overlaySounds: []
   - name: BloodSpellDamage
     clips:
     - {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
     minPitch: 1.1
     maxPitch: 0.9
     defaultVolume: 1
+    overlaySounds: []
   - name: DefaultDeath
     clips:
     - {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
     minPitch: 1.1
     maxPitch: 0.9
     defaultVolume: 1
+    overlaySounds: []
   - name: BuySound
     clips:
     - {fileID: 8300000, guid: abdbbfd33a46f4549987385f85c536b5, type: 3}
     minPitch: 1.05
     maxPitch: 0.95
     defaultVolume: 1
+    overlaySounds: []
   - name: ShootArrow
     clips:
     - {fileID: 8300000, guid: cbaea6ab652fa1844b7668d21e5cade8, type: 3}
     minPitch: 1.02
     maxPitch: 0.98
     defaultVolume: 8
+    overlaySounds: []
   - name: DrawArrow
     clips:
     - {fileID: 8300000, guid: d3b925af1e862c3408729053122d58ad, type: 3}
     minPitch: 1.05
     maxPitch: 0.95
     defaultVolume: 9
+    overlaySounds: []
   - name: IceBlast
     clips:
     - {fileID: 8300000, guid: 1d74880bed4586644a16a79a2d9dc8af, type: 3}
     minPitch: 1.05
     maxPitch: 0.95
     defaultVolume: 4
+    overlaySounds: []
   - name: MagicCast
     clips:
     - {fileID: 8300000, guid: c91fcf414acc0344cb03b13996f1bf3b, type: 3}
     minPitch: 1.05
     maxPitch: 0.95
     defaultVolume: 4
+    overlaySounds: []
+  - name: IceBreak
+    clips:
+    - {fileID: 8300000, guid: 4dd1b71da8a35ea45b139ba3904fe2e8, type: 3}
+    minPitch: 1.05
+    maxPitch: 0.95
+    defaultVolume: 4
+    overlaySounds: []
+  - name: DefaultDebuff
+    clips:
+    - {fileID: 8300000, guid: aa967a280457c054bb646d57611f5bd0, type: 3}
+    minPitch: 1.05
+    maxPitch: 0.95
+    defaultVolume: 4
+    overlaySounds: []
+  - name: FreezeBegin
+    clips:
+    - {fileID: 8300000, guid: 8ed8b20de0a485f46ad5a021d5e4c997, type: 3}
+    minPitch: 1.05
+    maxPitch: 0.95
+    defaultVolume: 4
+    overlaySounds: []
+  - name: IronKnightWindup
+    clips:
+    - {fileID: 8300000, guid: 12281eddb57d0bb48b701120ea8ff3e6, type: 3}
+    minPitch: 1.05
+    maxPitch: 0.95
+    defaultVolume: 4
+    overlaySounds: []
 --- !u!114 &1985718171
 MonoBehaviour:
   m_ObjectHideFlags: 0
