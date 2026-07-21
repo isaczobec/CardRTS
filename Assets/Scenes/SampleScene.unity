@@ -1466,6 +1466,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillshotProjectileRenderer
   _prefab: {fileID: 8077043507155612275, guid: 739532cd11a5ae043bd61e1bd753b6a6, type: 3}
   _rotationDegreesPerSecond: 1080
+  _groundOffset: 1
   _launchSoundName: 
   _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &231996844
@@ -3200,8 +3201,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac2631886645f494ab5e0907d9d99639, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkillshotProjectileRenderer
-  _prefab: {fileID: 8077043507155612275, guid: 739532cd11a5ae043bd61e1bd753b6a6, type: 3}
+  _prefab: {fileID: 8077043507155612275, guid: 807e73bf94c52314e92a84acbf9a5fa6, type: 3}
   _rotationDegreesPerSecond: 1080
+  _groundOffset: 1
   _launchSoundName: 
   _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &507829005
@@ -6076,8 +6078,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22e9ad967d6af0d4e95983d697271995, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
-  _prefab: {fileID: 8077043507155612275, guid: 5c06d9abc9800cd42b76770a9e6d0a7a, type: 3}
+  _prefab: {fileID: 8077043507155612275, guid: e563abb8e20cefe4094ab79ce9e28cce, type: 3}
   _rotationDegreesPerSecond: 1080
+  _groundOffset: 0
   _launchSoundName: 
   _impactSoundName: DefaultTroopDealDamage
 --- !u!1 &987012150

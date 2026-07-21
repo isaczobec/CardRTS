@@ -12,12 +12,11 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
 {
     [SerializeField] private GameObject _prefab;
     [SerializeField] private float _rotationDegreesPerSecond = 1080f;
+    [SerializeField] private float _groundOffset = 0f;
 
     [Header("Audio")]
     [SerializeField] private string _launchSoundName;
     [SerializeField] private string _impactSoundName;
-
-    private const float GroundOffset = 0f;
 
     private ECS _ecs;
     private readonly Dictionary<ulong, GameObject> _objects = new();
@@ -147,6 +146,6 @@ public class SeekingProjectileRenderer : MonoBehaviour, IComponentRenderer
             h = WorldManager.instance.Handler.GetHeight(tx, ty);
         }
 
-        return new Vector3(pos.X, h + GroundOffset, pos.Y);
+        return new Vector3(pos.X, h + _groundOffset, pos.Y);
     }
 }
