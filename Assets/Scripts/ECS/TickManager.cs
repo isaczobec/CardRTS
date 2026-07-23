@@ -182,6 +182,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ScheduledCallComponent>(40);
         _componentTypeRegistry.Register<DamageOverTimeComponent>(41);
         _componentTypeRegistry.Register<StackingBurnDebuffComponent>(42);
+        _componentTypeRegistry.Register<BuildingDamageBonusComponent>(43);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -302,6 +303,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<DamageOverTimeComponent>>(101);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<StackingBurnDebuffComponent>>(102);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<StackingBurnDebuffComponent>>(103);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BuildingDamageBonusComponent>>(104);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BuildingDamageBonusComponent>>(105);
 
         ECS = CreateSimulationECS();
     }
@@ -517,6 +520,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ScheduledCallComponent>());
         ecs.AddComponentStore(new ComponentStore<DamageOverTimeComponent>());
         ecs.AddComponentStore(new ComponentStore<StackingBurnDebuffComponent>());
+        ecs.AddComponentStore(new ComponentStore<BuildingDamageBonusComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -556,6 +560,11 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(new DeckSystem());
         ecs.RegisterSystem(ProjectileOnHitSystem.Instance);
         ecs.RegisterSystem(ProjectileHitResolutionSystem.Instance);
+        // Must be registered (thus Setup/Subscribe<DamageRequest>) before ArmorMitigationSystem
+        // — Subscribe callbacks run in registration order (see RequestManager's own doc
+        // comment), so this boosts the raw damage first, before ArmorMitigationSystem
+        // mitigates the (now-boosted) amount — see BuildingDamageBonusSystem's own comment.
+        ecs.RegisterSystem(BuildingDamageBonusSystem.Instance);
         ecs.RegisterSystem(ArmorMitigationSystem.Instance);
         ecs.RegisterSystem(PeriodicDamageReductionSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
@@ -619,6 +628,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ScheduledCallComponent>());
         ecs.AddComponentStore(new ComponentStore<DamageOverTimeComponent>());
         ecs.AddComponentStore(new ComponentStore<StackingBurnDebuffComponent>());
+        ecs.AddComponentStore(new ComponentStore<BuildingDamageBonusComponent>());
 
         return ecs;
     }

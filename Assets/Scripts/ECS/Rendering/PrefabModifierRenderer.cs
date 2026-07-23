@@ -30,7 +30,11 @@ public class PrefabModifierRenderer : MonoBehaviour, IModifierRenderer
 
     public void OnEntityRemoved(ulong targetEntityId)
     {
-        if (_objects.TryGetValue(targetEntityId, out GameObject go))
+        // go can already be a destroyed (Unity "fake null") reference here — e.g. a
+        // one-shot VFX prefab (ExpandingCirclePrefab) that destroys itself once its own
+        // animation finishes, well before the modifier's own (often longer) duration ends.
+        // Destroy(null) is a harmless no-op, but checking explicitly avoids relying on that.
+        if (_objects.TryGetValue(targetEntityId, out GameObject go) && go != null)
             Destroy(go);
         _objects.Remove(targetEntityId);
     }
@@ -39,7 +43,11 @@ public class PrefabModifierRenderer : MonoBehaviour, IModifierRenderer
     {
         // Can fire more than once for the same target (see IModifierRenderer) — guarded the
         // same way every other renderer's OnEntityActivated already guards against re-adding.
-        if (_objects.ContainsKey(targetEntityId) || _prefab == null) return;
+        // Checked against null, not just key presence — a prefab that already self-destroyed
+        // (see OnEntityRemoved's own comment) would otherwise permanently block a fresh one
+        // from ever being spawned on a later activation.
+        if (_prefab == null) return;
+        if (_objects.TryGetValue(targetEntityId, out GameObject existing) && existing != null) return;
         if (_positionStore == null || !_positionStore.HasComponent(targetEntityId)) return;
 
         GameObject go = Instantiate(_prefab, WorldPositionFor(_positionStore.GetComponent(targetEntityId)), Quaternion.identity);
@@ -54,6 +62,15 @@ public class PrefabModifierRenderer : MonoBehaviour, IModifierRenderer
         foreach (ulong id in targetEntityIds)
         {
             if (!_objects.TryGetValue(id, out GameObject go)) continue;
+            if (go == null)
+            {
+                // Prefab destroyed itself independently of OnEntityRemoved (see that
+                // method's own comment) — drop the stale reference instead of touching it
+                // again; OnEntityActivated will spawn a fresh one if this modifier is still
+                // active and fires again.
+                _objects.Remove(id);
+                continue;
+            }
             if (!_positionStore.HasComponent(id)) continue; // target no longer exists
 
             go.transform.position = WorldPositionFor(_positionStore.GetComponent(id));

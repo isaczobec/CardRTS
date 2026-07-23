@@ -4711,7 +4711,7 @@ MonoBehaviour:
   _rotationDegreesPerSecond: 1080
   _groundOffset: 2
   _launchSoundName: 
-  _impactSoundName: IceBlast
+  _impactSoundName: FireBlast
 --- !u!1 &766207495
 GameObject:
   m_ObjectHideFlags: 0
@@ -8810,7 +8810,7 @@ MonoBehaviour:
   - type: 2
     renderer: {fileID: 1065127970}
   - type: 3
-    renderer: {fileID: 1834985531}
+    renderer: {fileID: 1834985532}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -13878,7 +13878,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1834985530}
-  - component: {fileID: 1834985531}
+  - component: {fileID: 1834985532}
   m_Layer: 0
   m_Name: SchorcedPrefab
   m_TagString: Untagged
@@ -13901,7 +13901,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1244099536}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1834985531
+--- !u!114 &1834985532
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -13910,11 +13910,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1834985529}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: efeb234d133a1d5408ebb77d7181996f, type: 3}
+  m_Script: {fileID: 11500000, guid: 7b5b443febe33b841b89a8b13eca83d5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PrefabModifierRenderer
+  m_EditorClassIdentifier: Assembly-CSharp::ScorchedModifierRenderer
   _prefab: {fileID: 9038219233330971368, guid: 40a1c39396b2d584b938928ee8f12cd5, type: 3}
   _heightOffset: 1.5
+  _baseScale: 0.7
+  _scalePerStack: 0.15
 --- !u!114 &1858385900
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14852,7 +14854,17 @@ MonoBehaviour:
     overlaySounds: []
   - name: IronKnightWindup
     clips:
-    - {fileID: 8300000, guid: 12281eddb57d0bb48b701120ea8ff3e6, type: 3}
+    - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+    minPitch: 1.05
+    maxPitch: 0.95
+    defaultVolume: 4
+    overlaySounds:
+    - clip: {fileID: 8300000, guid: 12281eddb57d0bb48b701120ea8ff3e6, type: 3}
+      probability: 0
+      volume: 2
+  - name: FireBlast
+    clips:
+    - {fileID: 8300000, guid: a652877b012108e41871f867ada9f176, type: 3}
     minPitch: 1.05
     maxPitch: 0.95
     defaultVolume: 4
