@@ -62,6 +62,11 @@ public class SkeletonsCard : SpawnAtPointCard
     public override string Description => "Raises 8 skeletons in a ring. Each fallen enemy troop a skeleton kills rises again as a new friendly skeleton.";
     public override string IndicatorPrefabName => "Skeletons";
 
+    // Previews all 8 landing spots (same radius/angles OnPlayed itself spawns at) instead
+    // of a single indicator sitting at the cursor — see CircleIndicatorHelper.
+    public override void OnIndicatorSpawned(GameObject indicator)
+        => CircleIndicatorHelper.ArrangeInRing(indicator, SkeletonCount, SpawnRadius);
+
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {

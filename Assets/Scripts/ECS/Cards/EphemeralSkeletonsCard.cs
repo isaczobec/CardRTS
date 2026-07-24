@@ -58,6 +58,11 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     public override string Description => "Raises 8 short-lived skeleton archers in a ring that crumble after 20 seconds. Any enemy troop one kills rises again as a permanent friendly skeleton.";
     public override string IndicatorPrefabName => "EphemeralSkeletons";
 
+    // Previews all 8 landing spots (same radius/angles OnPlayed itself spawns at) instead
+    // of a single indicator sitting at the cursor — see CircleIndicatorHelper.
+    public override void OnIndicatorSpawned(GameObject indicator)
+        => CircleIndicatorHelper.ArrangeInRing(indicator, SkeletonCount, SpawnRadius);
+
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {

@@ -1,7 +1,9 @@
-// Subscribes to CanMoveRequest/CanPerformRequest and vetoes both for any entity currently
-// targeted by an active StunnedComponent modifier — mirrors ActionWindupSystem exactly, but
-// for a genuine stun debuff (e.g. Frozen, see AbilityManager's Ice Nova ability) rather than
-// a self-inflicted ability windup. Registered as a GlobalSystem purely for the Setup hook,
+// Subscribes to CanMoveRequest/CanMoveOnOwnAccountRequest/CanPerformRequest and vetoes all
+// three for any entity currently targeted by an active StunnedComponent modifier — mirrors
+// ActionWindupSystem exactly (including vetoing both CanMove requests, not just the narrower
+// one — a stunned entity isn't moving at all, unlike a merely-displaced one), but for a
+// genuine stun debuff (e.g. Frozen, see AbilityManager's Ice Nova ability) rather than a
+// self-inflicted ability windup. Registered as a GlobalSystem purely for the Setup hook,
 // same as ArmorMitigationSystem/ActionWindupSystem.
 public static class StunnedSystem
 {
@@ -15,6 +17,12 @@ public static class StunnedSystem
         {
             if (IsStunned(innerEcs, req.EntityId))
                 req.CanMove = false;
+        });
+
+        ecs.Requests.Subscribe<CanMoveOnOwnAccountRequest>((req, innerEcs) =>
+        {
+            if (IsStunned(innerEcs, req.EntityId))
+                req.CanMoveOnOwnAccount = false;
         });
 
         ecs.Requests.Subscribe<CanPerformRequest>((req, innerEcs) =>
