@@ -537,6 +537,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(DamageOverTimeSystem.Instance);
         ecs.RegisterSystem(ActionWindupSystem.Instance);
         ecs.RegisterSystem(StunnedSystem.Instance);
+        ecs.RegisterSystem(DisplacementSystem.Instance);
         ecs.RegisterSystem(new ScheduledCallSystem());
         ecs.RegisterSystem(new TeleportingModifierSystem());
         ecs.RegisterSystem(new BlinkSystem());

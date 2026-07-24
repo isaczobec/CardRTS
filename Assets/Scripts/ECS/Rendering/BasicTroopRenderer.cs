@@ -40,6 +40,7 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
     private static readonly int AttackTrigger = Animator.StringToHash("Attack");
     private static readonly int DieTrigger = Animator.StringToHash("Die");
     private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
+    private static readonly int IsDisplacedParam = Animator.StringToHash("IsDisplaced");
     private static readonly int AttackSpeedMultiplierFloat = Animator.StringToHash("AttackSpeedMultiplier");
     private static readonly int MovementSpeedFloat = Animator.StringToHash("MovementSpeed");
 
@@ -169,6 +170,8 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
 
             bool isMoving = movStore != null && movStore.HasComponent(id)
                 && movStore.GetComponent(id).IsMoving;
+            bool isDisplaced = movStore != null && movStore.HasComponent(id)
+                && movStore.GetComponent(id).IsDisplaced;
             bool teleported = movStore != null && movStore.HasComponent(id)
                 && movStore.GetComponent(id).TeleportedTick == _ecs.CurrentSimulationTick;
 
@@ -189,6 +192,7 @@ public class BasicTroopRenderer : MonoBehaviour, IComponentRenderer
             if (go.Animator != null)
             {
                 go.Animator.SetBool(IsMovingParam, isMoving);
+                go.Animator.SetBool(IsDisplacedParam, isDisplaced);
 
                 if (updateSpeedParam && _runAnimationSpeedStat > 0f)
                 {

@@ -4319,6 +4319,8 @@ MonoBehaviour:
     renderer: {fileID: 745290411}
   - type: 24
     renderer: {fileID: 1044113395}
+  - type: 25
+    renderer: {fileID: 1325757548}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -7051,7 +7053,7 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
-  _runAnimationSpeedStat: 70
+  _runAnimationSpeedStat: 50
   _speedParamUpdateInterval: 0.25
 --- !u!1 &1054813993
 GameObject:
@@ -8594,6 +8596,8 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: b36f8271a1e418445b45fcf4ee159666, type: 3}
   - name: GoblinSnatcher
     prefab: {fileID: 6472282922783299243, guid: 5e94ac261b7b540419e8b9345782f32a, type: 3}
+  - name: StoneConstruct
+    prefab: {fileID: 6472282922783299243, guid: 3524fd7b85d2f304f9cd7fd7d86ed6da, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -9331,6 +9335,75 @@ MonoBehaviour:
   _hoverPreviewCard: {fileID: 1585825894}
   _hoverSoundName: CardHover
   _buySoundName: BuySound
+--- !u!1 &1325757545
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1325757546}
+  - component: {fileID: 1325757548}
+  m_Layer: 0
+  m_Name: StoneConstructRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1325757546
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1325757545}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1325757548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1325757545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 3524fd7b85d2f304f9cd7fd7d86ed6da, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.3667
+    TimeUntilImpact: 0.3667
+  - TriggerName: Attack2
+    Duration: 1.167
+    TimeUntilImpact: 0.8334
+  _selectionMode: 1
+  _abilityAnimationTriggers:
+  - AbilitySlot: 0
+    TriggerName: Ability0
+    SpeedParam: Ability0Speed
+    SpeedMultiplier: 1
+    RotateTowardPosition: 1
+    SoundName: 
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _runAnimationSpeedStat: 19.5
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &1354889544
 GameObject:
   m_ObjectHideFlags: 0
@@ -10054,6 +10127,7 @@ Transform:
   m_Children:
   - {fileID: 1914037911}
   - {fileID: 1373427740}
+  - {fileID: 1325757546}
   - {fileID: 1631565995}
   - {fileID: 1044113394}
   - {fileID: 1671680053}
@@ -10392,6 +10466,10 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 9725fb87facc42a4984598500f76e0fb, type: 3}
   - name: GoblinSnatcher
     sprite: {fileID: 21300000, guid: 43c039c3ce9d3a94eb99e8c982a7818e, type: 3}
+  - name: StoneConstruct
+    sprite: {fileID: 21300000, guid: ca6299f192d72b047a99c160e51a72d0, type: 3}
+  - name: GroundSlam
+    sprite: {fileID: 21300000, guid: e32aad571b880e549a22b1cc2f2f84a2, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -11312,7 +11390,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -21.999817, y: 11}
+  m_AnchoredPosition: {x: -22.000366, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567

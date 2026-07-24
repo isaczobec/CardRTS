@@ -7,9 +7,12 @@
 // deterministic cast-time code creates the SAME component on both sides, and each side
 // resolves Type to its own locally-registered function.
 //
-// Param0-Param2 are generic argument slots for whatever the registered function needs to
-// read back (e.g. the caster's entity id) — plain scalars rather than a more elaborate
-// payload scheme, since that's enough for every scheduled call so far.
+// Param0-Param3 are generic argument slots for whatever the registered function needs to
+// read back (e.g. an entity id) — plain scalars rather than a more elaborate payload
+// scheme, since that's enough for every scheduled call so far. Two ulong slots (Param0,
+// Param3) support calls needing two entity ids (e.g. a windup-then-resolve ability that
+// needs both the caster and the originally-targeted entity — see AbilityManager's
+// GroundSlamResolve).
 public struct ScheduledCallComponent : IComponent
 {
     public ScheduledCallType Type;
@@ -17,6 +20,7 @@ public struct ScheduledCallComponent : IComponent
     public ulong Param0;
     public float Param1;
     public float Param2;
+    public ulong Param3;
 
     // Set once ScheduledCallSystem has invoked the registered function — mirrors
     // TeleportingModifierComponent.HasTeleported: entity deletion is server-only (see

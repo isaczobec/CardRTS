@@ -17,6 +17,7 @@ public static class CardRegistry
         { CardType.IceMan, new IceManCard() },
         { CardType.FireMan, new FireManCard() },
         { CardType.GoblinSnatcher, new GoblinSnatcherCard() },
+        { CardType.StoneConstruct, new StoneConstructCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

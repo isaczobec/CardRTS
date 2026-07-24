@@ -44,6 +44,14 @@ public class PathfindingSystem : ISystem
             if (!posStore.HasComponent(id)) return;
 
             ref MovableComponent mov = ref movStore.GetComponent(id);
+
+            // While displaced, DisplacementSystem owns both PositionComponent and IsMoving
+            // for this entity entirely — deferring here (rather than also calling
+            // SetIsMoving(false) via either branch below) avoids stomping whatever
+            // DisplacementSystem set IsMoving to this same tick, which used to make the
+            // position interpolator snap instead of smoothly follow a knocked-back troop.
+            if (mov.IsDisplaced) return;
+
             if (mov.currentMovementMode == MovementMode.NotMoving)
             {
                 _entityIdsToPaths.Remove(id);
@@ -51,13 +59,13 @@ public class PathfindingSystem : ISystem
                 return;
             }
 
-            // Authoritative "is this entity actually allowed to move right now" gate — an
-            // AI system may have already set a destination/mode before a root landed
+            // Authoritative "is this entity actually allowed to move itself right now" gate
+            // — an AI system may have already set a destination/mode before this landed
             // mid-chase; checking here (rather than only where destinations are set)
             // freezes movement immediately regardless of what set it. Leaves the cached
             // path/destination alone so it resumes exactly where it left off once able to
             // move again, rather than forgetting/re-pathing.
-            if (!ActivationQuery.CanMove(ecs, id))
+            if (!ActivationQuery.CanMoveOnOwnAccount(ecs, id))
             {
                 SetIsMoving(ecs, id, ref mov, false);
                 return;
@@ -118,6 +126,17 @@ public class PathfindingSystem : ISystem
             SetIsMoving(ecs, id, ref mov, true);
         });
     }
+
+    // Drops entityId's cached path (if any), forcing a fresh Pathfinding.PathFind from
+    // wherever it currently is next time it's allowed to move on its own account, instead of
+    // continuing to consume a path computed for (and anchored to) a position it's no longer
+    // at. Call this whenever something moves an entity out from under the cache by a means
+    // other than this system's own step — e.g. DisplacementSystem.BeginDisplacement when a
+    // knockback starts, or TeleportRequest.Execute right after an instant reposition — since
+    // the cached waypoints are only ever valid relative to the position history that
+    // produced them, and neither of those repositions is small enough for Execute's own
+    // ArrivalRadius tolerance to paper over.
+    public void ClearCachedPath(ulong entityId) => _entityIdsToPaths.Remove(entityId);
 
     // Only marks MovableComponent dirty when IsMoving actually changes — every idle troop
     // would otherwise get a dirty-marked component every single tick for no reason.

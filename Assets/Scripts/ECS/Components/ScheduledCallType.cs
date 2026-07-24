@@ -5,4 +5,5 @@ public enum ScheduledCallType : byte
 {
     None = 0,
     IceNovaResolve = 1,
+    GroundSlamResolve = 2,
 }

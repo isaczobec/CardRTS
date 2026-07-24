@@ -27,4 +27,11 @@ public static class ActivationQuery
     // effect vetoes this without affecting attacks/abilities or activation.
     public static bool CanMove(ECS ecs, ulong entityId)
         => ecs.Requests.Process(new CanMoveRequest(entityId), ecs, executeIfNotCancelled: false).CanMove;
+
+    // Narrower still: can this entity move itself, from its own movement input/pathing (see
+    // CanMoveOnOwnAccountRequest) — checked by PathfindingSystem before moving a troop toward
+    // its destination. False while e.g. displaced (knocked back), even though CanMove itself
+    // stays true for that case since the entity genuinely is still moving.
+    public static bool CanMoveOnOwnAccount(ECS ecs, ulong entityId)
+        => ecs.Requests.Process(new CanMoveOnOwnAccountRequest(entityId), ecs, executeIfNotCancelled: false).CanMoveOnOwnAccount;
 }

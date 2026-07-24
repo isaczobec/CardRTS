@@ -54,4 +54,16 @@ public struct MovableComponent : IComponent
     public float CurrentDestinationX => currentMovementMode == MovementMode.MoveToPlayerSetDestination ? playerSetDestinationX : destinationX;
     public float CurrentDestinationY => currentMovementMode == MovementMode.MoveToPlayerSetDestination ? playerSetDestinationY : destinationY;
 
+    // Knockback/displacement state — see DisplacementSystem, which is the only thing that
+    // ever sets or reads these. While IsDisplaced is true, DisplacementSystem steps
+    // PositionComponent by (DisplacementVelocityX, DisplacementVelocityY) (world units/
+    // second) each tick and counts DisplacementTicksRemaining down (0 = not displaced/no
+    // ticks left), and vetoes CanMoveRequest/CanPerformRequest for this entity so neither
+    // the player nor its own AI can steer or act mid-knockback. Lives here rather than on a
+    // separate component so PathfindingSystem's own CanMove gate is enough, by itself, to
+    // keep normal pathing from fighting with a displacement step on the same entity.
+    public bool IsDisplaced;
+    public float DisplacementVelocityX;
+    public float DisplacementVelocityY;
+    public int DisplacementTicksRemaining;
 }

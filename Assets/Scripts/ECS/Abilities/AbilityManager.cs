@@ -30,6 +30,20 @@ public static class AbilityManager
     // debuff in the process (see IceManCard, the only troop that currently equips this).
     public const int IceNovaAbilityId = 5;
 
+    // Target entity (friendly or enemy), knocks whatever's targeted away from the caster via
+    // DisplacementSystem — a no-op if the target has no MovableComponent at all (e.g. a
+    // building). Test ability exercising DisplacementSystem; not currently equipped by any
+    // troop (see GroundSlamAbilityId, StoneConstructCard's windup-based version of the
+    // same push).
+    public const int PushAbilityId = 6;
+
+    // Target entity (friendly or enemy) — same push as PushAbilityId, but winds up for
+    // GroundSlamWindupSeconds first (ActionWindupComponent blocks the caster's own
+    // CanMove/CanPerform for the duration) before resolving via ScheduledCallSystem, instead
+    // of pushing instantly (see StoneConstructCard, the only troop that currently equips
+    // this).
+    public const int GroundSlamAbilityId = 7;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     // The shot always travels the caster's second projectile pool's own Range (see
@@ -72,6 +86,22 @@ public static class AbilityManager
     // effect) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
     private const float IceNovaCastTimeSeconds = 1f;
 
+    private const float PushRange = 6f;
+    // World units/second — DisplacementSystem steps the target by this every tick for
+    // PushDurationSeconds, in the direction straight away from the caster at the moment the
+    // push lands.
+    private const float PushSpeed = 20f;
+    private const float PushDurationSeconds = 0.3f;
+
+    private const float GroundSlamRange = 6f;
+    private const float GroundSlamSpeed = 20f;
+    private const float GroundSlamDisplacementDurationSeconds = 0.3f;
+    // Cast time before the slam actually lands — see BuildGroundSlamAbility. Mirrors
+    // BuildIceNovaAbility's own IceNovaCastTimeSeconds: an ActionWindupComponent blocks the
+    // caster's own CanMove/CanPerform for the duration, and ResolveGroundSlam (the actual
+    // push) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
+    private const float GroundSlamWindupSeconds = 0.6f;
+
     // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
 
@@ -82,6 +112,8 @@ public static class AbilityManager
         { SkillshotAbilityId, BuildSkillshotAbility() },
         { MeleeStrikeAbilityId, BuildMeleeStrikeAbility() },
         { IceNovaAbilityId, BuildIceNovaAbility() },
+        { PushAbilityId, BuildPushAbility() },
+        { GroundSlamAbilityId, BuildGroundSlamAbility() },
     };
 
     // Runs after the field initializers above (C# guarantees static field initializers run
@@ -95,6 +127,7 @@ public static class AbilityManager
     static AbilityManager()
     {
         ScheduledCallSystem.RegisterCall(ScheduledCallType.IceNovaResolve, ResolveIceNova);
+        ScheduledCallSystem.RegisterCall(ScheduledCallType.GroundSlamResolve, ResolveGroundSlam);
     }
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
@@ -264,6 +297,107 @@ public static class AbilityManager
             ecs.Requests.CreateRequest(new DamageRequest(input.TargetEntityId, MeleeStrikeDamage) { DealerEntityId = input.CastingEntityId });
         },
     };
+
+    // Starts the target's displacement via DisplacementSystem.BeginDisplacement (a no-op if
+    // it has no MovableComponent at all, e.g. a building) — deterministic and side-effect-free
+    // like MeleeStrikeAbility's own DamageRequest (a plain component mutation, not an entity
+    // create/delete), so no isServer guard is needed here either.
+    private static Ability BuildPushAbility() => new Ability
+    {
+        Type = AbilityType.TargetEntity,
+        Name = "Shove",
+        Description = "Pushes a nearby troop away, briefly knocking it out of control.",
+        Range = PushRange,
+        ImageName = "Push",
+        CanTargetFriendly = true,
+        CanTargetEnemyOrNeutral = true,
+        ShowRangeCircle = true,
+        ShowTargetIndicator = true,
+        ExecuteOnEntity = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null) return;
+            if (!posStore.HasComponent(input.TargetEntityId) || !posStore.HasComponent(input.CastingEntityId)) return;
+
+            PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
+            PositionComponent targetPos = posStore.GetComponent(input.TargetEntityId);
+            Vector2 direction = new Vector2(targetPos.X - casterPos.X, targetPos.Y - casterPos.Y);
+            // Caster and target exactly overlapping is the only way this is zero — an
+            // arbitrary but deterministic fallback direction beats a NaN from normalizing a
+            // zero vector.
+            direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
+
+            DisplacementSystem.BeginDisplacement(ecs, input.TargetEntityId,
+                direction.x * PushSpeed, direction.y * PushSpeed, TickManager.SecondsToTicks(PushDurationSeconds));
+        },
+    };
+
+    // Same push as BuildPushAbility, but winds up for GroundSlamWindupSeconds first
+    // (ActionWindupComponent — blocks the caster's own CanMove/CanPerform for the duration,
+    // exactly like BuildSkillshotAbility/BuildIceNovaAbility) before resolving via
+    // ResolveGroundSlam below, deferred through ScheduledCallSystem. Deterministic and
+    // side-effect-free itself (the windup modifier and the scheduled call both act through
+    // TargetEntityId/ScheduledCall matching, not the entities' own ids), so no isServer guard
+    // is needed here — same reasoning as BuildIceNovaAbility.
+    private static Ability BuildGroundSlamAbility() => new Ability
+    {
+        Type = AbilityType.TargetEntity,
+        Name = "Ground Slam",
+        Description = "Winds up briefly, then slams the ground, pushing a nearby troop away.",
+        Range = GroundSlamRange,
+        ImageName = "GroundSlam",
+        CanTargetFriendly = true,
+        CanTargetEnemyOrNeutral = true,
+        ShowRangeCircle = true,
+        ShowTargetIndicator = true,
+        ExecuteOnEntity = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null) return;
+            if (!posStore.HasComponent(input.CastingEntityId) || !posStore.HasComponent(input.TargetEntityId)) return;
+
+            int windupTicks = Mathf.Max(1, TickManager.SecondsToTicks(GroundSlamWindupSeconds));
+
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = windupTicks,
+            });
+            ecs.AddComponent(modifier.Id, new ActionWindupComponent());
+
+            // param0 = caster, param3 = the originally-targeted entity — both re-read live
+            // at resolve time (ResolveGroundSlam), not captured here, so the push direction
+            // reflects where they actually are once the windup ends rather than where they
+            // stood when the cast began.
+            ScheduledCallSystem.Schedule(ecs, ScheduledCallType.GroundSlamResolve, windupTicks,
+                input.CastingEntityId, param3: input.TargetEntityId);
+
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+        },
+    };
+
+    // The actual Ground Slam push — deferred out of BuildGroundSlamAbility's ExecuteOnEntity
+    // so it can be scheduled to run once the windup above ends, via ScheduledCallSystem
+    // (registered against ScheduledCallType.GroundSlamResolve in the static constructor
+    // above). See BuildPushAbility for the push logic itself, which this mirrors exactly.
+    private static void ResolveGroundSlam(ECS ecs, ScheduledCallComponent call)
+    {
+        ulong casterId = call.Param0;
+        ulong targetId = call.Param3;
+
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        if (posStore == null) return;
+        if (!posStore.HasComponent(casterId) || !posStore.HasComponent(targetId)) return;
+
+        PositionComponent casterPos = posStore.GetComponent(casterId);
+        PositionComponent targetPos = posStore.GetComponent(targetId);
+        Vector2 direction = new Vector2(targetPos.X - casterPos.X, targetPos.Y - casterPos.Y);
+        direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
+
+        DisplacementSystem.BeginDisplacement(ecs, targetId,
+            direction.x * GroundSlamSpeed, direction.y * GroundSlamSpeed, TickManager.SecondsToTicks(GroundSlamDisplacementDurationSeconds));
+    }
 
     // Winds up for IceNovaCastTimeSeconds (ActionWindupComponent — blocks the caster's own
     // CanMove/CanPerform for the duration, exactly like BuildSkillshotAbility), then

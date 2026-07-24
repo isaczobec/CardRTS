@@ -34,8 +34,8 @@ public class ScheduledCallSystem : ISystem
         => _calls[type] = call;
 
     // Creates the entity backing a scheduled call, due ticksFromNow ticks from now. See
-    // ScheduledCallComponent's own doc comment for what param0-2 are for.
-    public static void Schedule(ECS ecs, ScheduledCallType type, int ticksFromNow, ulong param0 = 0, float param1 = 0f, float param2 = 0f)
+    // ScheduledCallComponent's own doc comment for what param0-3 are for.
+    public static void Schedule(ECS ecs, ScheduledCallType type, int ticksFromNow, ulong param0 = 0, float param1 = 0f, float param2 = 0f, ulong param3 = 0)
     {
         EntityHandle call = ecs.CreateEntity();
         ecs.AddComponent(call.Id, new ScheduledCallComponent
@@ -45,6 +45,7 @@ public class ScheduledCallSystem : ISystem
             Param0 = param0,
             Param1 = param1,
             Param2 = param2,
+            Param3 = param3,
         });
     }
 
