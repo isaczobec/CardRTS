@@ -185,6 +185,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BuildingDamageBonusComponent>(43);
         _componentTypeRegistry.Register<OnKillScheduleComponent>(44);
         _componentTypeRegistry.Register<ShadowCloakComponent>(45);
+        _componentTypeRegistry.Register<OnHitScheduleComponent>(46);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -311,6 +312,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<OnKillScheduleComponent>>(107);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ShadowCloakComponent>>(108);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShadowCloakComponent>>(109);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<OnHitScheduleComponent>>(110);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<OnHitScheduleComponent>>(111);
 
         ECS = CreateSimulationECS();
     }
@@ -529,6 +532,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<StackingBurnDebuffComponent>());
         ecs.AddComponentStore(new ComponentStore<BuildingDamageBonusComponent>());
         ecs.AddComponentStore(new ComponentStore<OnKillScheduleComponent>());
+        ecs.AddComponentStore(new ComponentStore<OnHitScheduleComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -587,6 +591,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
         ecs.RegisterSystem(ResourceProductionOnDeathSystem.Instance);
         ecs.RegisterSystem(OnKillScheduleSystem.Instance);
+        ecs.RegisterSystem(OnHitScheduleSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
         ecs.SetupSystems();
@@ -642,6 +647,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<StackingBurnDebuffComponent>());
         ecs.AddComponentStore(new ComponentStore<BuildingDamageBonusComponent>());
         ecs.AddComponentStore(new ComponentStore<OnKillScheduleComponent>());
+        ecs.AddComponentStore(new ComponentStore<OnHitScheduleComponent>());
 
         return ecs;
     }

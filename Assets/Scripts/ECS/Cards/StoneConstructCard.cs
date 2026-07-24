@@ -43,11 +43,13 @@ public class StoneConstructCard : SpawnAtPointCard
     public override string Description => "A slow, hulking rock golem that deals massive damage to buildings and can slam nearby troops away.";
     public override string IndicatorPrefabName => "StoneConstruct";
 
+    public const float SelectionScale = 3f;
+
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 100,
-            Stone = 150
+            Metal = 70,
+            Stone = 280
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -97,6 +99,6 @@ public class StoneConstructCard : SpawnAtPointCard
                 Ability1Id = AbilityManager.GroundSlamAbilityId,
                 Ability1CooldownTicks = TickManager.SecondsToTicks(GroundSlamCooldownSeconds),
             }),
-        });
+        }, SelectionScale: SelectionScale);
     }
 }

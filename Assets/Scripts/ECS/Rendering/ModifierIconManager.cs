@@ -221,7 +221,12 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         AddIfChanged(changes, "Range", mod.RangeRatioBonus, mod.RangeAdditiveBonus);
         AddIfChanged(changes, "Armor", mod.ArmorRatioBonus, mod.ArmorAdditiveBonus);
         AddIfChanged(changes, "Damage", mod.DamageRatioBonus, mod.DamageAdditiveBonus);
-        AddIfChanged(changes, "Attack Speed", mod.AttackSpeedRatioBonus, mod.AttackSpeedAdditiveBonus);
+        // AttackSpeed's underlying stat is a tick PERIOD (lower = faster attacks) — the
+        // opposite of every other stat here, where a higher value is always better. Negate
+        // just for display so a mechanically-negative (period-shortening, i.e. faster-
+        // attacking) bonus still reads as a positive "+X% Attack Speed" buff, and vice versa,
+        // without changing what StatModifierSystem/StatsQuery actually apply.
+        AddIfChanged(changes, "Attack Speed", -mod.AttackSpeedRatioBonus, -mod.AttackSpeedAdditiveBonus);
 
         if (changes.Count == 0)
             return (genericName, genericImageName, "This troop has stat changes.");

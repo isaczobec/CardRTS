@@ -7,4 +7,5 @@ public enum ScheduledCallType : byte
     IceNovaResolve = 1,
     GroundSlamResolve = 2,
     SkeletonSummonResolve = 3,
+    StalkerAmbushResolve = 4,
 }

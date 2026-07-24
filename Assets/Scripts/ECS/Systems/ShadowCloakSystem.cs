@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 // Subscribes to IsSelectableRequest and vetoes it for any entity currently targeted by an
 // active ShadowCloakComponent modifier (see AbilityManager's Shadow Cloak ability,
 // StalkerCard) — but ONLY from an identifiable enemy viewpoint (RequestingPlayerId set and
@@ -69,4 +71,38 @@ public static class ShadowCloakSystem
         if (cloaked) ownerId = troopStore.GetComponent(entityId).OwnerPlayerId;
         return cloaked;
     }
+
+    // Deletes every active ShadowCloakComponent modifier targeting entityId — e.g.
+    // StalkerCard's ambush payoff (see OnHitScheduleComponent) ends the cloak the instant it
+    // lands a hit, rather than waiting out its own duration. Server-only, mirroring
+    // ProjectileOnHitSystem.RemoveActiveChilledModifiers/ModifierSystem's own natural-expiry
+    // deletion — predicted-only deletion would desync a client from the server's
+    // authoritative entity set, so a non-owning client's own cloak icon just lingers one
+    // round-trip until the server's deletion delta lands, same latency every other
+    // server-only deletion in this codebase already has. Setting TicksRemaining to 0 instead
+    // of deleting would NOT be enough on its own — ModifierSystem's countdown only adds an
+    // already-expired modifier to its deletion pass when IT decrements TicksRemaining to 0,
+    // not when it finds one already at/below 0 — so an actual delete is required here.
+    public static void RemoveActiveShadowCloakModifiers(ECS ecs, ulong entityId)
+    {
+        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+        if (!isServer) return;
+
+        ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
+        ComponentStore<ShadowCloakComponent> cloakStore = ecs.GetComponentStore<ShadowCloakComponent>();
+        if (modifierStore == null || cloakStore == null) return;
+
+        _removalScratch.Clear();
+        cloakStore.ForEach((ulong modifierId) =>
+        {
+            if (!modifierStore.HasComponent(modifierId)) return;
+            if (modifierStore.GetComponent(modifierId).TargetEntityId != entityId) return;
+            _removalScratch.Add(modifierId);
+        });
+
+        foreach (ulong modifierId in _removalScratch)
+            ecs.DeleteEntity(modifierId);
+    }
+
+    private static readonly List<ulong> _removalScratch = new();
 }

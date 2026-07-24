@@ -140,6 +140,16 @@ public class SelectionManager : Singleton<SelectionManager>
                 PositionComponent pos = _positionStore.GetComponent(entityId);
                 ApplySelectionPosition(entityId, ref pos, selection);
             }
+
+            // Polled every frame (rather than event-driven, the way OnRespawnableEntityDied/
+            // Respawned toggle visibility for the dead-awaiting-respawn case) since there's
+            // no single event fired uniformly for every way an untargetable state can end —
+            // a Shadow Cloak modifier can expire naturally OR be broken instantly by
+            // StalkerCard's ambush payoff. Harmless overlap with the respawn-event-driven
+            // toggling above: IsEntitySelectable already folds RespawnSystem's own
+            // (viewer-agnostic) veto in too, so both paths always agree on that case and
+            // this is just a redundant re-application of the same value, not a fight.
+            selection.gameObject.SetActive(IsEntitySelectable(entityId));
         }
 
         foreach (var kvp in _targetingObjects)

@@ -435,6 +435,10 @@ public static class AbilityManager
             {
                 Type = RenderableModifierType.ShadowCloak,
             });
+            ecs.AddComponent(modifier.Id, new StatModifierComponent
+            {
+                SpeedRatioBonus = 1.35f,
+            });
         },
     };
 

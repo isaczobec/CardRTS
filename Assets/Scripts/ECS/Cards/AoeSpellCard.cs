@@ -20,7 +20,7 @@ public class AoeSpellCard : SpawnAtPointCard
     // (see OnIndicatorSpawned) so the player can see exactly what the blast will cover
     // before committing to it. Public so AbilityManager's AoeSpellCloneAbility can preview
     // the exact same radius (CursorCircleRadius) without duplicating/drifting from it.
-    public const int Range = 5;
+    public const int Range = 10;
 
     // 2.8x the old 20 — see BasicMeleeTroopCard for the rebalance baseline this is scaled from.
     private const int Damage = 56;

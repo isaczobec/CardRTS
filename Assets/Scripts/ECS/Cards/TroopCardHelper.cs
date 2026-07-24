@@ -25,7 +25,8 @@ public static class TroopCardHelper
         float x, float y,
         RenderableType renderableType,
         StatsComponent stats,
-        List<Action<ECS, ulong>> extraComponents)
+        List<Action<ECS, ulong>> extraComponents,
+        float SelectionScale = SelectionScale)
     {
         EntityHandle entity = ecs.CreateEntity();
         ulong id = entity.Id;

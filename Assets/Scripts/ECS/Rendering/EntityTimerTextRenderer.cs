@@ -20,6 +20,7 @@ public class EntityTimerTextRenderer : Singleton<EntityTimerTextRenderer>
 {
     [SerializeField] private TimerTextPrefab _timerTextPrefab;
 
+    private ECS _ecs;
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<RespawnableInPlaceComponent> _respawnStore;
     private ComponentStore<LifetimeComponent> _lifetimeStore;
@@ -30,10 +31,10 @@ public class EntityTimerTextRenderer : Singleton<EntityTimerTextRenderer>
     {
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
 
-        ECS ecs = TickManager.instance.ActiveECS;
-        _positionStore = ecs.GetComponentStore<PositionComponent>();
-        _respawnStore = ecs.GetComponentStore<RespawnableInPlaceComponent>();
-        _lifetimeStore = ecs.GetComponentStore<LifetimeComponent>();
+        _ecs = TickManager.instance.ActiveECS;
+        _positionStore = _ecs.GetComponentStore<PositionComponent>();
+        _respawnStore = _ecs.GetComponentStore<RespawnableInPlaceComponent>();
+        _lifetimeStore = _ecs.GetComponentStore<LifetimeComponent>();
     }
 
     void Update()
@@ -63,7 +64,14 @@ public class EntityTimerTextRenderer : Singleton<EntityTimerTextRenderer>
             return;
 
         LifetimeComponent lifetime = _lifetimeStore.GetComponent(entityId);
-        ApplyLabel(entityId, lifetime.ShowTimer, (ulong)Mathf.Max(0, lifetime.TicksRemaining));
+
+        // Mirrors LifetimeSystem.Execute's own gating: TicksRemaining doesn't actually start
+        // counting down until the entity is past its deploy delay (ActivationQuery.IsActive)
+        // — showing the label before that would just freeze at the full duration (e.g. a
+        // misleading "0:20" for however long a multi-second deploy delay lasts), rather than
+        // genuinely reflecting "the countdown hasn't started yet."
+        bool showTimer = lifetime.ShowTimer && ActivationQuery.IsActive(_ecs, entityId);
+        ApplyLabel(entityId, showTimer, (ulong)Mathf.Max(0, lifetime.TicksRemaining));
     }
 
     private void ApplyLabel(ulong entityId, bool shouldShow, ulong ticksRemaining)
