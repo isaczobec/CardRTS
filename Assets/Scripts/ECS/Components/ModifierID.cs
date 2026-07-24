@@ -10,4 +10,5 @@ public enum ModifierID
     Chilled = 2,
     Frozen = 3,
     Scorched = 4,
+    ShadowCloak = 5,
 }

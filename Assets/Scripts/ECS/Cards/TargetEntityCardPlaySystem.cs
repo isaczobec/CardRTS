@@ -88,7 +88,7 @@ public static class TargetEntityCardPlaySystem
             return;
         }
 
-        bool isSelectable = ecs.Requests.Process(new IsSelectableRequest(input.TargetEntityId), ecs, executeIfNotCancelled: false).IsSelectable;
+        bool isSelectable = ecs.Requests.Process(new IsSelectableRequest(input.TargetEntityId, input.ClientId), ecs, executeIfNotCancelled: false).IsSelectable;
         if (!isSelectable)
         {
             DebugLogger.LogWarning($"[TargetEntityCardPlaySystem] Rejected: target entity {input.TargetEntityId} is not currently selectable.", "cards");

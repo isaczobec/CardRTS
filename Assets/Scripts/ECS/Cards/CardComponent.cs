@@ -14,6 +14,7 @@ public enum CardType : byte
     StoneConstruct = 11,
     Skeletons = 12,
     EphemeralSkeletons = 13,
+    Stalker = 14,
 }
 
 public enum CardLocation : byte

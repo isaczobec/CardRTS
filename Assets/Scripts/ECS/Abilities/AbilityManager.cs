@@ -44,6 +44,14 @@ public static class AbilityManager
     // this).
     public const int GroundSlamAbilityId = 7;
 
+    // Instant activate, cloaks the caster (ShadowCloakComponent, ModifierID.ShadowCloak) so
+    // it can't be selected/targeted by anyone but its own owner for
+    // ShadowCloakDurationSeconds — see ShadowCloakSystem/StalkerCard, the only troop that
+    // currently equips this. Already-fired projectiles (seeking or hitbox) still land, since
+    // neither SeekingProjectileSystem nor SkillshotProjectileSystem consult the veto this
+    // relies on.
+    public const int ShadowCloakAbilityId = 8;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     // The shot always travels the caster's second projectile pool's own Range (see
@@ -102,6 +110,9 @@ public static class AbilityManager
     // push) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
     private const float GroundSlamWindupSeconds = 0.6f;
 
+    // How long Shadow Cloak's untargetability lasts — explicit design ask (StalkerCard).
+    private const float ShadowCloakDurationSeconds = 8f;
+
     // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
 
@@ -114,6 +125,7 @@ public static class AbilityManager
         { IceNovaAbilityId, BuildIceNovaAbility() },
         { PushAbilityId, BuildPushAbility() },
         { GroundSlamAbilityId, BuildGroundSlamAbility() },
+        { ShadowCloakAbilityId, BuildShadowCloakAbility() },
     };
 
     // Runs after the field initializers above (C# guarantees static field initializers run
@@ -398,6 +410,33 @@ public static class AbilityManager
         DisplacementSystem.BeginDisplacement(ecs, targetId,
             direction.x * GroundSlamSpeed, direction.y * GroundSlamSpeed, TickManager.SecondsToTicks(GroundSlamDisplacementDurationSeconds));
     }
+
+    // Instant, self-targeted, deterministic and side-effect-free like RingOfProjectilesAbility
+    // (spawns a modifier entity acting through ModifierComponent.TargetEntityId, not the
+    // modifier entity's own id) — so, like that ability, no isServer guard is needed; both
+    // the server and a predicting client creating "the same" cloak modifier is harmless.
+    private static Ability BuildShadowCloakAbility() => new Ability
+    {
+        Type = AbilityType.Instant,
+        Name = "Shadow Cloak",
+        Description = "Cloaks the caster, making it untargetable by enemies for a short time. Shots already fired at it can still land.",
+        ImageName = "ShadowCloak",
+        ExecuteInstant = (ecs, input) =>
+        {
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = TickManager.SecondsToTicks(ShadowCloakDurationSeconds),
+                ModifierID     = ModifierID.ShadowCloak,
+            });
+            ecs.AddComponent(modifier.Id, new ShadowCloakComponent());
+            ecs.AddComponent(modifier.Id, new RenderableModifierComponent
+            {
+                Type = RenderableModifierType.ShadowCloak,
+            });
+        },
+    };
 
     // Winds up for IceNovaCastTimeSeconds (ActionWindupComponent — blocks the caster's own
     // CanMove/CanPerform for the duration, exactly like BuildSkillshotAbility), then

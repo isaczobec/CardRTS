@@ -20,6 +20,7 @@ public static class CardRegistry
         { CardType.StoneConstruct, new StoneConstructCard() },
         { CardType.Skeletons, new SkeletonsCard() },
         { CardType.EphemeralSkeletons, new EphemeralSkeletonsCard() },
+        { CardType.Stalker, new StalkerCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

@@ -135,7 +135,7 @@ public static class AbilitySystem
             return;
         }
 
-        bool isSelectable = ecs.Requests.Process(new IsSelectableRequest(input.TargetEntityId), ecs, executeIfNotCancelled: false).IsSelectable;
+        bool isSelectable = ecs.Requests.Process(new IsSelectableRequest(input.TargetEntityId, input.ClientId), ecs, executeIfNotCancelled: false).IsSelectable;
         if (!isSelectable)
         {
             DebugLogger.LogWarning($"[AbilitySystem] Rejected: target entity {input.TargetEntityId} is not currently selectable.", "abilities");

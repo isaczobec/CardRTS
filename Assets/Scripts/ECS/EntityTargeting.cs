@@ -36,7 +36,7 @@ public static class EntityTargeting
             if (isFriendly && !canTargetFriendly) continue;
             if (!isFriendly && !canTargetEnemyOrNeutral) continue;
 
-            if (!IsSelectable(ecs, entityId)) continue;
+            if (!IsSelectable(ecs, entityId, localPlayerId)) continue;
 
             PositionComponent pos = posStore.GetComponent(entityId);
             float dx = pos.X - x, dy = pos.Y - y;
@@ -51,6 +51,6 @@ public static class EntityTargeting
         return bestId;
     }
 
-    private static bool IsSelectable(ECS ecs, ulong entityId)
-        => ecs.Requests.Process(new IsSelectableRequest(entityId), ecs, executeIfNotCancelled: false).IsSelectable;
+    private static bool IsSelectable(ECS ecs, ulong entityId, ushort localPlayerId)
+        => ecs.Requests.Process(new IsSelectableRequest(entityId, localPlayerId), ecs, executeIfNotCancelled: false).IsSelectable;
 }

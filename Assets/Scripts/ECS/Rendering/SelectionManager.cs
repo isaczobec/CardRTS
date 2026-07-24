@@ -371,7 +371,7 @@ public class SelectionManager : Singleton<SelectionManager>
         => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
     private bool IsEntitySelectable(ulong entityId)
-        => _ecs != null && _ecs.Requests.Process(new IsSelectableRequest(entityId), _ecs, executeIfNotCancelled: false).IsSelectable;
+        => _ecs != null && _ecs.Requests.Process(new IsSelectableRequest(entityId, LocalPlayerId()), _ecs, executeIfNotCancelled: false).IsSelectable;
 
     private bool IsFriendly(ulong entityId)
     {

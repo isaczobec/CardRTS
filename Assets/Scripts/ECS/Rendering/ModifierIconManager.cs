@@ -31,6 +31,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Chilled, ResolveChilled },
         { ModifierID.Frozen, ResolveFrozen },
         { ModifierID.Scorched, ResolveScorched },
+        { ModifierID.ShadowCloak, ResolveShadowCloak },
     };
 
     private ECS _ecs;
@@ -288,6 +289,12 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         int damagePerSecond = Mathf.RoundToInt(damagePerProc * procsPerSecond);
         return ("Scorched", "Scorched", $"Taking {damagePerSecond} damage per second ({stacks} stacks).");
     }
+
+    // ShadowCloakComponent-carrying modifier from AbilityManager's Shadow Cloak ability —
+    // no payload to read (ShadowCloakComponent has no fields), so the name/description are
+    // fixed, mirroring ResolveFrozen.
+    private static (string name, string imageName, string description) ResolveShadowCloak(ECS ecs, ulong modifierEntityId)
+        => ("Shadow Cloak", "ShadowCloak", "Untargetable by enemies — already-fired projectiles can still land.");
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {

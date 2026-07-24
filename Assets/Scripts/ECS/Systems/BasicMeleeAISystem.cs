@@ -289,13 +289,17 @@ public class BasicMeleeAISystem : ISystem
     }
 
     // A target is still worth chasing/attacking if it still exists, still has a
-    // position, and (when trackable) isn't dead.
+    // position, and (when trackable) isn't dead. Every entityId reaching this is already
+    // guaranteed non-owned (added via IsEnemy's own owner check, or a player's right-click
+    // order — see ShadowCloakSystem.IsCloaked's own doc comment), so a cloaked target can
+    // simply be rejected outright here, same as an IsDead one, with no owner check needed.
     private bool IsValidTarget(ulong entityId)
     {
         if (!_ecs.HasEntity(entityId)) return false;
         if (!_posStore.HasComponent(entityId)) return false;
         if (_healthStore.HasComponent(entityId) && _healthStore.GetComponent(entityId).CurrentHealth <= 0) return false;
         if (_troopStore.HasComponent(entityId) && _troopStore.GetComponent(entityId).IsDead) return false;
+        if (ShadowCloakSystem.IsCloaked(_ecs, entityId, out _)) return false;
         return true;
     }
 
