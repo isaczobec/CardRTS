@@ -51,10 +51,12 @@ public class CardRTSAudioSource
     /// </param>
     /// <returns>
     /// A handle to the main clip only. If entry.overlaySounds rolls a hit (see
-    /// SoundRegistryEntry.RollOverlayClip), that layered clip starts alongside it as its own
+    /// SoundRegistryEntry.RollOverlaySound), that layered clip starts alongside it as its own
     /// independent one-shot voice — always non-looping regardless of loop above, since an
     /// overlay is meant to be a one-time extra layer, not a second sustained loop — with no
-    /// handle of its own; it plays out and cleans itself up on its own.
+    /// handle of its own; it plays out and cleans itself up on its own. Its volume and pitch
+    /// range are its own (OverlaySoundEntry.volume/minPitch/maxPitch), independent of the
+    /// main clip's.
     /// </returns>
     public PlayingSound PlaySound(string soundName, float volume = 1f, bool loop = false, float crossfadeDuration = 0f)
     {
@@ -78,9 +80,9 @@ public class CardRTSAudioSource
         float finalVolume = Mathf.Max(0f, volume) * entry.defaultVolume;
         PlayingSound sound = StartClip($"Sound_{soundName}", clip, finalVolume, entry.GetRandomPitch(), loop, crossfadeDuration);
 
-        AudioClip overlayClip = entry.RollOverlayClip(out float overlayVolume);
-        if (overlayClip != null)
-            StartClip($"Sound_{soundName}_Overlay_{overlayClip.name}", overlayClip, Mathf.Max(0f, overlayVolume), entry.GetRandomPitch(), loop: false, crossfadeDuration: 0f);
+        OverlaySoundEntry overlay = entry.RollOverlaySound();
+        if (overlay != null)
+            StartClip($"Sound_{soundName}_Overlay_{overlay.clip.name}", overlay.clip, Mathf.Max(0f, overlay.volume), overlay.GetRandomPitch(), loop: false, crossfadeDuration: 0f);
 
         return sound;
     }

@@ -12,12 +12,12 @@ public class GoblinSnatcherCard : SpawnAtPointCard
     // frontline brawler.
     private const int MaxHealth = 140;
     // 25% higher than BasicMeleeTroopCard.Speed (50), rounded (50 * 1.25 = 62.5).
-    private const int Speed = 63;
+    private const int Speed = 58;
     // Unchanged from BasicMeleeTroopCard.
-    private const int Range = 5;
+    private const int Range = 3;
     private const int Armor = 20;
     // Exactly half of BasicMeleeTroopCard.Damage (34).
-    private const int Damage = 17;
+    private const int Damage = 14;
     // 15% higher attack speed than BasicMeleeTroopCard's 333ms — "higher attack speed"
     // means a shorter windup, so this divides rather than multiplies (mirrors
     // IronKnightCard's own "half attack speed = double AttackSpeedMilliseconds" convention,
@@ -30,7 +30,7 @@ public class GoblinSnatcherCard : SpawnAtPointCard
     private const float DetectionRangeMultiplier = 12f;
     private const float ChaseRangeMultiplier = 24f;
     private const float AttackRangeMultiplier = 1.5f;
-    private const float CooldownMultiplier = 3f;
+    private const float CooldownMultiplier = 2f;
 
     // Permanent damage bonus vs. buildings (see BuildingDamageBonusComponent/System).
     private const float BuildingDamageBonusRatio = 0.2f;
@@ -50,7 +50,7 @@ public class GoblinSnatcherCard : SpawnAtPointCard
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood = 80,
+            Wood = 100,
             Stone = 20
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;

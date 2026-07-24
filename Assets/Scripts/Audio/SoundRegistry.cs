@@ -6,11 +6,17 @@ public class OverlaySoundEntry
 {
     public AudioClip clip;
 
-    [Tooltip("Chance [0,1] this overlay plays alongside the main clip. See SoundRegistryEntry.RollOverlayClip for exactly how this is rolled.")]
+    [Tooltip("Chance [0,1] this overlay plays alongside the main clip. See SoundRegistryEntry.RollOverlaySound for exactly how this is rolled.")]
     [Range(0f, 1f)] public float probability = 0f;
 
     [Tooltip("Baseline volume multiplier for this overlay clip specifically - independent of the main entry's defaultVolume, since an extra layered clip (e.g. a bonus crunch/impact layer) often needs its own balancing.")]
     public float volume = 1f;
+
+    [Tooltip("Playback pitch is randomized uniformly within this range each time this overlay plays - independent of the main entry's own minPitch/maxPitch. Leave both at 1 for no randomization.")]
+    public float minPitch = 1f;
+    public float maxPitch = 1f;
+
+    public float GetRandomPitch() => Random.Range(minPitch, maxPitch);
 }
 
 [System.Serializable]
@@ -28,7 +34,7 @@ public class SoundRegistryEntry
     [Tooltip("Baseline volume multiplier applied on top of the volume argument passed to PlaySound() - use this to fix a clip that's balanced too quiet (or loud) across every call site. Not capped at 1, so it can boost a quiet clip.")]
     public float defaultVolume = 1f;
 
-    [Tooltip("Extra clips layered on top of the main clip on some plays - see RollOverlayClip.")]
+    [Tooltip("Extra clips layered on top of the main clip on some plays - see RollOverlaySound.")]
     public List<OverlaySoundEntry> overlaySounds = new List<OverlaySoundEntry>();
 
     public AudioClip GetRandomClip()
@@ -40,14 +46,15 @@ public class SoundRegistryEntry
     public float GetRandomPitch() => Random.Range(minPitch, maxPitch);
 
     /// Rolls a single cumulative-probability table across overlaySounds (in list order) and
-    /// returns the chosen clip, or null if the roll lands past the end of the table (or
+    /// returns the chosen entry, or null if the roll lands past the end of the table (or
     /// there are no overlay entries at all) - so at most one overlay is ever chosen per
     /// call, never more than one. If the probabilities across the whole list sum to 1 or
     /// more, every roll lands inside some entry's slice, so one overlay is guaranteed to
     /// play; anything less than 1 leaves a gap that's the chance no overlay plays that time.
-    public AudioClip RollOverlayClip(out float volume)
+    /// Returns the whole entry (not just its clip) so the caller can also read its own
+    /// volume/pitch range, independent of this main entry's own.
+    public OverlaySoundEntry RollOverlaySound()
     {
-        volume = 1f;
         if (overlaySounds == null || overlaySounds.Count == 0) return null;
 
         float roll = Random.value;
@@ -57,10 +64,7 @@ public class SoundRegistryEntry
             if (overlay.clip == null) continue;
             cumulative += overlay.probability;
             if (roll < cumulative)
-            {
-                volume = overlay.volume;
-                return overlay.clip;
-            }
+                return overlay;
         }
         return null;
     }

@@ -9,6 +9,7 @@ using UnityEngine;
 ///   Left Alt + Right Mouse drag   — rotate around world Y axis
 ///   Tab                           — jump to the next entity the local player owns (see
 ///                                    SelectionManager.TryGetNextOwnedEntityPosition)
+///   Shift + Tab                   — jump to the previous one instead
 ///   Space (held)                  — continuously follows the current selection every
 ///                                    frame (see SelectionManager.TryGetFocusPositionForSelection),
 ///                                    suppressing edge-scroll while it's actively tracking
@@ -119,15 +120,16 @@ public class CameraController : MonoBehaviour
 
     // Tab is a one-shot GetKeyDown trigger (unlike held Space above) — same dev-console
     // guard reasoning, though Tab itself can't be typed into the console's text field.
+    // Shift+Tab cycles backward through the same ordering instead of forward.
     void HandleTabHotkey()
     {
         if (DevConsole.IsOpen) return;
+        if (!Input.GetKeyDown(KeyCode.Tab)) return;
+        if (SelectionManager.instance == null) return;
 
-        if (Input.GetKeyDown(KeyCode.Tab) && SelectionManager.instance != null
-            && SelectionManager.instance.TryGetNextOwnedEntityPosition(out Vector3 nextOwnedPos))
-        {
+        bool forward = !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift);
+        if (SelectionManager.instance.TryGetNextOwnedEntityPosition(out Vector3 nextOwnedPos, forward))
             JumpTo(nextOwnedPos);
-        }
     }
 
     void HandleEdgeScroll()

@@ -689,9 +689,10 @@ public class SelectionManager : Singleton<SelectionManager>
 
     // Tab: cycles the camera through every entity the local player owns (independent of
     // the current selection), advancing to the next one each call and wrapping back to the
-    // first once the last is reached. Ordered by ascending entity id, which is stable as
-    // long as the set of owned entities doesn't change between calls.
-    public bool TryGetNextOwnedEntityPosition(out Vector3 worldPos)
+    // first once the last is reached — or, with forward false (Shift+Tab), the previous one,
+    // wrapping back to the last. Ordered by ascending entity id, which is stable as long as
+    // the set of owned entities doesn't change between calls.
+    public bool TryGetNextOwnedEntityPosition(out Vector3 worldPos, bool forward = true)
     {
         worldPos = default;
         if (_selectableStore == null || _positionStore == null) return false;
@@ -706,10 +707,13 @@ public class SelectionManager : Singleton<SelectionManager>
         if (_ownedEntityCycleBuffer.Count == 0) return false;
         _ownedEntityCycleBuffer.Sort();
 
-        int nextIndex = 0;
+        int count = _ownedEntityCycleBuffer.Count;
+        int step = forward ? 1 : -1;
+
+        int nextIndex = forward ? 0 : count - 1;
         int lastIndex = _ownedEntityCycleBuffer.IndexOf(_lastCycledOwnedEntityId);
         if (lastIndex >= 0)
-            nextIndex = (lastIndex + 1) % _ownedEntityCycleBuffer.Count;
+            nextIndex = (lastIndex + step + count) % count;
 
         ulong nextId = _ownedEntityCycleBuffer[nextIndex];
         _lastCycledOwnedEntityId = nextId;

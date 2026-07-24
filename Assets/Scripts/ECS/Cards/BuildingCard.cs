@@ -5,7 +5,7 @@ public class BuildingCard : SpawnAtPointCard
 {
     // 3x the old 300 — see BasicMeleeTroopCard for the rebalance baseline this (and every
     // other troop/building/resource-node health value) is scaled from.
-    private const int MaxHealth = 900;
+    private const int MaxHealth = 350;
     private const float ActivationDelaySeconds = 2f;
 
     // Gold dropped to whoever kills this building (see OnDeathResourceDropComponent/
@@ -41,8 +41,8 @@ public class BuildingCard : SpawnAtPointCard
 
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood = 45,
-            Stone = 45
+            Wood = 60,
+            Stone = 60
         };
 
     public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)

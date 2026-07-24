@@ -148,26 +148,40 @@ public class WorldManager : Singleton<WorldManager>
         // added below can see where they ended up (via GetPreviousFeature) if it needs to.
         handler.features.Add(new SpawnPlayerBasesFeature());
 
+        // Every noise generator below samples Mathf.PerlinNoise, which is itself a pure
+        // (deterministic) function of its input coordinates — the only thing that ever made
+        // two generations look different was each generator's own OffsetX/OffsetY shifting
+        // WHERE in that noise field gets sampled. Previously those were hardcoded literals,
+        // so every world reused the exact same offsets (hence the exact same biome/terrain
+        // layout) regardless of Seed. Drawing them from a Random seeded with handler.Seed
+        // instead — in this fixed order, which never changes since SetupWorldGen always
+        // builds the same resource list (same reasoning as WorldGenHandler.Random's own doc
+        // comment) — makes the layout depend on Seed while staying fully reproducible for a
+        // given one. This can't just reuse handler.Random itself: that's only created once
+        // WorldGenHandler.Generate() actually starts running (after SetupWorldGen returns),
+        // so this draws from its own, separately-seeded instance instead.
+        System.Random offsetRandom = new System.Random(handler.Seed);
+
         // --- Terrain noise ---
         handler.AddResource(new PerlinNoiseGenerator("terrain")
         {
             Scale   = 0.04f,
-            OffsetX = 0f,
-            OffsetY = 0f,
+            OffsetX = offsetRandom.Next(0, 10000),
+            OffsetY = offsetRandom.Next(0, 10000),
         });
 
         // --- Biome axes: temperature (X) and humidity (Y) ---
         handler.AddResource(new PerlinNoiseGenerator("biomeTemp")
         {
             Scale   = 0.005f,
-            OffsetX = 500f,
-            OffsetY = 300f,
+            OffsetX = offsetRandom.Next(0, 10000),
+            OffsetY = offsetRandom.Next(0, 10000),
         });
         handler.AddResource(new PerlinNoiseGenerator("biomeHumidity")
         {
             Scale   = 0.005f,
-            OffsetX = 200f,
-            OffsetY = 700f,
+            OffsetX = offsetRandom.Next(0, 10000),
+            OffsetY = offsetRandom.Next(0, 10000),
         });
 
         // Ridged (thin, winding vein) noise for TundraBiome's tunnel-like mountain
@@ -176,8 +190,8 @@ public class WorldManager : Singleton<WorldManager>
         handler.AddResource(new RidgedNoiseGenerator("tundraRidges")
         {
             Scale   = 0.06f,
-            OffsetX = 900f,
-            OffsetY = 900f,
+            OffsetX = offsetRandom.Next(0, 10000),
+            OffsetY = offsetRandom.Next(0, 10000),
         });
 
         // Coarse, low-frequency mask gating where the ridged vein noise above is even
@@ -186,8 +200,8 @@ public class WorldManager : Singleton<WorldManager>
         handler.AddResource(new PerlinNoiseGenerator("tundraMountainPatchMask")
         {
             Scale   = 0.02f,
-            OffsetX = 1300f,
-            OffsetY = 1300f,
+            OffsetX = offsetRandom.Next(0, 10000),
+            OffsetY = offsetRandom.Next(0, 10000),
         });
 
         // Desert biome: hot (high temp) and dry (low humidity).

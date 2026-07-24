@@ -2,7 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Spawns a world-space health bar for every troop as it activates, keeps it positioned
-// above its entity, and updates its fill amount off DamageDealtEvent. Bars are torn down
+// above its entity, and updates its health off DamageRequest's SubscribeExecuted callback
+// (fires right after Execute mutates HealthComponent — see RequestManager) rather than
+// DamageDealtEvent/ServerFlagEvents, so a bar reflects predicted damage immediately instead
+// of waiting on server confirmation. This is safe to predict even though a mispredicted
+// DamageRequest can end up replayed more than once during reconciliation (unlike a one-shot
+// sound/animation trigger): SetHealth just re-applies whatever HealthComponent.CurrentHealth
+// currently reads as, so a redundant call is harmless — it settles on the correct value
+// either way. Bars are torn down
 // on EntityDeletedEvent only — NOT TroopDiedEvent, which fires on every death including a
 // respawnable entity's (RespawnSystem vetoes deletion for those, so IsDead flips but the
 // entity survives to be revived in place — see RespawnableEntityDiedEvent/
@@ -25,7 +32,6 @@ public class HealthBarManager : Singleton<HealthBarManager>
     {
         TickManager.instance.ServerFlagEvents.Subscribe<EntityActivatedEvent>(OnTroopActivated);
         TickManager.instance.ServerFlagEvents.Subscribe<EntityDeletedEvent>(OnEntityDeleted);
-        TickManager.instance.ServerFlagEvents.Subscribe<DamageDealtEvent>(OnDamageDealt);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityDiedEvent>(OnRespawnableEntityDied);
         TickManager.instance.ServerFlagEvents.Subscribe<RespawnableEntityRespawnedEvent>(OnRespawnableEntityRespawned);
 
@@ -34,6 +40,8 @@ public class HealthBarManager : Singleton<HealthBarManager>
         _healthStore = _ecs.GetComponentStore<HealthComponent>();
         _movableStore = _ecs.GetComponentStore<MovableComponent>();
         _troopStore = _ecs.GetComponentStore<TroopComponent>();
+
+        _ecs.Requests.SubscribeExecuted<DamageRequest>(OnDamageRequestExecuted);
     }
 
     void Update()
@@ -75,10 +83,10 @@ public class HealthBarManager : Singleton<HealthBarManager>
 
     private void OnEntityDeleted(EntityDeletedEvent e) => DestroyHealthBar(e.EntityId);
 
-    private void OnDamageDealt(DamageDealtEvent e)
+    private void OnDamageRequestExecuted(DamageRequest request, ECS ecs)
     {
-        if (!_healthBars.TryGetValue(e.EntityId, out HealthBarPrefab bar)) return;
-        ApplyHealth(e.EntityId, bar);
+        if (!_healthBars.TryGetValue(request.EntityId, out HealthBarPrefab bar)) return;
+        ApplyHealth(request.EntityId, bar);
     }
 
     private void ApplyHealth(ulong entityId, HealthBarPrefab bar)
@@ -87,7 +95,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
 
         int currentHealth = _healthStore.GetComponent(entityId).CurrentHealth;
         int maxHealth = StatsQuery.GetMaxHealth(_ecs, entityId, currentHealth);
-        bar.SetFillAmount(maxHealth > 0 ? (float)currentHealth / maxHealth : 0f);
+        bar.SetHealth(currentHealth, maxHealth);
     }
 
     private void ApplyPosition(ulong entityId, PositionComponent pos, HealthBarPrefab bar)

@@ -4317,6 +4317,8 @@ MonoBehaviour:
     renderer: {fileID: 1640101356}
   - type: 23
     renderer: {fileID: 745290411}
+  - type: 24
+    renderer: {fileID: 1044113395}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -6991,6 +6993,66 @@ MonoBehaviour:
   _deathSoundName: DefaultDeath
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
+--- !u!1 &1044113393
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1044113394}
+  - component: {fileID: 1044113395}
+  m_Layer: 0
+  m_Name: GoblinSnatcherRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1044113394
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1044113393}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1044113395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1044113393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 5e94ac261b7b540419e8b9345782f32a, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.167
+    TimeUntilImpact: 0.6
+  _selectionMode: 1
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: GoblinSnatcherWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _runAnimationSpeedStat: 70
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &1054813993
 GameObject:
   m_ObjectHideFlags: 0
@@ -8530,6 +8592,8 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: 494c48cbb01bd9b4c95202304c2501ea, type: 3}
   - name: FireMan
     prefab: {fileID: 6472282922783299243, guid: b36f8271a1e418445b45fcf4ee159666, type: 3}
+  - name: GoblinSnatcher
+    prefab: {fileID: 6472282922783299243, guid: 5e94ac261b7b540419e8b9345782f32a, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -9991,6 +10055,7 @@ Transform:
   - {fileID: 1914037911}
   - {fileID: 1373427740}
   - {fileID: 1631565995}
+  - {fileID: 1044113394}
   - {fileID: 1671680053}
   - {fileID: 1036075494}
   - {fileID: 1934511542}
@@ -10325,6 +10390,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 9725fb87facc42a4984598500f76e0fb, type: 3}
   - name: FireMan
     sprite: {fileID: 21300000, guid: 9725fb87facc42a4984598500f76e0fb, type: 3}
+  - name: GoblinSnatcher
+    sprite: {fileID: 21300000, guid: 43c039c3ce9d3a94eb99e8c982a7818e, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -11245,7 +11312,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22, y: 11}
+  m_AnchoredPosition: {x: -21.999817, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567
@@ -13929,7 +13996,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8335fb7779d4e8a855aab76ede25172, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthBarManager
-  _healthBarPrefab: {fileID: 8085468842011575487, guid: 77007240cc6147eb82b14687488de31c, type: 3}
+  _healthBarPrefab: {fileID: 8085468842011575487, guid: f9cd1832ea07baf4b84f63d0dc00d329, type: 3}
 --- !u!1 &1860560195
 GameObject:
   m_ObjectHideFlags: 0
@@ -14862,6 +14929,8 @@ MonoBehaviour:
     - clip: {fileID: 8300000, guid: 12281eddb57d0bb48b701120ea8ff3e6, type: 3}
       probability: 0
       volume: 2
+      minPitch: 1
+      maxPitch: 1
   - name: FireBlast
     clips:
     - {fileID: 8300000, guid: a652877b012108e41871f867ada9f176, type: 3}
@@ -14869,6 +14938,23 @@ MonoBehaviour:
     maxPitch: 0.95
     defaultVolume: 4
     overlaySounds: []
+  - name: GoblinSnatcherWindup
+    clips:
+    - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+    minPitch: 1.3
+    maxPitch: 1.4
+    defaultVolume: 3
+    overlaySounds:
+    - clip: {fileID: 8300000, guid: 9e0bc36ec7bc7874a9d27c1c2fa9be50, type: 3}
+      probability: 0.228
+      volume: 1
+      minPitch: 2.2
+      maxPitch: 2.4
+    - clip: {fileID: 8300000, guid: 1ae9233cccc26e440ba221c03b6efc46, type: 3}
+      probability: 0.256
+      volume: 1
+      minPitch: 2.1
+      maxPitch: 2.2
 --- !u!114 &1985718171
 MonoBehaviour:
   m_ObjectHideFlags: 0
