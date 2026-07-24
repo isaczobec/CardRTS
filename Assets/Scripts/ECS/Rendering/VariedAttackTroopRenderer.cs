@@ -96,6 +96,11 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private string _dealDamageSoundName;
     [SerializeField] private string _takeDamageSoundName;
     [SerializeField] private string _deathSoundName;
+    // Looped (via crossfade, not native looping — hides an imperfect loop point the same
+    // way OverlaySoundEntry-style clips would) for as long as the troop is moving, started/
+    // stopped off MovableComponent.IsMoving in UpdateRenderable. Left blank to play nothing.
+    [SerializeField] private string _walkSoundName;
+    [SerializeField] private float _walkSoundCrossfadeDuration = 0.2f;
 
     private const float GroundOffset = 0f;
 
@@ -125,6 +130,12 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     // Per-entity next index into _attackAnimations, for AttackAnimationSelectionMode.Cycle
     // only — each troop advances through the list independently of every other troop.
     private readonly Dictionary<ulong, int> _nextAttackIndex = new();
+
+    // The looping walk sound currently playing for each moving entity (see UpdateWalkSound)
+    // — entity-linked/position-following (AudioManager.CreateAudioSource), so it's only
+    // tracked here to know when to explicitly Stop() it once the troop stops moving.
+    private readonly Dictionary<ulong, CardRTSAudioSource> _walkSoundSources = new();
+    private readonly Dictionary<ulong, PlayingSound> _walkSounds = new();
 
     // Shared across all entities this renderer owns, rather than tracked per entity —
     // MovementSpeed just gets recalculated for the whole batch once this elapses (see
@@ -293,6 +304,7 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
         _objects.Remove(entityId);
         _interpolator.Remove(entityId);
         _nextAttackIndex.Remove(entityId);
+        StopWalkSound(entityId);
     }
 
     public void OnEntityActivated(ulong entityId)
@@ -355,7 +367,52 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
                     go.Animator.SetFloat(MovementSpeedFloat, speed / _runAnimationSpeedStat);
                 }
             }
+
+            UpdateWalkSound(id, isMoving);
         }
+    }
+
+    // Starts the looping walk sound the moment a troop begins moving, and explicitly stops
+    // it (rather than waiting for the entity's audio source to be torn down some other way)
+    // the moment it stops — a sustained loop, unlike every other sound on this renderer,
+    // needs an explicit start/stop pair instead of a fire-and-forget one-shot.
+    private void UpdateWalkSound(ulong entityId, bool isMoving)
+    {
+        if (string.IsNullOrEmpty(_walkSoundName)) return;
+
+        bool isPlaying = _walkSoundSources.ContainsKey(entityId);
+        if (isMoving == isPlaying) return;
+
+        if (isMoving)
+        {
+            if (AudioManager.instance == null) return;
+
+            CardRTSAudioSource source = AudioManager.instance.CreateAudioSource(entityId);
+            PlayingSound sound = source.PlaySound(_walkSoundName, 1f, loop: true, crossfadeDuration: _walkSoundCrossfadeDuration);
+            if (sound == null)
+            {
+                source.Destroy();
+                return;
+            }
+
+            _walkSoundSources[entityId] = source;
+            _walkSounds[entityId] = sound;
+        }
+        else
+        {
+            StopWalkSound(entityId);
+        }
+    }
+
+    private void StopWalkSound(ulong entityId)
+    {
+        if (_walkSounds.TryGetValue(entityId, out PlayingSound sound))
+            sound.Stop();
+        _walkSounds.Remove(entityId);
+
+        if (_walkSoundSources.TryGetValue(entityId, out CardRTSAudioSource source))
+            source.DestroyWhenIdle();
+        _walkSoundSources.Remove(entityId);
     }
 
     private Vector3 ToWorldPosition(PositionComponent pos)

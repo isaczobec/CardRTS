@@ -6993,6 +6993,8 @@ MonoBehaviour:
   _dealDamageSoundName: 
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &1044113393
@@ -7053,6 +7055,8 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 50
   _speedParamUpdateInterval: 0.25
 --- !u!1 &1054813993
@@ -9395,13 +9399,15 @@ MonoBehaviour:
     SpeedParam: Ability0Speed
     SpeedMultiplier: 1
     RotateTowardPosition: 1
-    SoundName: 
-  _attackWindupSoundName: DefaultTroopWindup
+    SoundName: StoneConstructWindup
+  _attackWindupSoundName: StoneConstructWindup
   _attackWindupFinishedSoundName: 
   _abilityWindupSoundName: 
-  _dealDamageSoundName: DefaultTroopDealDamage
+  _dealDamageSoundName: StoneBreak
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: StoneRumbling
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 19.5
   _speedParamUpdateInterval: 0.25
 --- !u!1 &1354889544
@@ -9520,6 +9526,8 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 27.3
   _speedParamUpdateInterval: 0.25
 --- !u!114 &1373427742
@@ -12331,6 +12339,8 @@ MonoBehaviour:
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.25
 --- !u!1 &1640101354
@@ -12400,6 +12410,8 @@ MonoBehaviour:
   _dealDamageSoundName: 
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &1656309795
@@ -14436,6 +14448,8 @@ MonoBehaviour:
   _dealDamageSoundName: 
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
 --- !u!1 &1939733692
@@ -15033,6 +15047,28 @@ MonoBehaviour:
       volume: 1
       minPitch: 2.1
       maxPitch: 2.2
+  - name: StoneRumbling
+    clips:
+    - {fileID: 8300000, guid: b4278225fec45c141b50c21ea84cb31e, type: 3}
+    minPitch: 0.4
+    maxPitch: 0.4
+    defaultVolume: 0.8
+    overlaySounds: []
+  - name: StoneBreak
+    clips:
+    - {fileID: 8300000, guid: c62055f61db78af4dba4e8bb50b33c30, type: 3}
+    minPitch: 0.7
+    maxPitch: 0.8
+    defaultVolume: 1
+    overlaySounds: []
+  - name: StoneConstructWindup
+    clips:
+    - {fileID: 8300000, guid: 1ae9233cccc26e440ba221c03b6efc46, type: 3}
+    - {fileID: 8300000, guid: 9e0bc36ec7bc7874a9d27c1c2fa9be50, type: 3}
+    minPitch: 0.4
+    maxPitch: 0.5
+    defaultVolume: 1
+    overlaySounds: []
 --- !u!114 &1985718171
 MonoBehaviour:
   m_ObjectHideFlags: 0

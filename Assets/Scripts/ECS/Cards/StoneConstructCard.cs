@@ -8,12 +8,12 @@ using System.Collections.Generic;
 public class StoneConstructCard : SpawnAtPointCard
 {
     // Explicit design ask.
-    private const int Damage = 30;
+    private const int Damage = 60;
     // More than IronKnightCard.MaxHealth (300).
-    private const int MaxHealth = 450;
+    private const int MaxHealth = 550;
     // Slower than IronKnightCard.Speed (40).
     private const int Speed = 25;
-    private const int Range = 5;
+    private const int Range = 4;
     // Higher than IronKnightCard.Armor (40) — a large rock golem is even tankier.
     private const int Armor = 55;
     // Slower than IronKnightCard.AttackSpeedMilliseconds (790).
@@ -27,10 +27,7 @@ public class StoneConstructCard : SpawnAtPointCard
     private const float AttackRangeMultiplier = 2.5f;
     private const float CooldownMultiplier = 1.8f;
 
-    // Explicit design ask: 200% increased damage vs. buildings (see
-    // BuildingDamageBonusComponent/System — request.Amount * (1 + BonusRatio), so 2.0 here
-    // means 3x total).
-    private const float BuildingDamageBonusRatio = 2.0f;
+    private const float BuildingDamageBonusRatio = 1.0f;
 
     // Cooldown for the troop's push ability (see AbilityManager.GroundSlamAbilityId).
     private const float GroundSlamCooldownSeconds = 8f;
