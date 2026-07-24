@@ -28,6 +28,8 @@ public enum RenderableType : byte
     FireProjectile = 23,
     GoblinSnatcher = 24,
     StoneConstruct = 25,
+    Skeleton = 26,
+    EphemeralSkeleton = 27,
 }
 
 public struct RenderableComponent : IComponent

@@ -9,7 +9,7 @@ using UnityEngine;
 // TroopComponent.IsPhysicalTroop).
 public class BlinkCard : MultiPointCard
 {
-    private const float ActivationDelaySeconds = 2f;
+    private const float ActivationDelaySeconds = 1f;
     private const float MaxDistanceFromBuilding = 25f;
     private const float MaxDistanceFromTroop = 15f;
 
