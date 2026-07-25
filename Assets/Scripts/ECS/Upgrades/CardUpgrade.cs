@@ -23,6 +23,13 @@ public abstract class CardUpgrade
     // Persistent gold price to buy this upgrade — same shape as Card.ShopGoldCost.
     public virtual int ShopGoldCost => 0;
 
+    // Maximum number of times this upgrade may be equipped on the SAME card at once —
+    // checked by BuyUpgradeSystem before a purchase is allowed (see
+    // UpgradeQuery.CountUpgradesOfType). int.MaxValue means no limit. Defaults to
+    // int.MaxValue — every existing upgrade unless overridden (e.g. FocusFireUpgrade caps
+    // at 1, GiantsbaneUpgrade at 2).
+    public virtual int MaxStackCount => int.MaxValue;
+
     // Runs server-only, given the id of the entity a SpawnAtPointCard-kind upgraded card
     // just spawned and the ECS it spawned into — see SpawnAtPointCardPlaySystem, which calls
     // this right after the card's own OnPlayed returns that entity's id, ONLY when the

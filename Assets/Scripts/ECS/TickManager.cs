@@ -194,6 +194,9 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<PeriodicAreaEffectComponent>(52);
         _componentTypeRegistry.Register<HealModifierComponent>(53);
         _componentTypeRegistry.Register<HealSourceComponent>(54);
+        _componentTypeRegistry.Register<GiantsbaneComponent>(55);
+        _componentTypeRegistry.Register<FocusFireComponent>(56);
+        _componentTypeRegistry.Register<LifestealComponent>(57);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -340,6 +343,12 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<HealSourceComponent>>(127);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<HealSourceComponent>>(128);
         _flagEventTypeRegistry.Register<HealDealtEvent>(129);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<GiantsbaneComponent>>(130);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<GiantsbaneComponent>>(131);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<FocusFireComponent>>(132);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<FocusFireComponent>>(133);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<LifestealComponent>>(134);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<LifestealComponent>>(135);
 
         ECS = CreateSimulationECS();
     }
@@ -567,6 +576,9 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PeriodicAreaEffectComponent>());
         ecs.AddComponentStore(new ComponentStore<HealModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<HealSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<GiantsbaneComponent>());
+        ecs.AddComponentStore(new ComponentStore<FocusFireComponent>());
+        ecs.AddComponentStore(new ComponentStore<LifestealComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -638,6 +650,9 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(ResourceProductionOnDeathSystem.Instance);
         ecs.RegisterSystem(OnKillScheduleSystem.Instance);
         ecs.RegisterSystem(OnHitScheduleSystem.Instance);
+        ecs.RegisterSystem(GiantsbaneSystem.Instance);
+        ecs.RegisterSystem(FocusFireSystem.Instance);
+        ecs.RegisterSystem(LifestealSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
         // Must run BEFORE ResourceGenerationSystem — see ResourceGeneratorSystem's own doc
         // comment: that system only enqueues ResourcesAdded requests, and
@@ -706,6 +721,9 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PeriodicAreaEffectComponent>());
         ecs.AddComponentStore(new ComponentStore<HealModifierComponent>());
         ecs.AddComponentStore(new ComponentStore<HealSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<GiantsbaneComponent>());
+        ecs.AddComponentStore(new ComponentStore<FocusFireComponent>());
+        ecs.AddComponentStore(new ComponentStore<LifestealComponent>());
 
         return ecs;
     }

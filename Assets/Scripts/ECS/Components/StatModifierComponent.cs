@@ -19,6 +19,9 @@ public struct StatModifierComponent : IComponent
     public float ArmorRatioBonus;
     public float ArmorAdditiveBonus;
 
+    public float SpellResistRatioBonus;
+    public float SpellResistAdditiveBonus;
+
     public float DamageRatioBonus;
     public float DamageAdditiveBonus;
 

@@ -11669,6 +11669,22 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 2e350bcef09f70943ba03de78d8c063a, type: 3}
   - name: HealerGuardian
     sprite: {fileID: 21300000, guid: 511b7df189d509e4bbb3271bf1df0df5, type: 3}
+  - name: MaxHealthBoost
+    sprite: {fileID: 21300000, guid: 2e350bcef09f70943ba03de78d8c063a, type: 3}
+  - name: RangeBoost
+    sprite: {fileID: 21300000, guid: fb1e48043961d8f44948225f539a83bb, type: 3}
+  - name: ArmorBoost
+    sprite: {fileID: 21300000, guid: 40f2d97515d2434418f9dcdd11d438a2, type: 3}
+  - name: SpellResistBoost
+    sprite: {fileID: 21300000, guid: 1db2aafa220bdac428f29f48a82e2b50, type: 3}
+  - name: AttackSpeedBoost
+    sprite: {fileID: 21300000, guid: 1c467e4d8975db74d93c99737e38c07f, type: 3}
+  - name: Giantsbane
+    sprite: {fileID: 21300000, guid: f2648ea0962833c46b5d26a1e40f3f4d, type: 3}
+  - name: FocusFire
+    sprite: {fileID: 21300000, guid: 619fbe1fc6dd3da4096b2e061321c2ff, type: 3}
+  - name: Lifesteal
+    sprite: {fileID: 21300000, guid: dd9553335d5e8ac4f8cd1bf7715b004f, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0

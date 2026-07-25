@@ -15,4 +15,7 @@ public enum ModifierID
     Rooted = 7,
     HealAura = 8,
     Healing = 9,
+    Giantsbane = 10,
+    FocusFire = 11,
+    Lifesteal = 12,
 }

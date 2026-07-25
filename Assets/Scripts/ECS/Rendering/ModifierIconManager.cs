@@ -36,6 +36,9 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Rooted, ResolveRooted },
         { ModifierID.HealAura, ResolveHealAura },
         { ModifierID.Healing, ResolveHealing },
+        { ModifierID.Giantsbane, ResolveGiantsbane },
+        { ModifierID.FocusFire, ResolveFocusFire },
+        { ModifierID.Lifesteal, ResolveLifesteal },
     };
 
     private ECS _ecs;
@@ -224,6 +227,7 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         AddIfChanged(changes, "Speed", mod.SpeedRatioBonus, mod.SpeedAdditiveBonus);
         AddIfChanged(changes, "Range", mod.RangeRatioBonus, mod.RangeAdditiveBonus);
         AddIfChanged(changes, "Armor", mod.ArmorRatioBonus, mod.ArmorAdditiveBonus);
+        AddIfChanged(changes, "Spell Resist", mod.SpellResistRatioBonus, mod.SpellResistAdditiveBonus);
         AddIfChanged(changes, "Damage", mod.DamageRatioBonus, mod.DamageAdditiveBonus);
         // AttackSpeed's underlying stat is a tick PERIOD (lower = faster attacks) — the
         // opposite of every other stat here, where a higher value is always better. Negate
@@ -355,6 +359,52 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         float periodSeconds = TickManager.TicksToSeconds(Mathf.Max(1, heal.PeriodTicks));
         float healPerSecond = periodSeconds > 0f ? heal.HealAdditivePerProc / periodSeconds : heal.HealAdditivePerProc;
         return ("Healing", "Healing", $"Restoring approximately {healPerSecond:0.#} health per second.");
+    }
+
+    // GiantsbaneComponent lives directly on this modifier entity (see that class's own doc
+    // comment) — states the current proc period/bonus directly, mirroring ResolveBarrier/
+    // ResolveScorched's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveGiantsbane(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Every few hits deals bonus damage equal to a percentage of the target's max health.";
+
+        ComponentStore<GiantsbaneComponent> giantsbaneStore = ecs.GetComponentStore<GiantsbaneComponent>();
+        if (giantsbaneStore == null || !giantsbaneStore.HasComponent(modifierEntityId))
+            return ("Giantsbane", "Giantsbane", fallback);
+
+        GiantsbaneComponent giantsbane = giantsbaneStore.GetComponent(modifierEntityId);
+        int percent = Mathf.RoundToInt(giantsbane.BonusDamageMaxHealthRatio * 100f);
+        return ("Giantsbane", "Giantsbane", $"Every {giantsbane.PeriodHits} hits deals an additional {percent}% of the target's max health as bonus damage.");
+    }
+
+    // FocusFireComponent lives directly on this modifier entity, alongside the
+    // StatModifierComponent that actually drives the attack-speed effect (see that class's
+    // own doc comment) — states the current stack count/attack speed bonus directly.
+    private static (string name, string imageName, string description) ResolveFocusFire(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Repeatedly hitting the same target increases attack speed, stacking up. Switching targets resets the stacks.";
+
+        ComponentStore<FocusFireComponent> focusStore = ecs.GetComponentStore<FocusFireComponent>();
+        if (focusStore == null || !focusStore.HasComponent(modifierEntityId))
+            return ("Focus Fire", "FocusFire", fallback);
+
+        FocusFireComponent focus = focusStore.GetComponent(modifierEntityId);
+        int percent = Mathf.RoundToInt(focus.Stacks * focus.AttackSpeedRatioBonusPerStack * 100f);
+        return ("Focus Fire", "FocusFire", $"{focus.Stacks}/{focus.MaxStacks} stacks — +{percent}% attack speed. Resets when switching targets.");
+    }
+
+    // LifestealComponent lives directly on this modifier entity (see that class's own doc
+    // comment).
+    private static (string name, string imageName, string description) ResolveLifesteal(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Heals for a percentage of damage dealt.";
+
+        ComponentStore<LifestealComponent> lifestealStore = ecs.GetComponentStore<LifestealComponent>();
+        if (lifestealStore == null || !lifestealStore.HasComponent(modifierEntityId))
+            return ("Lifesteal", "Lifesteal", fallback);
+
+        int percent = Mathf.RoundToInt(lifestealStore.GetComponent(modifierEntityId).LifestealRatio * 100f);
+        return ("Lifesteal", "Lifesteal", $"Heals for {percent}% of damage dealt.");
     }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)

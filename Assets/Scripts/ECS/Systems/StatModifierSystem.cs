@@ -20,6 +20,7 @@ public static class StatModifierSystem
         Subscribe<GetSpeedRequest>(ecs, m => (m.SpeedRatioBonus, m.SpeedAdditiveBonus));
         Subscribe<GetRangeRequest>(ecs, m => (m.RangeRatioBonus, m.RangeAdditiveBonus));
         Subscribe<GetArmorRequest>(ecs, m => (m.ArmorRatioBonus, m.ArmorAdditiveBonus));
+        Subscribe<GetSpellResistRequest>(ecs, m => (m.SpellResistRatioBonus, m.SpellResistAdditiveBonus));
         Subscribe<GetDamageStatRequest>(ecs, m => (m.DamageRatioBonus, m.DamageAdditiveBonus));
         Subscribe<GetAttackSpeedRequest>(ecs, m => (m.AttackSpeedRatioBonus, m.AttackSpeedAdditiveBonus));
     }

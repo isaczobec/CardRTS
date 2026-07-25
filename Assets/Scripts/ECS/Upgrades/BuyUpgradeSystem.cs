@@ -41,6 +41,13 @@ public static class BuyUpgradeSystem
             return;
         }
 
+        int currentStackCount = UpgradeQuery.CountUpgradesOfType(ecs, input.TargetCardEntityId, input.UpgradeType);
+        if (currentStackCount >= definition.MaxStackCount)
+        {
+            DebugLogger.LogWarning($"[BuyUpgradeSystem] Rejected: card {input.TargetCardEntityId} already has {currentStackCount}/{definition.MaxStackCount} of upgrade {input.UpgradeType} (client {input.ClientId}).", "cards");
+            return;
+        }
+
         ulong resourceEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, input.ClientId);
         ComponentStore<PlayerResourcesComponent> resourceStore = ecs.GetComponentStore<PlayerResourcesComponent>();
         if (resourceStore == null || resourceEntityId == 0 || !resourceStore.HasComponent(resourceEntityId))

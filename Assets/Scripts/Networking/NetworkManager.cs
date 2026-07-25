@@ -345,12 +345,12 @@ public class NetworkManager : Singleton<NetworkManager>
         // baseline passive income.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
             GoldPerSecond = 0f,
-            Gold = 1000,
-            Wood = 1000,
-            Stone = 1000,
-            Metal = 1000,
-            Gems = 1000,
-            Soulstones = 1000,
+            Gold = 10000,
+            Wood = 10000,
+            Stone = 10000,
+            Metal = 10000,
+            Gems = 10000,
+            Soulstones = 10000,
             });
         // ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
         //     GoldPerSecond = 0f,
