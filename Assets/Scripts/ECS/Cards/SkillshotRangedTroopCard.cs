@@ -26,8 +26,9 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 5f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 20f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 

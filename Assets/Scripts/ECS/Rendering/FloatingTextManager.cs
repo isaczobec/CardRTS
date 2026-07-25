@@ -76,7 +76,6 @@ public class FloatingTextManager : Singleton<FloatingTextManager>
         Vector2 jitter = Random.insideUnitCircle * _spawnJitterRadius;
         worldPos += new Vector3(jitter.x, 0f, jitter.y);
 
-        Debug.Log("spawning text");
         FloatingTextSpawner instance = Instantiate(_floatingTextPrefab, worldPos, Quaternion.identity);
         instance.Setup(text, color, icon);
     }

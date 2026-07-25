@@ -21,8 +21,10 @@ public static class SpawnTroopSystem
     private const int DefaultSpellResist = 0;
     private const float DefaultActivationDelaySeconds = 2f;
 
-    private const float DefaultDetectionRangeMultiplier = 3f;
-    private const float DefaultChaseRangeMultiplier = 5f;
+    // 4x — explicit design ask (matches every card's own DetectionRangeMultiplier/
+    // ChaseRangeMultiplier bump).
+    private const float DefaultDetectionRangeMultiplier = 12f;
+    private const float DefaultChaseRangeMultiplier = 20f;
     private const float DefaultAttackRangeMultiplier = 1.5f;
     private const float DefaultCooldownMultiplier = 3f;
 

@@ -19,11 +19,16 @@ public static class ProjectileOnHitSystem
     {
         { ProjectileOnHitEffectType.Slow, ApplySlow },
         { ProjectileOnHitEffectType.Burn, ApplyBurn },
+        { ProjectileOnHitEffectType.Aoe, ApplyAoe },
     };
 
     // Scratch for ApplyBurn's splash query, reused across every burn hit rather than
     // reallocated per hit.
     private static readonly List<ulong> _burnSplashBuffer = new List<ulong>();
+
+    // Scratch for ApplyAoe's blast-radius query, reused across every hit rather than
+    // reallocated per hit.
+    private static readonly List<ulong> _aoeBuffer = new List<ulong>();
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents) { }
 
@@ -199,6 +204,50 @@ public static class ProjectileOnHitSystem
         dot.DamagePerProc = damagePerProc;
         ecs.Delta.MarkComponentDirty(modifierId, typeof(DamageOverTimeComponent));
     }
+
+    // SantaClausCard's on-hit effect: deals instant AOE damage to every enemy troop within
+    // AoeRadiusMultiplier x the shooter's own Range stat of the hit point (including the
+    // primary target itself, which also still takes the normal per-shot DamageRequest every
+    // projectile deals regardless of EffectType — see ProjectileHitRequest.Execute — so the
+    // troop standing at ground zero effectively takes both). Mirrors ApplyBurn's splash
+    // query, just dealing direct damage instead of applying a modifier.
+    private static void ApplyAoe(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
+    {
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        if (posStore == null || troopStore == null || healthStore == null) return;
+        if (!posStore.HasComponent(targetId) || !troopStore.HasComponent(ownerId)) return;
+
+        PositionComponent hitPos = posStore.GetComponent(targetId);
+        ushort casterOwnerId = troopStore.GetComponent(ownerId).OwnerPlayerId;
+        float radius = StatsQuery.GetRange(ecs, ownerId, AoeFallbackRange) * onHit.AoeRadiusMultiplier;
+        int aoeDamage = Mathf.RoundToInt(StatsQuery.GetDamage(ecs, ownerId, AoeFallbackDamage) * onHit.AoeDamageRatio);
+        if (aoeDamage <= 0) return;
+
+        _aoeBuffer.Clear();
+        ecs.ChunkTracker.GetEntitiesNear(hitPos.X, hitPos.Y, radius, _aoeBuffer);
+
+        foreach (ulong splashTargetId in _aoeBuffer)
+        {
+            if (splashTargetId == ownerId) continue;
+            if (!troopStore.HasComponent(splashTargetId)) continue;
+            if (troopStore.GetComponent(splashTargetId).OwnerPlayerId == casterOwnerId) continue;
+            if (!healthStore.HasComponent(splashTargetId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, splashTargetId)) continue;
+
+            // Enqueued (not flushed here) — same reasoning as ProjectileHitRequest.Execute's
+            // own DamageRequest: DamageResolutionSystem flushes DamageRequest later this same
+            // tick, after every other DamageRequest subscriber (ArmorMitigationSystem, ...)
+            // has had a chance to run.
+            ecs.Requests.CreateRequest(new DamageRequest(splashTargetId, aoeDamage) { DealerEntityId = ownerId });
+        }
+    }
+
+    // Fallbacks for StatsQuery.GetRange/GetDamage when the shooter somehow has no
+    // StatsComponent — matches BurnFallbackRange/BurnFallbackDamage's own convention.
+    private const int AoeFallbackRange = 10;
+    private const int AoeFallbackDamage = 10;
 
     // Mirrors ActionWindupSystem.IsWindingUp's "walk every ModifierComponent targeting this
     // entity" shape. Shared by every ModifierID this system cares about (Chilled, Scorched)

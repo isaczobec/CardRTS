@@ -33,8 +33,9 @@ public class SkeletonsCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from BasicMeleeTroopCard.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 24f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 48f;
+    private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -70,7 +71,7 @@ public class SkeletonsCard : SpawnAtPointCard
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood = 60,
+            Wood = 50,
             Stone = 100
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;

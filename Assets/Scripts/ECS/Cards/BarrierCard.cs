@@ -6,7 +6,7 @@
 // the barrier actually starts absorbing hits.
 public class BarrierCard : TargetEntityCard
 {
-    private const float BarrierMaxHealth = 200f;
+    private const float BarrierMaxHealth = 140f;
     // 1 = the barrier loses exactly as much of its own health as the damage it blocks.
     private const float BarrierDamageMultiplier = 1f;
     private const float BarrierDamageAdditiveBonus = 0f;
@@ -18,7 +18,7 @@ public class BarrierCard : TargetEntityCard
     public override string ImageName => "Barrier";
     public override string Description => "Shields a friendly troop with a barrier that fully blocks incoming damage until its own health runs out.";
 
-    public override int ShopGoldCost => 110;
+    public override int ShopGoldCost => 100;
 
     public override StatsComponent DefaultStats => new StatsComponent
     {
@@ -34,7 +34,7 @@ public class BarrierCard : TargetEntityCard
     public override ResourceCost Cost => new ResourceCost
         {
             Metal = 60,
-            Gems  = 2
+            Stone = 60,
         };
 
     // No range requirement at all — playable on any friendly troop anywhere on the map.

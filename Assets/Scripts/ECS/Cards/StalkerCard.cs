@@ -24,13 +24,14 @@ public class StalkerCard : SpawnAtPointCard
     private const int Speed = 46;
     private const int Range = 5;
     private const int Armor = 20;
-    private const int Damage = 25;
+    private const int Damage = 30;
     private const float AttackSpeedMilliseconds = 333f;
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 24f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 48f;
+    private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -42,15 +43,15 @@ public class StalkerCard : SpawnAtPointCard
     private const float ShadowCloakCooldownSeconds = 45f;
 
     // Ambush payoff (see OnHitScheduleComponent/ResolveAmbush) — explicit design ask.
-    private const float AmbushTargetSlowDurationSeconds = 4f;
-    private const float AmbushTargetSlowRatio = -0.2f;
+    private const float AmbushTargetSlowDurationSeconds = 8f;
+    private const float AmbushTargetSlowRatio = -0.4f;
     // AttackSpeed is a tick PERIOD (lower = faster attacks — see StatsQuery.GetAttackSpeed),
     // the opposite of every other stat here, where higher is better. A "-20% attack speed"
     // DEBUFF (attacks slower) therefore needs a POSITIVE ratio here (lengthens the period) —
     // see ModifierIconManager.ResolveStatChange's own comment, which negates this same field
     // right back for display so the UI still reads "-20%" despite the mechanically-inverted
     // sign.
-    private const float AmbushTargetAttackSpeedDebuffRatio = 0.2f;
+    private const float AmbushTargetAttackSpeedDebuffRatio = 0.3f;
     private const float AmbushSelfAttackSpeedBuffDurationSeconds = 8f;
     // "+60% attack speed" (attacks faster) needs a NEGATIVE ratio (shortens the period) —
     // same inverted-sign reasoning as AmbushTargetAttackSpeedDebuffRatio above.

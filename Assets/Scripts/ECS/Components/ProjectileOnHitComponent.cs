@@ -26,4 +26,12 @@ public struct ProjectileOnHitComponent : IComponent
     public int BurnMaxStacks;
     public int BurnProcPeriodTicks;
     public float BurnSplashRangeMultiplier;
+
+    // Aoe-specific — see ProjectileOnHitSystem.ApplyAoe. Radius is AoeRadiusMultiplier x the
+    // shooter's own Range stat, centered on the hit point; every enemy troop caught in it
+    // (including whatever the projectile directly hit, which still also takes the normal
+    // per-shot DamageRequest every projectile deals) takes AoeDamageRatio x the shooter's own
+    // Damage stat as instant damage.
+    public float AoeRadiusMultiplier;
+    public float AoeDamageRatio;
 }

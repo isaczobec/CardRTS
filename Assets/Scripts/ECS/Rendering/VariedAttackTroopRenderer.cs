@@ -96,6 +96,9 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private string _dealDamageSoundName;
     [SerializeField] private string _takeDamageSoundName;
     [SerializeField] private string _deathSoundName;
+    // Played once, at the troop's spawn position, the instant it activates (see
+    // OnEntityActivated) — e.g. a deploy/battle-cry sound. Skipped entirely when blank.
+    [SerializeField] private string _activationSoundName;
     // Looped (via crossfade, not native looping — hides an imperfect loop point the same
     // way OverlaySoundEntry-style clips would) for as long as the troop is moving, started/
     // stopped off MovableComponent.IsMoving in UpdateRenderable. Left blank to play nothing.
@@ -314,6 +317,8 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
         BasicTroopGameObject go = Instantiate(_prefab);
         go.name = $"Troop_{entityId}";
         _objects[entityId] = go;
+
+        PlaySoundAt(_activationSoundName, go.transform.position);
     }
 
     public IReadOnlyList<Renderer> GetRenderers(ulong entityId)

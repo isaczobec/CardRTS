@@ -19,8 +19,9 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 24f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 48f;
+    private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 

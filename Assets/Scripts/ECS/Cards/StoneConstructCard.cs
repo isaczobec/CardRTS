@@ -22,8 +22,9 @@ public class StoneConstructCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from IronKnightCard.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 24f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 48f;
+    private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 2.5f;
     private const float CooldownMultiplier = 1.8f;
 

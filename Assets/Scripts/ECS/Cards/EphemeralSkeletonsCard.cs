@@ -33,8 +33,9 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from BasicRangedTroopCard.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 5f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 20f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -66,8 +67,8 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {
-            Stone = 60,
-            Metal = 30
+            Stone = 100,
+            Metal = 40
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 

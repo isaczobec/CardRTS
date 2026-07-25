@@ -20,8 +20,9 @@ public class IronKnightCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 24f;
+    // 4x — explicit design ask.
+    private const float DetectionRangeMultiplier = 48f;
+    private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 2.5f;
     // Shorter than BasicMeleeTroopCard's 3x — a proportionally quicker recovery relative to
     // its doubled windup, so its swing doesn't feel even more sluggish on top of the slower

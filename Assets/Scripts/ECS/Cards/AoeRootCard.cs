@@ -42,7 +42,7 @@ public class AoeRootCard : SpawnAtPointCard
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {
-            Gems = 4,
+            Gems = 3,
             Wood = 80
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;

@@ -33,6 +33,17 @@ public class BasicRangedAISystem : ISystem
     private const float DefaultAttackSpeedMilliseconds = 800f;
     private const float HomeRadius = 0.1f;
 
+    // Extra chase-repath drift tolerance per world unit of distance between this troop and
+    // its target — the further away a chase currently is, the less a small drift in the
+    // target's exact position actually matters for the overall path, so recomputing gets
+    // delayed proportionally more. See MoveToward.
+    private const float DriftToleranceDistanceRatio = 0.15f;
+    // Max extra, per-chasing-troop-id deterministic jitter added on top of the drift
+    // tolerance above, so a large group of troops all chasing the same distant target
+    // doesn't all cross their threshold on the exact same tick and repath in one
+    // simultaneous lag spike — see DeterministicJitter.
+    private const float DriftToleranceJitterAmplitude = 1.5f;
+
     private readonly List<ulong> _queryBuffer = new List<ulong>();
     private readonly HashSet<ulong> _movedThisTick = new HashSet<ulong>();
 
@@ -216,7 +227,7 @@ public class BasicRangedAISystem : ISystem
         }
         else
         {
-            MoveToward(id, ref mov, ref ai, activeTarget, range);
+            MoveToward(id, ref mov, ref ai, activeTarget, range, myPos);
         }
     }
 
@@ -378,12 +389,19 @@ public class BasicRangedAISystem : ISystem
         _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
     }
 
-    // Only recomputes the chase destination (and lets PathfindingSystem repath) once
-    // the target has moved more than `range` from where it was the last time we did —
-    // repathing on every tiny step of a moving target is wasteful. Switching to a
-    // different target, or resuming movement after a windup (which clears
-    // PathfindingSystem's cached path), always forces a fresh one.
-    private void MoveToward(ulong id, ref MovableComponent mov, ref BasicRangedAIComponent ai, ulong targetId, int range)
+    // Only recomputes the chase destination (and lets PathfindingSystem repath) once the
+    // target has moved more than a drift tolerance from where it was the last time we did —
+    // repathing on every tiny step of a moving target is wasteful. That tolerance is at
+    // least `range`, plus DriftToleranceDistanceRatio for every world unit currently between
+    // this troop and its target (a distant chase can tolerate more absolute drift before it
+    // meaningfully changes the path), plus a small amount of DeterministicJitter unique to
+    // this troop's own id — without that last part, a whole group chasing the same distant
+    // target would all cross the exact same distance-based threshold on the exact same tick
+    // and repath simultaneously, which is its own lag spike even though each individual
+    // repath is "correctly" delayed. Switching to a different target, or resuming movement
+    // after a windup (which clears PathfindingSystem's cached path), always forces a fresh
+    // one regardless of drift.
+    private void MoveToward(ulong id, ref MovableComponent mov, ref BasicRangedAIComponent ai, ulong targetId, int range, Vector2 myPos)
     {
         if (!ActivationQuery.CanMove(_ecs, id)) return;
 
@@ -392,8 +410,12 @@ public class BasicRangedAISystem : ISystem
 
         bool modeNeedsFixing = mov.currentMovementMode != MovementMode.MoveToDestination;
         bool sameTarget = ai.LastPathTargetId == targetId;
+
+        float distanceToTarget = Vector2.Distance(myPos, targetVec);
+        float driftTolerance = range + distanceToTarget * DriftToleranceDistanceRatio
+            + DeterministicJitter(id, DriftToleranceJitterAmplitude);
         bool targetDrifted = !sameTarget
-            || Vector2.Distance(targetVec, new Vector2(ai.LastPathTargetX, ai.LastPathTargetY)) > range;
+            || Vector2.Distance(targetVec, new Vector2(ai.LastPathTargetX, ai.LastPathTargetY)) > driftTolerance;
 
         if (!modeNeedsFixing && !targetDrifted) return;
 
@@ -408,5 +430,20 @@ public class BasicRangedAISystem : ISystem
 
         _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
         _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
+    }
+
+    // Deterministic, stable pseudo-random value in [0, amplitude) derived purely from id —
+    // deliberately NOT Unity's Random or ulong.GetHashCode (neither is guaranteed to produce
+    // the identical result on the server and every predicting client, which this must, since
+    // it feeds a lockstep-replicated repath decision). A splitmix64-style integer mix: not
+    // cryptographic, just needs to spread different ids out evenly and repeatably.
+    private static float DeterministicJitter(ulong id, float amplitude)
+    {
+        ulong x = id + 0x9E3779B97F4A7C15UL;
+        x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9UL;
+        x = (x ^ (x >> 27)) * 0x94D049BB133111EBUL;
+        x ^= x >> 31;
+        float unit = (x & 0xFFFFFF) / (float)0x1000000; // low 24 bits -> [0, 1)
+        return unit * amplitude;
     }
 }

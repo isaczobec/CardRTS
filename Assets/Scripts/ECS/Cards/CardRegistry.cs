@@ -23,6 +23,7 @@ public static class CardRegistry
         { CardType.Stalker, new StalkerCard() },
         { CardType.Barrier, new BarrierCard() },
         { CardType.AoeRoot, new AoeRootCard() },
+        { CardType.SantaClaus, new SantaClausCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);
