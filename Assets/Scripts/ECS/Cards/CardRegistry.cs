@@ -21,6 +21,8 @@ public static class CardRegistry
         { CardType.Skeletons, new SkeletonsCard() },
         { CardType.EphemeralSkeletons, new EphemeralSkeletonsCard() },
         { CardType.Stalker, new StalkerCard() },
+        { CardType.Barrier, new BarrierCard() },
+        { CardType.AoeRoot, new AoeRootCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

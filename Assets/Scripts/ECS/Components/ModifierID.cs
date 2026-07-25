@@ -11,4 +11,6 @@ public enum ModifierID
     Frozen = 3,
     Scorched = 4,
     ShadowCloak = 5,
+    Barrier = 6,
+    Rooted = 7,
 }

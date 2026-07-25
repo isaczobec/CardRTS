@@ -37,9 +37,9 @@ public class EntitySpawnAction : IWorldGenAction
     // they're spawned, each with its own long "grace period" respawn timer, ramping down to
     // a shared shorter steady-state timer after each one's first respawn (see
     // RespawnCooldownRampComponent/RespawnCooldownRampSystem).
-    private const int   SoulstoneSmallMaxHealth  = 1600;
-    private const int   SoulstoneMediumMaxHealth = 1600;
-    private const int   SoulstoneLargeMaxHealth  = 1600;
+    private const int   SoulstoneSmallMaxHealth  = 900;
+    private const int   SoulstoneMediumMaxHealth = 900;
+    private const int   SoulstoneLargeMaxHealth  = 900;
     private const float SoulstoneBlockRadius     = 1f;
     private const float SoulstoneSelectionScale  = 2f;
 
@@ -50,7 +50,7 @@ public class EntitySpawnAction : IWorldGenAction
 
     // Neutral gem deposit (see GemClusterFeature) — spawned alive, same shape as
     // Tree/Rock/Ore, just dropping Gems instead.
-    private const int   GemMaxHealth      = 700;
+    private const int   GemMaxHealth      = 600;
     private const float GemBlockRadius    = 1f;
     private const float GemRespawnSeconds = 3f * 60f + 30f; // 3:30
     private const float GemSelectionScale = 2f;

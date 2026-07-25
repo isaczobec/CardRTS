@@ -32,6 +32,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Frozen, ResolveFrozen },
         { ModifierID.Scorched, ResolveScorched },
         { ModifierID.ShadowCloak, ResolveShadowCloak },
+        { ModifierID.Barrier, ResolveBarrier },
+        { ModifierID.Rooted, ResolveRooted },
     };
 
     private ECS _ecs;
@@ -300,6 +302,27 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     // fixed, mirroring ResolveFrozen.
     private static (string name, string imageName, string description) ResolveShadowCloak(ECS ecs, ulong modifierEntityId)
         => ("Shadow Cloak", "ShadowCloak", "Untargetable by enemies — already-fired projectiles can still land.");
+
+    // BarrierComponent-carrying modifier from BarrierCard — states the current/max
+    // absorption pool directly, mirroring ResolveScorched's "state the current numbers"
+    // approach.
+    private static (string name, string imageName, string description) ResolveBarrier(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<BarrierComponent> barrierStore = ecs.GetComponentStore<BarrierComponent>();
+        if (barrierStore == null || !barrierStore.HasComponent(modifierEntityId))
+            return ("Barrier", "Barrier", "This troop is shielded by a barrier.");
+
+        BarrierComponent barrier = barrierStore.GetComponent(modifierEntityId);
+        int remaining = Mathf.CeilToInt(barrier.HealthRemaining);
+        int max = Mathf.CeilToInt(barrier.MaxHealth);
+        return ("Barrier", "Barrier", $"Blocks incoming damage. Barrier health: {remaining}/{max}.");
+    }
+
+    // RootedComponent-carrying modifier from AoeRootCard — no payload to read
+    // (RootedComponent has no fields), so the name/description are fixed, mirroring
+    // ResolveFrozen/ResolveShadowCloak.
+    private static (string name, string imageName, string description) ResolveRooted(ECS ecs, ulong modifierEntityId)
+        => ("Rooted", "Rooted", "This troop is rooted in place and cannot move on its own, but can still attack and act.");
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {

@@ -5,6 +5,8 @@ public enum RenderableModifierType : byte
     Frozen = 2,
     Scorched = 3,
     ShadowCloak = 4,
+    Barrier = 5,
+    Rooted = 6,
 }
 
 // Attached to a modifier entity (alongside its ModifierComponent) to say which visual

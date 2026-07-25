@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +11,9 @@ using UnityEngine.UI;
 public class HealthBarPrefab : MonoBehaviour
 {
     [SerializeField] private Image _image;
+    // Optional — shows "<current>/<max>" over the fill. Left null on a bar that doesn't
+    // want the text (e.g. a smaller/simpler variant prefab).
+    [SerializeField] private TMP_Text _healthText;
     // Template material using the HealthBar shader — instantiated fresh per bar in Awake so
     // each troop's fill/segment ticks can be driven independently rather than all bars
     // fighting over one shared material's property values.
@@ -56,6 +60,9 @@ public class HealthBarPrefab : MonoBehaviour
         float normalized = maxHealth > 0 ? Mathf.Clamp01((float)currentHealth / maxHealth) : 0f;
         _material.SetFloat(CurrentHealthNormalizedId, normalized);
         _material.SetFloat(MaxHealthId, Mathf.Max(0, maxHealth));
+
+        if (_healthText != null)
+            _healthText.text = $"{Mathf.Max(0, currentHealth)}/{Mathf.Max(0, maxHealth)}";
 
         ApplyWidthForMaxHealth(maxHealth);
     }

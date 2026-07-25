@@ -186,6 +186,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<OnKillScheduleComponent>(44);
         _componentTypeRegistry.Register<ShadowCloakComponent>(45);
         _componentTypeRegistry.Register<OnHitScheduleComponent>(46);
+        _componentTypeRegistry.Register<BarrierComponent>(47);
+        _componentTypeRegistry.Register<RootedComponent>(48);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -314,6 +316,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShadowCloakComponent>>(109);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<OnHitScheduleComponent>>(110);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<OnHitScheduleComponent>>(111);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BarrierComponent>>(112);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BarrierComponent>>(113);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RootedComponent>>(114);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RootedComponent>>(115);
 
         ECS = CreateSimulationECS();
     }
@@ -533,6 +539,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BuildingDamageBonusComponent>());
         ecs.AddComponentStore(new ComponentStore<OnKillScheduleComponent>());
         ecs.AddComponentStore(new ComponentStore<OnHitScheduleComponent>());
+        ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
+        ecs.AddComponentStore(new ComponentStore<RootedComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -551,6 +559,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(StunnedSystem.Instance);
         ecs.RegisterSystem(ShadowCloakSystem.Instance);
         ecs.RegisterSystem(DisplacementSystem.Instance);
+        ecs.RegisterSystem(RootedSystem.Instance);
         ecs.RegisterSystem(new ScheduledCallSystem());
         ecs.RegisterSystem(new TeleportingModifierSystem());
         ecs.RegisterSystem(new BlinkSystem());
@@ -581,6 +590,11 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(BuildingDamageBonusSystem.Instance);
         ecs.RegisterSystem(ArmorMitigationSystem.Instance);
         ecs.RegisterSystem(PeriodicDamageReductionSystem.Instance);
+        // Registered last among DamageRequest subscribers (Subscribe callbacks fire in
+        // registration order — see RequestManager's own doc comment) so it acts on the
+        // final, fully-mitigated Amount, right before DamageResolutionSystem's Flush
+        // actually applies it to HealthComponent — see BarrierSystem's own doc comment.
+        ecs.RegisterSystem(BarrierSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
@@ -648,6 +662,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BuildingDamageBonusComponent>());
         ecs.AddComponentStore(new ComponentStore<OnKillScheduleComponent>());
         ecs.AddComponentStore(new ComponentStore<OnHitScheduleComponent>());
+        ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
+        ecs.AddComponentStore(new ComponentStore<RootedComponent>());
 
         return ecs;
     }

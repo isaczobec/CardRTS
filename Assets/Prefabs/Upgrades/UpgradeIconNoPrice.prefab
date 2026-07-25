@@ -55,6 +55,7 @@ MonoBehaviour:
   _image: {fileID: 919204513596666031}
   _priceText: {fileID: 0}
   _unaffordableOverlay: {fileID: 2624263906706694004}
+  _showDescriptionOnHover: 1
 --- !u!1 &2624263906706694004
 GameObject:
   m_ObjectHideFlags: 0

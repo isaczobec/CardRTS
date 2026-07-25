@@ -8,4 +8,5 @@ public enum ScheduledCallType : byte
     GroundSlamResolve = 2,
     SkeletonSummonResolve = 3,
     StalkerAmbushResolve = 4,
+    AoeRootResolve = 5,
 }

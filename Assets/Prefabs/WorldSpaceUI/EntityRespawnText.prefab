@@ -212,4 +212,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimerTextPrefab
   _text: {fileID: 33262188897385422}
-  _worldOffset: {x: 0, y: 4, z: 0}
+  _worldOffset: {x: 0, y: 4.5, z: 0}

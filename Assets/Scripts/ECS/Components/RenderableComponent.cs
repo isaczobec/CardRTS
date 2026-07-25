@@ -31,6 +31,7 @@ public enum RenderableType : byte
     Skeleton = 26,
     EphemeralSkeleton = 27,
     Stalker = 28,
+    AoeRoot = 29,
 }
 
 public struct RenderableComponent : IComponent
