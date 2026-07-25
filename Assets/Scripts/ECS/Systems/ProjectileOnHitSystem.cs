@@ -20,6 +20,7 @@ public static class ProjectileOnHitSystem
         { ProjectileOnHitEffectType.Slow, ApplySlow },
         { ProjectileOnHitEffectType.Burn, ApplyBurn },
         { ProjectileOnHitEffectType.Aoe, ApplyAoe },
+        { ProjectileOnHitEffectType.Hook, ApplyHook },
     };
 
     // Scratch for ApplyBurn's splash query, reused across every burn hit rather than
@@ -248,6 +249,41 @@ public static class ProjectileOnHitSystem
     // StatsComponent — matches BurnFallbackRange/BurnFallbackDamage's own convention.
     private const int AoeFallbackRange = 10;
     private const int AoeFallbackDamage = 10;
+
+    // PirateCard's Hook ability on-hit effect: yanks the hit target via
+    // DisplacementSystem.BeginDisplacement to a point HookPullBehindOffset world units past
+    // the shooter (ownerId), on the far side from the target — i.e. "slightly behind" the
+    // shooter as seen from the target's own approach direction — computed from the shooter's
+    // CURRENT position at the moment of the hit, not wherever it stood when the hook was
+    // fired. The pull itself takes HookPullDurationSeconds (converted to a straight-line
+    // velocity, same primitive AbilityManager's own Push/GroundSlam abilities use).
+    private static void ApplyHook(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
+    {
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        ComponentStore<MovableComponent> movStore = ecs.GetComponentStore<MovableComponent>();
+        if (posStore == null || movStore == null) return;
+        if (!posStore.HasComponent(ownerId) || !posStore.HasComponent(targetId)) return;
+        if (!movStore.HasComponent(targetId)) return; // nothing to displace (e.g. a building)
+
+        PositionComponent ownerPos = posStore.GetComponent(ownerId);
+        PositionComponent targetPos = posStore.GetComponent(targetId);
+        Vector2 ownerVec = new Vector2(ownerPos.X, ownerPos.Y);
+        Vector2 targetVec = new Vector2(targetPos.X, targetPos.Y);
+
+        Vector2 pullDirection = ownerVec - targetVec;
+        // Owner and target exactly overlapping is the only way this is zero — an arbitrary
+        // but deterministic fallback direction beats a NaN from normalizing a zero vector,
+        // same reasoning as AbilityManager's own Push/GroundSlam abilities.
+        pullDirection = pullDirection.sqrMagnitude > 0.0001f ? pullDirection.normalized : Vector2.right;
+
+        Vector2 landingPoint = ownerVec + pullDirection * onHit.HookPullBehindOffset;
+
+        float duration = Mathf.Max(0.01f, onHit.HookPullDurationSeconds);
+        Vector2 velocity = (landingPoint - targetVec) / duration;
+        int ticks = Mathf.Max(1, TickManager.SecondsToTicks(duration));
+
+        DisplacementSystem.BeginDisplacement(ecs, targetId, velocity.x, velocity.y, ticks);
+    }
 
     // Mirrors ActionWindupSystem.IsWindingUp's "walk every ModifierComponent targeting this
     // entity" shape. Shared by every ModifierID this system cares about (Chilled, Scorched)

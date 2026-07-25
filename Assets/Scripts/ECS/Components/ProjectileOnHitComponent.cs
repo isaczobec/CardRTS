@@ -34,4 +34,11 @@ public struct ProjectileOnHitComponent : IComponent
     // Damage stat as instant damage.
     public float AoeRadiusMultiplier;
     public float AoeDamageRatio;
+
+    // Hook-specific — see ProjectileOnHitSystem.ApplyHook (PirateCard). HookPullBehindOffset
+    // is how far past the shooter (world units, on the far side from the hit target) the
+    // landing point sits; HookPullDurationSeconds is how long (seconds) the pull itself
+    // takes via DisplacementSystem — smaller reads as a snappier yank.
+    public float HookPullBehindOffset;
+    public float HookPullDurationSeconds;
 }

@@ -93,13 +93,30 @@ public static class ProjectilePool
     // one for a second pool of visually distinct projectiles (e.g. a faster/longer-range
     // kind fired by an ability — see SkillshotRangedTroopCard). damageMultiplier defaults
     // to 1 (the owning troop's plain Damage stat); pass a different one for a pool that
-    // should hit harder/softer than the troop's ordinary auto-attack.
+    // should hit harder/softer than the troop's ordinary auto-attack. onHit is null by
+    // default (no on-hit effect beyond the normal DamageRequest); pass a
+    // ProjectileOnHitComponent for a pool whose hits should also apply one (see
+    // ProjectileOnHitSystem) — mirrors CreatePool's own onHit param. SkillshotProjectileSystem
+    // creates the same ProjectileHitRequest CreatePool's SeekingProjectileSystem does per hit,
+    // so ProjectileOnHitSystem's dispatch works identically for either pool kind.
+    // stopOnFirstHit defaults to false (every existing skillshot pool's own piercing
+    // behavior); pass true for a pool that should stop dead on the first thing it hits
+    // instead — see SkillshotProjectileComponent.StopOnFirstHit (PirateCard's Hook).
     public static ulong CreateSkillshotPool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond, float hitRadius,
-        RenderableType renderableType = RenderableType.SkillshotProjectile, float damageMultiplier = 1f)
+        RenderableType renderableType = RenderableType.SkillshotProjectile, float damageMultiplier = 1f, ProjectileOnHitComponent? onHit = null,
+        bool stopOnFirstHit = false)
         => CreatePoolRing(ecs, ownerId, count, (e, id) =>
         {
             e.AddComponent(id, new RenderableComponent { Type = renderableType });
-            e.AddComponent(id, new SkillshotProjectileComponent { Speed = speedMilliTilesPerSecond, HitRadius = hitRadius, DamageMultiplier = damageMultiplier });
+            e.AddComponent(id, new SkillshotProjectileComponent
+            {
+                Speed           = speedMilliTilesPerSecond,
+                HitRadius       = hitRadius,
+                DamageMultiplier = damageMultiplier,
+                StopOnFirstHit  = stopOnFirstHit,
+            });
+            if (onHit.HasValue)
+                e.AddComponent(id, onHit.Value);
         });
 
     // Finds the next available pooled projectile, activates it, and advances the owner's

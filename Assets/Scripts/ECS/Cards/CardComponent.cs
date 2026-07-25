@@ -20,6 +20,7 @@ public enum CardType : byte
     SantaClaus = 17,
     Cannon = 18,
     MissileSilo = 19,
+    Pirate = 20,
 }
 
 public enum CardLocation : byte

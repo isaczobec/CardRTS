@@ -65,20 +65,23 @@ public static class SkillshotProjectileSystem
         pos.Y = next.y;
         ecs.Delta.MarkComponentDirty(id, typeof(PositionComponent));
 
-        HitOverlappingEnemies(ecs, id, projectile.OwnerEntityId, next, skillshot.HitRadius, skillshot.DamageMultiplier);
+        bool hitAnything = HitOverlappingEnemies(ecs, id, projectile.OwnerEntityId, next, skillshot.HitRadius, skillshot.DamageMultiplier);
 
         skillshot.RangeRemaining -= step;
         ecs.Delta.MarkComponentDirty(id, typeof(SkillshotProjectileComponent));
 
-        if (skillshot.RangeRemaining <= 0f)
+        if (skillshot.RangeRemaining <= 0f || (skillshot.StopOnFirstHit && hitAnything))
             Deactivate(ecs, id, ref projectile);
     }
 
-    private static void HitOverlappingEnemies(ECS ecs, ulong projectileId, ulong ownerId, Vector2 pos, float hitRadius, float damageMultiplier)
+    // Returns whether at least one enemy was actually hit this tick — see
+    // SkillshotProjectileComponent.StopOnFirstHit, which uses this to deactivate immediately
+    // instead of piercing on.
+    private static bool HitOverlappingEnemies(ECS ecs, ulong projectileId, ulong ownerId, Vector2 pos, float hitRadius, float damageMultiplier)
     {
         ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
         ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
-        if (troopStore == null || healthStore == null || !troopStore.HasComponent(ownerId)) return;
+        if (troopStore == null || healthStore == null || !troopStore.HasComponent(ownerId)) return false;
 
         ushort ownerPlayerId = troopStore.GetComponent(ownerId).OwnerPlayerId;
         int hitboxImmunityTicksToGive = healthStore.HasComponent(ownerId) ? healthStore.GetComponent(ownerId).HitboxImmunityTicksToGive : 0;
@@ -86,6 +89,8 @@ public static class SkillshotProjectileSystem
 
         _queryBuffer.Clear();
         ecs.ChunkTracker.GetEntitiesNear(pos.x, pos.y, hitRadius, _queryBuffer);
+
+        bool hitAnything = false;
 
         foreach (ulong targetId in _queryBuffer)
         {
@@ -102,7 +107,10 @@ public static class SkillshotProjectileSystem
 
             targetHealth.HitboxImmunityTicksRemaining = hitboxImmunityTicksToGive;
             ecs.Delta.MarkComponentDirty(targetId, typeof(HealthComponent));
+            hitAnything = true;
         }
+
+        return hitAnything;
     }
 
     private static void Deactivate(ECS ecs, ulong id, ref ProjectileBaseComponent projectile)

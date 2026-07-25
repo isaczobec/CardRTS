@@ -52,6 +52,14 @@ public static class AbilityManager
     // relies on.
     public const int ShadowCloakAbilityId = 8;
 
+    // Target location, winds up then fires one of the caster's own pooled skillshot
+    // projectiles (a hook) straight at the point — same casting shape as SkillshotAbilityId
+    // (ActionWindupComponent + FireProjectileOnExpireComponent) — but on hit, yanks the
+    // struck enemy troop via DisplacementSystem to just behind the caster's current position
+    // (ProjectileOnHitEffectType.Hook — see ProjectileOnHitSystem.ApplyHook) instead of just
+    // dealing damage. See PirateCard, the only troop that currently equips this.
+    public const int HookAbilityId = 9;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     // The shot always travels the caster's second projectile pool's own Range (see
@@ -113,6 +121,15 @@ public static class AbilityManager
     // How long Shadow Cloak's untargetability lasts — explicit design ask (StalkerCard).
     private const float ShadowCloakDurationSeconds = 8f;
 
+    // Not used for any cast validation (the shot always travels its own pool's Range — see
+    // ProjectilePool.AimSkillshot), only so AbilityIndicatorManager can preview roughly how
+    // far it reaches; kept in step with PirateCard.Range, the only troop that currently
+    // equips this, same limitation SkillshotAbilityRange's own comment describes.
+    private const float HookAbilityRange = 50f;
+    // Mirrors BuildSkillshotAbility's own SkillshotWindupSeconds — an ActionWindupComponent
+    // blocks the caster's own CanMove/CanPerform for the duration.
+    private const float HookWindupSeconds = 0.4f;
+
     // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
 
@@ -126,6 +143,7 @@ public static class AbilityManager
         { PushAbilityId, BuildPushAbility() },
         { GroundSlamAbilityId, BuildGroundSlamAbility() },
         { ShadowCloakAbilityId, BuildShadowCloakAbility() },
+        { HookAbilityId, BuildHookAbility() },
     };
 
     // Runs after the field initializers above (C# guarantees static field initializers run
@@ -274,6 +292,63 @@ public static class AbilityManager
             {
                 TargetEntityId = input.CastingEntityId,
                 TicksRemaining = Mathf.Max(1, TickManager.SecondsToTicks(SkillshotWindupSeconds)),
+            });
+            ecs.AddComponent(modifier.Id, new ActionWindupComponent());
+            ecs.AddComponent(modifier.Id, new FireProjectileOnExpireComponent
+            {
+                DirectionX = direction.x,
+                DirectionY = direction.y,
+                ProjectilePoolOwnerId = poolOwnerId,
+            });
+
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+        };
+
+        return ability;
+    }
+
+    // Winds up for HookWindupSeconds (ActionWindupComponent — blocks the caster's own
+    // CanMove/CanPerform for the duration), then fires one of the caster's own pooled
+    // projectiles (FireProjectileOnExpireComponent — ProjectilePool.FireInDirection under the
+    // hood) in a straight line toward the cast point, captured once at cast time so it still
+    // fires exactly where aimed regardless of what happens during the windup. The firing
+    // mechanism itself is IDENTICAL to BuildSkillshotAbility — the only difference is what
+    // happens on hit, which lives entirely on the pool's own ProjectileOnHitComponent
+    // (EffectType.Hook — see PirateCard, which sets that up) rather than here. Deterministic
+    // and side-effect-free like BuildSkillshotAbility, so no isServer guard is needed either.
+    private static Ability BuildHookAbility()
+    {
+        Ability ability = new Ability
+        {
+            Type = AbilityType.TargetLocation,
+            Name = "Hook",
+            Description = "Winds up briefly, then fires a hook straight toward the targeted point. An enemy troop it hits is yanked to just behind the Pirate.",
+            Range = HookAbilityRange,
+            ImageName = "Hook",
+            ShowRangeCircle = true,
+            ShowDirectionArrow = true,
+            DirectionArrowAlwaysMaxRange = true,
+            // Pirate has no separate auto-attack pool (it's a melee troop) — the hook is its
+            // only pool, at the default index.
+            ProjectileOwnerIndex = 0,
+        };
+
+        ability.ExecuteAtLocation = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null || !posStore.HasComponent(input.CastingEntityId)) return;
+
+            PositionComponent casterPos = posStore.GetComponent(input.CastingEntityId);
+            Vector2 firePosition = new Vector2(casterPos.X, casterPos.Y);
+            Vector2 direction = new Vector2(input.X, input.Y) - firePosition;
+
+            ulong poolOwnerId = ProjectilePool.ResolveOwnerAtIndex(ecs, input.CastingEntityId, ability.ProjectileOwnerIndex);
+
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = Mathf.Max(1, TickManager.SecondsToTicks(HookWindupSeconds)),
             });
             ecs.AddComponent(modifier.Id, new ActionWindupComponent());
             ecs.AddComponent(modifier.Id, new FireProjectileOnExpireComponent

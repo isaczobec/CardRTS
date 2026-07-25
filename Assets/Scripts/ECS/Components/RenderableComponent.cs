@@ -38,6 +38,8 @@ public enum RenderableType : byte
     CannonProjectile = 33,
     Missile = 34,
     MissileSilo = 35,
+    Pirate = 36,
+    Hook = 37,
 }
 
 public struct RenderableComponent : IComponent

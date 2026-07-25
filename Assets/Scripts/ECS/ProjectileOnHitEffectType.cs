@@ -7,4 +7,5 @@ public enum ProjectileOnHitEffectType
     Slow = 1,
     Burn = 2,
     Aoe = 3,
+    Hook = 4,
 }

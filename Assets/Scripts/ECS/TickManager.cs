@@ -326,6 +326,7 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<TurretAIComponent>>(117);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<BallisticProjectileComponent>>(118);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BallisticProjectileComponent>>(119);
+        _flagEventTypeRegistry.Register<LinkedProjectileFiredEvent>(120);
 
         ECS = CreateSimulationECS();
     }

@@ -10,13 +10,15 @@ using UnityEngine;
 // BasicMeleeAISystem/BasicRangedAISystem — a turret's target can never be manually assigned
 // by a player.
 //
-// Targeting priority: an enemy PHYSICAL troop always outranks a neutral-owned building
-// (TurretAIComponent.CanTargetNeutralBuildings) — every tick, if the turret isn't currently
-// locked onto an enemy troop specifically (whether because it has no target at all, or its
-// current lock is a lower-priority neutral building), it checks for the closest enemy troop
-// in range and takes that over instead, even overriding an otherwise still-valid building
-// lock. A neutral building is only ever engaged as a fallback, when no enemy troop is in
-// range at all.
+// Targeting priority, high to low: enemy PHYSICAL troop > enemy-owned building
+// (TurretAIComponent.CanTargetEnemyBuildings) > neutral-owned building
+// (CanTargetNeutralBuildings). Every tick, the turret checks whether a HIGHER-priority
+// target than whatever it's currently locked onto (if anything) has come into range, and
+// takes that over instead — even overriding an otherwise still-valid lower-priority lock —
+// but never downgrades on its own once locked onto something (an enemy building stays
+// locked even if a closer enemy building shows up; it only ever gets bumped by a strictly
+// higher tier). A neutral building is only ever engaged as an absolute last resort, when
+// nothing else at all is in range.
 //
 // No movement/chase/leash concerns at all (buildings have no MovableComponent), so this is
 // considerably simpler than BasicMeleeAISystem/BasicRangedAISystem: a target is either
@@ -83,11 +85,11 @@ public class TurretAISystem : ISystem
         }
 
         // (Re)validate the current lock.
-        if (ai.TargetEntityId != 0 && !IsValidTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, ai.CanTargetNeutralBuildings))
+        if (ai.TargetEntityId != 0 && !IsValidTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, ai.CanTargetEnemyBuildings, ai.CanTargetNeutralBuildings))
             ai.TargetEntityId = 0;
 
-        // Enemy troops always outrank a neutral building — take one over even while still
-        // validly locked onto a (lower-priority) building.
+        // Enemy troops always outrank everything else — take one over even while still
+        // validly locked onto a lower-priority building.
         if (!IsEnemyTroopTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range))
         {
             ulong closestTroop = FindClosestEnemyTroopInRange(id, troop.OwnerPlayerId, myPos, range);
@@ -95,6 +97,18 @@ public class TurretAISystem : ISystem
                 ai.TargetEntityId = closestTroop;
         }
 
+        // Enemy buildings outrank neutral ones (but never an enemy troop) — take one over if
+        // we're not already locked onto an enemy troop OR enemy building.
+        if (ai.CanTargetEnemyBuildings
+            && !IsEnemyTroopTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range)
+            && !IsEnemyBuildingTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range))
+        {
+            ulong closestEnemyBuilding = FindClosestEnemyBuildingInRange(id, troop.OwnerPlayerId, myPos, range);
+            if (closestEnemyBuilding != 0)
+                ai.TargetEntityId = closestEnemyBuilding;
+        }
+
+        // Neutral building — absolute last resort, only when nothing else qualified at all.
         if (ai.TargetEntityId == 0 && ai.CanTargetNeutralBuildings)
             ai.TargetEntityId = FindClosestNeutralBuildingInRange(id, myPos, range);
 
@@ -126,7 +140,7 @@ public class TurretAISystem : ISystem
         // Finishing the attack (firing the shot) needs its own validity + CanPerform check —
         // a silence landing mid-windup should waste the shot, same as the target having
         // left range/died, rather than still firing because the windup already started.
-        if (targetId != 0 && IsValidTarget(targetId, ownerPlayerId, myPos, range * ai.AttackRangeMultiplier, ai.CanTargetNeutralBuildings)
+        if (targetId != 0 && IsValidTarget(targetId, ownerPlayerId, myPos, range * ai.AttackRangeMultiplier, ai.CanTargetEnemyBuildings, ai.CanTargetNeutralBuildings)
             && ActivationQuery.CanPerform(_ecs, id))
         {
             bool fired = ai.ProjectileMode == TurretProjectileMode.Ballistic
@@ -213,6 +227,17 @@ public class TurretAISystem : ISystem
         return !ShadowCloakSystem.IsCloaked(_ecs, targetId, out _);
     }
 
+    private bool IsEnemyBuildingTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range)
+    {
+        if (targetId == 0) return false;
+        if (!PassesCommonChecks(targetId, myPos, range)) return false;
+
+        TroopComponent target = _troopStore.GetComponent(targetId);
+        if (target.IsPhysicalTroop) return false;
+        if (target.OwnerPlayerId == myOwnerId || target.OwnerPlayerId == TroopComponent.NEUTRAL_OWNER_PLAYER_ID) return false;
+        return _buildingStore != null && _buildingStore.HasComponent(targetId);
+    }
+
     private bool IsNeutralBuildingTarget(ulong targetId, Vector2 myPos, float range)
     {
         if (targetId == 0) return false;
@@ -224,8 +249,9 @@ public class TurretAISystem : ISystem
         return _buildingStore != null && _buildingStore.HasComponent(targetId);
     }
 
-    private bool IsValidTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range, bool canTargetNeutralBuildings)
+    private bool IsValidTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range, bool canTargetEnemyBuildings, bool canTargetNeutralBuildings)
         => IsEnemyTroopTarget(targetId, myOwnerId, myPos, range)
+        || (canTargetEnemyBuildings && IsEnemyBuildingTarget(targetId, myOwnerId, myPos, range))
         || (canTargetNeutralBuildings && IsNeutralBuildingTarget(targetId, myPos, range));
 
     private ulong FindClosestEnemyTroopInRange(ulong turretId, ushort myOwnerId, Vector2 myPos, float range)
@@ -240,6 +266,32 @@ public class TurretAISystem : ISystem
         {
             if (candidateId == turretId) continue;
             if (!IsEnemyTroopTarget(candidateId, myOwnerId, myPos, range)) continue;
+
+            PositionComponent p = _posStore.GetComponent(candidateId);
+            float dx = p.X - myPos.x, dy = p.Y - myPos.y;
+            float distSq = dx * dx + dy * dy;
+            if (distSq < bestDistSq)
+            {
+                bestDistSq = distSq;
+                bestId = candidateId;
+            }
+        }
+
+        return bestId;
+    }
+
+    private ulong FindClosestEnemyBuildingInRange(ulong turretId, ushort myOwnerId, Vector2 myPos, float range)
+    {
+        _queryBuffer.Clear();
+        _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, range, _queryBuffer);
+
+        ulong bestId = 0;
+        float bestDistSq = float.MaxValue;
+
+        foreach (ulong candidateId in _queryBuffer)
+        {
+            if (candidateId == turretId) continue;
+            if (!IsEnemyBuildingTarget(candidateId, myOwnerId, myPos, range)) continue;
 
             PositionComponent p = _posStore.GetComponent(candidateId);
             float dx = p.X - myPos.x, dy = p.Y - myPos.y;

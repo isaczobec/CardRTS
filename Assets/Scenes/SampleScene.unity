@@ -7866,12 +7866,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e63bef65ab5555459eadcbabad854c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MissileProjectileRenderer
-  _missilePrefab: {fileID: 8077043507155612275, guid: c7195fadfec4f92408481d6f04d06f77, type: 3}
+  _missilePrefab: {fileID: 8077043507155612275, guid: 24664e83a8dc65c489af044187ec7247, type: 3}
   _targetIndicatorPrefab: {fileID: 7953956060509625171, guid: c6b69feb97dafb041960cdc76c8ba904, type: 3}
   _impactEffectPrefab: {fileID: 8464950693656172981, guid: 6a50f6923590d78468133b7369b0c513, type: 3}
   _impactEffectDestroyAfterSeconds: 3
   _arcHeight: 6
-  _rotationDegreesPerSecond: 1080
+  _rotationDegreesPerSecond: 200
   _launchSoundName: 
   _impactSoundName: Explosion
   _flightLoopSoundName: Flying

@@ -39,11 +39,18 @@ public struct TurretAIComponent : IComponent
     // BasicRangedAIComponent.AttackRangeMultiplier.
     public float AttackRangeMultiplier;
 
+    // Whether this turret may also engage an enemy-owned building — see TurretAISystem's own
+    // targeting-priority comment. Outranks a neutral building (see CanTargetNeutralBuildings
+    // below) but NOT an enemy troop: an enemy troop always takes over a currently-locked
+    // enemy/neutral building the instant one comes into range. Defaults to false (a turret
+    // like CannonCard only ever engages enemy troops).
+    public bool CanTargetEnemyBuildings;
+
     // Whether this turret may also engage a neutral-owned building (a world-gen resource
-    // node/tree — see TroopComponent.NEUTRAL_OWNER_PLAYER_ID) when no enemy troop is
-    // currently in range — see TurretAISystem's own targeting-priority comment. An enemy
-    // troop always takes over a currently-locked neutral building the instant one comes into
-    // range; defaults to false (a turret like CannonCard only ever engages enemy troops).
+    // node/tree — see TroopComponent.NEUTRAL_OWNER_PLAYER_ID) as a last-resort fallback, only
+    // when no enemy troop AND no enemy building (if CanTargetEnemyBuildings) is currently in
+    // range — see TurretAISystem's own targeting-priority comment. Defaults to false (a
+    // turret like CannonCard only ever engages enemy troops).
     public bool CanTargetNeutralBuildings;
 
     public TurretProjectileMode ProjectileMode;

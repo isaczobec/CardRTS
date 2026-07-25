@@ -26,6 +26,7 @@ public static class CardRegistry
         { CardType.SantaClaus, new SantaClausCard() },
         { CardType.Cannon, new CannonCard() },
         { CardType.MissileSilo, new MissileSiloCard() },
+        { CardType.Pirate, new PirateCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

@@ -31,4 +31,11 @@ public struct SkillshotProjectileComponent : IComponent
     // there) rather than left to default here, since a bare 0 would silently zero out
     // damage for anyone who forgot to set it.
     public float DamageMultiplier;
+
+    // If true, this projectile deactivates the instant it hits ANYTHING, instead of
+    // piercing on until RangeRemaining runs out — e.g. PirateCard's Hook, which should grab
+    // one troop and stop, not pierce through everyone in its path the way a normal skillshot
+    // does. Defaults to false (every existing skillshot pool's own piercing behavior,
+    // unchanged) — set via ProjectilePool.CreateSkillshotPool's own stopOnFirstHit param.
+    public bool StopOnFirstHit;
 }

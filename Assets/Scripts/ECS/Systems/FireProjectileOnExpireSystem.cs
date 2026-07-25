@@ -39,7 +39,15 @@ public static class FireProjectileOnExpireSystem
             ulong poolOwnerId = fire.ProjectilePoolOwnerId != 0 ? fire.ProjectilePoolOwnerId : casterId;
 
             PositionComponent pos = posStore.GetComponent(casterId);
-            ProjectilePool.FireInDirection(ecs, poolOwnerId, new Vector2(fire.DirectionX, fire.DirectionY), new Vector2(pos.X, pos.Y));
+            ulong projectileId = ProjectilePool.FireInDirection(ecs, poolOwnerId, new Vector2(fire.DirectionX, fire.DirectionY), new Vector2(pos.X, pos.Y));
+
+            // Lets a renderer that cares about drawing a persistent visual link back to the
+            // caster (e.g. HookProjectileRenderer's line between a Pirate and its hook) know
+            // which caster a freshly-fired projectile belongs to, without having to filter
+            // through every projectile firing in the game via the generic
+            // ProjectileActivatedEvent — see LinkedProjectileFiredEvent's own doc comment.
+            if (projectileId != 0)
+                ecs.FlagEvents.Add(new LinkedProjectileFiredEvent { EntityId = projectileId, LinkedEntityId = casterId });
         });
     }
 }

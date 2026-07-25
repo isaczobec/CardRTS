@@ -9,21 +9,22 @@ using UnityEngine;
 // moment of firing once their flight ends — see ResolveMissileImpact, deferred out to
 // ScheduledCallSystem for exactly the flight's own duration.
 //
-// TurretAIComponent.CanTargetNeutralBuildings is true — this silo can also fire at a
-// neutral-owned building (a world-gen resource node/tree) when no enemy troop is in range,
-// but TurretAISystem's own targeting priority always prefers an enemy troop the instant one
-// comes into range. It also carries a permanent BuildingDamageBonusComponent modifier with a
+// TurretAIComponent.CanTargetEnemyBuildings and CanTargetNeutralBuildings are both true —
+// this silo can also fire at an enemy-owned building, or (failing that) a neutral-owned one
+// (a world-gen resource node/tree), when no enemy troop is in range — see TurretAISystem's
+// own targeting-priority comment for the full enemy troop > enemy building > neutral
+// building order. It also carries a permanent BuildingDamageBonusComponent modifier with a
 // NEGATIVE ratio (60% REDUCED damage vs. buildings) — the same BuildingDamageBonusSystem
 // every other building-damage-bonus card already uses, which applies automatically to
-// WHATEVER building the AOE blast hits (the neutral one it deliberately targeted, or any
-// other building simply caught in the radius), no special-casing needed in the AOE
-// resolution itself.
+// WHATEVER building the AOE blast hits (the one it deliberately targeted, or any other
+// building simply caught in the radius), no special-casing needed in the AOE resolution
+// itself.
 public class MissileSiloCard : SpawnAtPointCard
 {
     private const int MaxHealth = 270;
     // Much higher than CannonCard's own Range (14) — explicit design ask.
     private const int Range = 300;
-    private const int Damage = 40;
+    private const int Damage = 60;
     // Slow reload — a long-range siege piece, not a rapid-fire defense.
     private const float AttackSpeedMilliseconds = 3000f;
 
@@ -32,7 +33,7 @@ public class MissileSiloCard : SpawnAtPointCard
     // Missile flight speed (world units/second) — distinct from CannonCard's own
     // milli-tiles/sec pooled-projectile speed, since a ballistic shot has no
     // SeekingProjectileComponent at all; see TurretAISystem.FireBallistic.
-    private const float MissileSpeedTilesPerSecond = 18f;
+    private const float MissileSpeedTilesPerSecond = 50f;
 
     // Multiple of this card's own Range stat — the AOE damage radius when a missile's flight
     // ends (see BallisticProjectileComponent.ImpactRadius/ResolveMissileImpact).
@@ -69,7 +70,7 @@ public class MissileSiloCard : SpawnAtPointCard
         ScheduledCallSystem.RegisterCall(ScheduledCallType.MissileImpactResolve, ResolveMissileImpact);
     }
 
-    public override int ShopGoldCost => 220;
+    public override int ShopGoldCost => 100;
 
     public override CardType Type => CardType.MissileSilo;
     public override string Title => "Missile Silo";
@@ -92,8 +93,8 @@ public class MissileSiloCard : SpawnAtPointCard
 
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 170,
-            Gems  = 20,
+            Metal = 220,
+            Gems  = 25,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -111,6 +112,7 @@ public class MissileSiloCard : SpawnAtPointCard
         {
             WindDownMultiplier              = WindDownMultiplier,
             AttackRangeMultiplier           = AttackRangeMultiplier,
+            CanTargetEnemyBuildings         = true,
             CanTargetNeutralBuildings       = true,
             ProjectileMode                  = TurretProjectileMode.Ballistic,
             BallisticRenderableType         = RenderableType.Missile,
