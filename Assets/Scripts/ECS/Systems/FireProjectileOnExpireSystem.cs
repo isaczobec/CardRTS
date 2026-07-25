@@ -39,7 +39,7 @@ public static class FireProjectileOnExpireSystem
             ulong poolOwnerId = fire.ProjectilePoolOwnerId != 0 ? fire.ProjectilePoolOwnerId : casterId;
 
             PositionComponent pos = posStore.GetComponent(casterId);
-            ulong projectileId = ProjectilePool.FireInDirection(ecs, poolOwnerId, new Vector2(fire.DirectionX, fire.DirectionY), new Vector2(pos.X, pos.Y));
+            ulong projectileId = ProjectilePool.FireInDirection(ecs, poolOwnerId, new Vector2(fire.DirectionX, fire.DirectionY), new Vector2(pos.X, pos.Y), fire.RangeOverride);
 
             // Lets a renderer that cares about drawing a persistent visual link back to the
             // caster (e.g. HookProjectileRenderer's line between a Pirate and its hook) know

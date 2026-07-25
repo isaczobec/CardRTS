@@ -356,6 +356,13 @@ public static class AbilityManager
                 DirectionX = direction.x,
                 DirectionY = direction.y,
                 ProjectilePoolOwnerId = poolOwnerId,
+                // The hook's pool owner (index 0) IS the Pirate itself, so without this its
+                // travel distance would default to the Pirate's own melee Range stat (5) —
+                // wildly short of what this ability's own Range (used for the cast-time
+                // range-circle/arrow preview above) promises. Tying both to the SAME constant
+                // (HookAbilityRange) guarantees the shot always travels exactly as far as the
+                // indicator shows.
+                RangeOverride = HookAbilityRange,
             });
 
             ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });

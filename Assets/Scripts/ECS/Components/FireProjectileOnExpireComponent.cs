@@ -21,4 +21,14 @@ public struct FireProjectileOnExpireComponent : IComponent
     // falls back to ModifierComponent.TargetEntityId's own pool, for a caller that only has
     // one pool and doesn't need to think about this at all.
     public ulong ProjectilePoolOwnerId;
+
+    // Overrides a skillshot-type pool's own travel distance for this shot, instead of
+    // deriving it from ProjectilePool.FireInDirection's usual StatsQuery.GetRange(ownerId)
+    // lookup — 0 (the default) means "no override, use the pool owner's own Range stat" (see
+    // ProjectilePool.AimSkillshot), unchanged from before this field existed. Needed for a
+    // pool whose owner IS the caster itself (ProjectileOwnerIndex = 0 — see PirateCard's Hook
+    // ability) but whose intended travel distance is longer than that caster's own melee
+    // Range stat, which is also used for unrelated things (e.g. BasicMeleeAISystem's own
+    // attack-range check) and so can't just be bumped up to match.
+    public float RangeOverride;
 }

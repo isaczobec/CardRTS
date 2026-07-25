@@ -190,6 +190,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<RootedComponent>(48);
         _componentTypeRegistry.Register<TurretAIComponent>(49);
         _componentTypeRegistry.Register<BallisticProjectileComponent>(50);
+        _componentTypeRegistry.Register<ResourceGeneratorComponent>(51);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -327,6 +328,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<BallisticProjectileComponent>>(118);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BallisticProjectileComponent>>(119);
         _flagEventTypeRegistry.Register<LinkedProjectileFiredEvent>(120);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceGeneratorComponent>>(121);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceGeneratorComponent>>(122);
 
         ECS = CreateSimulationECS();
     }
@@ -549,6 +552,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
         ecs.AddComponentStore(new ComponentStore<RootedComponent>());
         ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceGeneratorComponent>());
         ecs.AddComponentStore(new ComponentStore<BallisticProjectileComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
@@ -617,6 +621,10 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(OnKillScheduleSystem.Instance);
         ecs.RegisterSystem(OnHitScheduleSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
+        // Must run BEFORE ResourceGenerationSystem — see ResourceGeneratorSystem's own doc
+        // comment: that system only enqueues ResourcesAdded requests, and
+        // ResourceGenerationSystem is what actually flushes every pending one this tick.
+        ecs.RegisterSystem(ResourceGeneratorSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
         ecs.SetupSystems();
         return ecs;
@@ -675,6 +683,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
         ecs.AddComponentStore(new ComponentStore<RootedComponent>());
         ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceGeneratorComponent>());
         ecs.AddComponentStore(new ComponentStore<BallisticProjectileComponent>());
 
         return ecs;

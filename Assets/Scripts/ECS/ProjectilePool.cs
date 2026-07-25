@@ -17,7 +17,9 @@ public static class ProjectilePool
     // SeekingProjectileComponent, homes in on targetId. For a pooled
     // SkillshotProjectileComponent, aims once at targetId's position at the moment of
     // firing (never re-homes) — targetId itself isn't stored anywhere on that projectile.
-    public static ulong Fire(ECS ecs, ulong ownerId, ulong targetId, Vector2 firePosition)
+    // rangeOverride, when > 0, overrides a skillshot-type pool's own travel distance for
+    // this shot instead of deriving it from the owner's own Range stat — see AimSkillshot.
+    public static ulong Fire(ECS ecs, ulong ownerId, ulong targetId, Vector2 firePosition, float rangeOverride = 0f)
     {
         ulong projectileId = ActivateNext(ecs, ownerId);
         if (projectileId == 0) return 0;
@@ -42,7 +44,7 @@ public static class ProjectilePool
                 Vector2 toTarget = new Vector2(targetPos.X, targetPos.Y) - firePosition;
                 if (toTarget.sqrMagnitude > 0.0001f) direction = toTarget.normalized;
             }
-            AimSkillshot(ecs, projectileId, ownerId, skillshotStore, direction);
+            AimSkillshot(ecs, projectileId, ownerId, skillshotStore, direction, rangeOverride);
         }
 
         PlaceAndAnnounce(ecs, projectileId, ownerId, targetId, firePosition, posStore);
@@ -53,15 +55,20 @@ public static class ProjectilePool
     // that fires a ring of shots outward with nothing to aim at. Only meaningful for a
     // pooled SkillshotProjectileComponent (a homing SeekingProjectileComponent fired this
     // way has no target, so it deactivates itself the next tick — see
-    // SeekingProjectileSystem).
-    public static ulong FireInDirection(ECS ecs, ulong ownerId, Vector2 direction, Vector2 firePosition)
+    // SeekingProjectileSystem). rangeOverride, when > 0, overrides the pool's own travel
+    // distance for this shot instead of deriving it from the owner's own Range stat — needed
+    // when the pool's owner (see ProjectileOwnerIndex/ResolveOwnerAtIndex) is the caster
+    // itself, whose Range stat means something else entirely (e.g. PirateCard's Hook, fired
+    // from the Pirate's own melee-range pool but meant to travel much further — see
+    // AbilityManager.BuildHookAbility, the only caller that sets this).
+    public static ulong FireInDirection(ECS ecs, ulong ownerId, Vector2 direction, Vector2 firePosition, float rangeOverride = 0f)
     {
         ulong projectileId = ActivateNext(ecs, ownerId);
         if (projectileId == 0) return 0;
 
         ComponentStore<SkillshotProjectileComponent> skillshotStore = ecs.GetComponentStore<SkillshotProjectileComponent>();
         if (skillshotStore != null && skillshotStore.HasComponent(projectileId))
-            AimSkillshot(ecs, projectileId, ownerId, skillshotStore, direction);
+            AimSkillshot(ecs, projectileId, ownerId, skillshotStore, direction, rangeOverride);
 
         ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
         PlaceAndAnnounce(ecs, projectileId, ownerId, 0, firePosition, posStore);
@@ -141,7 +148,7 @@ public static class ProjectilePool
         return projectileId;
     }
 
-    private static void AimSkillshot(ECS ecs, ulong projectileId, ulong ownerId, ComponentStore<SkillshotProjectileComponent> skillshotStore, Vector2 direction)
+    private static void AimSkillshot(ECS ecs, ulong projectileId, ulong ownerId, ComponentStore<SkillshotProjectileComponent> skillshotStore, Vector2 direction, float rangeOverride = 0f)
     {
         ref SkillshotProjectileComponent skillshot = ref skillshotStore.GetComponent(projectileId);
 
@@ -150,7 +157,7 @@ public static class ProjectilePool
 
         skillshot.DirectionX = direction.x;
         skillshot.DirectionY = direction.y;
-        skillshot.RangeRemaining = StatsQuery.GetRange(ecs, ownerId, DefaultRange);
+        skillshot.RangeRemaining = rangeOverride > 0f ? rangeOverride : StatsQuery.GetRange(ecs, ownerId, DefaultRange);
         ecs.Delta.MarkComponentDirty(projectileId, typeof(SkillshotProjectileComponent));
     }
 

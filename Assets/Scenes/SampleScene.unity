@@ -694,6 +694,57 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 35858626}
   m_CullTransparentMesh: 1
+--- !u!1 &43467376
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 43467377}
+  - component: {fileID: 43467378}
+  m_Layer: 0
+  m_Name: QuarryRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &43467377
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 43467376}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &43467378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 43467376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bb3bacf6bc5cb14e82285132fd3e3d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasicBuildingRenderer
+  _prefab: {fileID: 9030713940054835064, guid: 6caa06e650ae1dd4a9981c178acb38aa, type: 3}
+  _prefabVariants: []
+  _randomRotation: 0
+  _minScale: 1
+  _maxScale: 1
+  _takeDamageSoundName: WoodTakeDamage
+  _destroyedSoundName: DefaultDeath
 --- !u!1 &44267242
 GameObject:
   m_ObjectHideFlags: 0
@@ -3530,6 +3581,56 @@ MonoBehaviour:
   _groundOffset: 2
   _launchSoundName: 
   _impactSoundName: Explosion
+--- !u!1 &530576883
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 530576884}
+  - component: {fileID: 530576885}
+  m_Layer: 0
+  m_Name: HookRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &530576884
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 530576883}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &530576885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 530576883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11b98a617ece29b4586e599a2c02b1df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HookProjectileRenderer
+  _hookPrefab: {fileID: 8077043507155612275, guid: c7195fadfec4f92408481d6f04d06f77, type: 3}
+  _rotationDegreesPerSecond: 1080
+  _groundOffset: 2
+  _lineMaterial: {fileID: 5147520435782516356, guid: 3955de6a24970f840996fe77051507ee, type: 3}
+  _lineWidth: 0.15
+  _lineColor: {r: 1, g: 0.38564786, b: 0.14150941, a: 1}
 --- !u!1 &541862059
 GameObject:
   m_ObjectHideFlags: 0
@@ -4536,6 +4637,16 @@ MonoBehaviour:
     renderer: {fileID: 1100716341}
   - type: 35
     renderer: {fileID: 1822299835}
+  - type: 36
+    renderer: {fileID: 1149034175}
+  - type: 37
+    renderer: {fileID: 530576885}
+  - type: 38
+    renderer: {fileID: 1480344646}
+  - type: 39
+    renderer: {fileID: 43467378}
+  - type: 40
+    renderer: {fileID: 1092847670}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -7822,6 +7933,57 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1092847668
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1092847669}
+  - component: {fileID: 1092847670}
+  m_Layer: 0
+  m_Name: MineRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1092847669
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092847668}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1092847670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092847668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bb3bacf6bc5cb14e82285132fd3e3d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasicBuildingRenderer
+  _prefab: {fileID: 9030713940054835064, guid: 7cf3fb3b125a4d445a006f20841cec3a, type: 3}
+  _prefabVariants: []
+  _randomRotation: 0
+  _minScale: 1
+  _maxScale: 1
+  _takeDamageSoundName: WoodTakeDamage
+  _destroyedSoundName: DefaultDeath
 --- !u!1 &1100716339
 GameObject:
   m_ObjectHideFlags: 0
@@ -8373,6 +8535,72 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeployProgressIndicatorManager
   _indicatorPrefab: {fileID: 1685226708195409191, guid: 658b0017df8b25a4692a6e552dcbb0d6, type: 3}
+--- !u!1 &1149034173
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1149034174}
+  - component: {fileID: 1149034175}
+  m_Layer: 0
+  m_Name: PirateRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1149034174
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1149034173}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1149034175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1149034173}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 0e771a1a1c0b56d4bb6915d1583bbbc2, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.167
+    TimeUntilImpact: 0.5
+  - TriggerName: Attack2
+    Duration: 2.4
+    TimeUntilImpact: 0.5
+  _selectionMode: 1
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 70
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &1156487920
 GameObject:
   m_ObjectHideFlags: 0
@@ -9054,6 +9282,14 @@ MonoBehaviour:
     prefab: {fileID: 9030713940054835064, guid: dddb93cf2f44b8d42beacd9baecea5b6, type: 3}
   - name: MissileSilo
     prefab: {fileID: 9030713940054835064, guid: 28ce88c56d8207b41a888f40030de74c, type: 3}
+  - name: Pirate
+    prefab: {fileID: 6472282922783299243, guid: 0e771a1a1c0b56d4bb6915d1583bbbc2, type: 3}
+  - name: Mine
+    prefab: {fileID: 9030713940054835064, guid: 7cf3fb3b125a4d445a006f20841cec3a, type: 3}
+  - name: Quarry
+    prefab: {fileID: 9030713940054835064, guid: 6caa06e650ae1dd4a9981c178acb38aa, type: 3}
+  - name: Sawmill
+    prefab: {fileID: 9030713940054835064, guid: 14d56fc76e7e4fc42917da3ef4ebaf8a, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -10810,6 +11046,7 @@ Transform:
   - {fileID: 1373427740}
   - {fileID: 1325757546}
   - {fileID: 1631565995}
+  - {fileID: 1149034174}
   - {fileID: 713213433}
   - {fileID: 1871728200}
   - {fileID: 1890897682}
@@ -10828,7 +11065,11 @@ Transform:
   - {fileID: 745290410}
   - {fileID: 226858188}
   - {fileID: 506840436}
+  - {fileID: 530576884}
   - {fileID: 920356594}
+  - {fileID: 43467377}
+  - {fileID: 1480344645}
+  - {fileID: 1092847669}
   - {fileID: 893038368}
   - {fileID: 1822299834}
   - {fileID: 1439762914}
@@ -11179,6 +11420,20 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 4ba18157414453c40b17c669e4ddbfbf, type: 3}
   - name: SantaClaus
     sprite: {fileID: 21300000, guid: 5ab71ab515b5c864b99cbc0e848d3662, type: 3}
+  - name: Pirate
+    sprite: {fileID: 21300000, guid: 600efcd1e359c604b823dcc06b09c4fc, type: 3}
+  - name: Hook
+    sprite: {fileID: 21300000, guid: 9a32185a4d4b2d1459c58a811ed95887, type: 3}
+  - name: MissileSilo
+    sprite: {fileID: 21300000, guid: ed0a32aeeb2bf0f40ad22e944d930018, type: 3}
+  - name: Cannon
+    sprite: {fileID: 21300000, guid: 86aefa2655c3f114ab27823c16e3f431, type: 3}
+  - name: Quarry
+    sprite: {fileID: 21300000, guid: 9a32185a4d4b2d1459c58a811ed95887, type: 3}
+  - name: Mine
+    sprite: {fileID: 21300000, guid: 3d4b8772a53d74a408443af996aa36f0, type: 3}
+  - name: Sawmill
+    sprite: {fileID: 21300000, guid: 7153d7f40b46ab04ead59b3273f92c98, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -11364,6 +11619,57 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1467796127}
   m_CullTransparentMesh: 1
+--- !u!1 &1480344644
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1480344645}
+  - component: {fileID: 1480344646}
+  m_Layer: 0
+  m_Name: SawmillRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1480344645
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1480344644}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1480344646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1480344644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bb3bacf6bc5cb14e82285132fd3e3d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasicBuildingRenderer
+  _prefab: {fileID: 9030713940054835064, guid: 14d56fc76e7e4fc42917da3ef4ebaf8a, type: 3}
+  _prefabVariants: []
+  _randomRotation: 0
+  _minScale: 1
+  _maxScale: 1
+  _takeDamageSoundName: WoodTakeDamage
+  _destroyedSoundName: DefaultDeath
 --- !u!1 &1487923320
 GameObject:
   m_ObjectHideFlags: 0

@@ -39,7 +39,7 @@ public class PirateCard : SpawnAtPointCard
 
     // Hook ability's own (only) pool — see AbilityManager.HookAbilityId/BuildHookAbility.
     private const int HookProjectilePoolSize = 8;
-    private const int HookProjectileSpeedMilliTilesPerSecond = 20000; // 20 tiles/sec
+    private const int HookProjectileSpeedMilliTilesPerSecond = 35000; // 20 tiles/sec
     private const float HookHitRadius = 1.5f;
     // 1 = the hook hits for exactly this troop's own plain Damage stat.
     private const float HookDamageMultiplier = 1f;
