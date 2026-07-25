@@ -24,6 +24,7 @@ public enum CardType : byte
     Sawmill = 21,
     Quarry = 22,
     Mine = 23,
+    HealerGuardian = 24,
 }
 
 public enum CardLocation : byte

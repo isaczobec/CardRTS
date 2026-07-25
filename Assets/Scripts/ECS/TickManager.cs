@@ -191,6 +191,9 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<TurretAIComponent>(49);
         _componentTypeRegistry.Register<BallisticProjectileComponent>(50);
         _componentTypeRegistry.Register<ResourceGeneratorComponent>(51);
+        _componentTypeRegistry.Register<PeriodicAreaEffectComponent>(52);
+        _componentTypeRegistry.Register<HealModifierComponent>(53);
+        _componentTypeRegistry.Register<HealSourceComponent>(54);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -330,6 +333,13 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<LinkedProjectileFiredEvent>(120);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceGeneratorComponent>>(121);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceGeneratorComponent>>(122);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PeriodicAreaEffectComponent>>(123);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PeriodicAreaEffectComponent>>(124);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<HealModifierComponent>>(125);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<HealModifierComponent>>(126);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<HealSourceComponent>>(127);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<HealSourceComponent>>(128);
+        _flagEventTypeRegistry.Register<HealDealtEvent>(129);
 
         ECS = CreateSimulationECS();
     }
@@ -554,6 +564,9 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceGeneratorComponent>());
         ecs.AddComponentStore(new ComponentStore<BallisticProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<PeriodicAreaEffectComponent>());
+        ecs.AddComponentStore(new ComponentStore<HealModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<HealSourceComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -568,6 +581,9 @@ public class TickManager : Singleton<TickManager>
         // DamageRequests it creates get processed the same tick — no ordering dependency on
         // anything else here (see DamageOverTimeSystem's own doc comment).
         ecs.RegisterSystem(DamageOverTimeSystem.Instance);
+        // Same ordering reasoning as DamageOverTimeSystem above, just for HealRequest/
+        // HealResolutionSystem instead.
+        ecs.RegisterSystem(HealModifierSystem.Instance);
         ecs.RegisterSystem(ActionWindupSystem.Instance);
         ecs.RegisterSystem(StunnedSystem.Instance);
         ecs.RegisterSystem(ShadowCloakSystem.Instance);
@@ -588,6 +604,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(SeekingProjectileSystem.Instance);
         ecs.RegisterSystem(SkillshotProjectileSystem.Instance);
         ecs.RegisterSystem(DamageAuraSystem.Instance);
+        ecs.RegisterSystem(PeriodicAreaEffectSystem.Instance);
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(TargetEntityCardPlaySystem.Instance);
         ecs.RegisterSystem(MultiPointCardPlaySystem.Instance);
@@ -610,6 +627,7 @@ public class TickManager : Singleton<TickManager>
         // actually applies it to HealthComponent — see BarrierSystem's own doc comment.
         ecs.RegisterSystem(BarrierSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
+        ecs.RegisterSystem(HealResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
         ecs.RegisterSystem(AbilityChargeSystem.Instance);
@@ -685,6 +703,9 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceGeneratorComponent>());
         ecs.AddComponentStore(new ComponentStore<BallisticProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<PeriodicAreaEffectComponent>());
+        ecs.AddComponentStore(new ComponentStore<HealModifierComponent>());
+        ecs.AddComponentStore(new ComponentStore<HealSourceComponent>());
 
         return ecs;
     }

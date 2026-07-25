@@ -13,4 +13,6 @@ public enum ModifierID
     ShadowCloak = 5,
     Barrier = 6,
     Rooted = 7,
+    HealAura = 8,
+    Healing = 9,
 }

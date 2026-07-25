@@ -30,6 +30,7 @@ public static class CardRegistry
         { CardType.Sawmill, new SawmillCard() },
         { CardType.Quarry, new QuarryCard() },
         { CardType.Mine, new MineCard() },
+        { CardType.HealerGuardian, new HealerGuardianCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

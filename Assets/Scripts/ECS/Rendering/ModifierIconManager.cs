@@ -34,6 +34,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.ShadowCloak, ResolveShadowCloak },
         { ModifierID.Barrier, ResolveBarrier },
         { ModifierID.Rooted, ResolveRooted },
+        { ModifierID.HealAura, ResolveHealAura },
+        { ModifierID.Healing, ResolveHealing },
     };
 
     private ECS _ecs;
@@ -323,6 +325,37 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     // ResolveFrozen/ResolveShadowCloak.
     private static (string name, string imageName, string description) ResolveRooted(ECS ecs, ulong modifierEntityId)
         => ("Rooted", "Rooted", "This troop is rooted in place and cannot move on its own, but can still attack and act.");
+
+    // PeriodicAreaEffectComponent-carrying modifier from HealerGuardianCard's own self-buff
+    // (see ApplyOrRefreshHealAura) — states the current heal radius directly, mirroring
+    // ResolveBarrier/ResolveScorched's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveHealAura(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
+        ComponentStore<PeriodicAreaEffectComponent> areaStore = ecs.GetComponentStore<PeriodicAreaEffectComponent>();
+        if (modifierStore == null || areaStore == null || !areaStore.HasComponent(modifierEntityId))
+            return ("Healing Aura", "HealAura", "This troop periodically heals nearby friendly troops.");
+
+        ModifierComponent modifier = modifierStore.GetComponent(modifierEntityId);
+        PeriodicAreaEffectComponent effect = areaStore.GetComponent(modifierEntityId);
+        int radius = Mathf.RoundToInt(StatsQuery.GetRange(ecs, modifier.TargetEntityId, 5) * effect.RangeMultiplier);
+        return ("Healing Aura", "HealAura", $"Periodically heals friendly troops within {radius} range.");
+    }
+
+    // HealModifierComponent-carrying modifier granted by a Healer Guardian's aura (see
+    // HealerGuardianCard.ApplyHealPulse) — states the current heal-per-second directly,
+    // mirroring ResolveScorched's own damage-per-second wording.
+    private static (string name, string imageName, string description) ResolveHealing(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<HealModifierComponent> healStore = ecs.GetComponentStore<HealModifierComponent>();
+        if (healStore == null || !healStore.HasComponent(modifierEntityId))
+            return ("Healing", "Healing", "This troop is being healed over time.");
+
+        HealModifierComponent heal = healStore.GetComponent(modifierEntityId);
+        float periodSeconds = TickManager.TicksToSeconds(Mathf.Max(1, heal.PeriodTicks));
+        float healPerSecond = periodSeconds > 0f ? heal.HealAdditivePerProc / periodSeconds : heal.HealAdditivePerProc;
+        return ("Healing", "Healing", $"Restoring approximately {healPerSecond:0.#} health per second.");
+    }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {

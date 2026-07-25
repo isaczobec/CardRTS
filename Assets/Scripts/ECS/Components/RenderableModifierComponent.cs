@@ -7,6 +7,8 @@ public enum RenderableModifierType : byte
     ShadowCloak = 4,
     Barrier = 5,
     Rooted = 6,
+    HealAura = 7,
+    Healing = 8,
 }
 
 // Attached to a modifier entity (alongside its ModifierComponent) to say which visual

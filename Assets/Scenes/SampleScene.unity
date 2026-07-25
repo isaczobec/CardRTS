@@ -3532,6 +3532,115 @@ MonoBehaviour:
   _attackAnimationTimeUntilImpact: 0.61
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
+--- !u!1 &511465364
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 511465365}
+  - component: {fileID: 511465366}
+  m_Layer: 0
+  m_Name: HealerGuardianRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &511465365
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511465364}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &511465366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511465364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 9deae98c1836c91428d5fbacb67b1b56, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 1.3
+    TimeUntilImpact: 0.566
+  _selectionMode: 0
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 20
+  _speedParamUpdateInterval: 0.25
+--- !u!1 &523926792
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 523926793}
+  - component: {fileID: 523926794}
+  m_Layer: 0
+  m_Name: HealingAuraAura
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &523926793
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 523926792}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &523926794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 523926792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da68ee277b199494382cce97c7e2a01b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AreaEffectRadiusModifierRenderer
+  _prefab: {fileID: 7953956060509625171, guid: 5a0e202aa5170d54691d485b5040a859, type: 3}
+  _heightOffset: 0.01
 --- !u!1 &529117641
 GameObject:
   m_ObjectHideFlags: 0
@@ -4647,6 +4756,10 @@ MonoBehaviour:
     renderer: {fileID: 43467378}
   - type: 40
     renderer: {fileID: 1092847670}
+  - type: 41
+    renderer: {fileID: 511465366}
+  - type: 42
+    renderer: {fileID: 1681632886}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -5930,7 +6043,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 76.82373, y: 18.69873}
+  m_AnchoredPosition: {x: 76.82373, y: 18.69867}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &867664181
@@ -6956,6 +7069,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 987813833}
   m_CullTransparentMesh: 1
+--- !u!1 &995546731
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 995546732}
+  - component: {fileID: 995546733}
+  m_Layer: 0
+  m_Name: HealingOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &995546732
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995546731}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &995546733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995546731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2dfa99c6b7de61499a18e52b14d46d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
+  _material: {fileID: 2100000, guid: 0ab56d2d5303859488943b08e78c4ef4, type: 2}
+  _key: HealingMaterial
 --- !u!1 &1009830071
 GameObject:
   m_ObjectHideFlags: 0
@@ -9290,6 +9449,8 @@ MonoBehaviour:
     prefab: {fileID: 9030713940054835064, guid: 6caa06e650ae1dd4a9981c178acb38aa, type: 3}
   - name: Sawmill
     prefab: {fileID: 9030713940054835064, guid: 14d56fc76e7e4fc42917da3ef4ebaf8a, type: 3}
+  - name: HealerGuardian
+    prefab: {fileID: 6472282922783299243, guid: 9deae98c1836c91428d5fbacb67b1b56, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -9596,6 +9757,8 @@ Transform:
   - {fileID: 1765164527}
   - {fileID: 312136074}
   - {fileID: 1360105555}
+  - {fileID: 523926793}
+  - {fileID: 995546732}
   m_Father: {fileID: 1889187866}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1244099537
@@ -9641,6 +9804,10 @@ MonoBehaviour:
     renderer: {fileID: 312136075}
   - type: 6
     renderer: {fileID: 1360105556}
+  - type: 7
+    renderer: {fileID: 523926794}
+  - type: 8
+    renderer: {fileID: 995546733}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -10841,7 +11008,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1, y: -12.000488}
+  m_AnchoredPosition: {x: -1, y: -12.000427}
   m_SizeDelta: {x: -18.968, y: -13.929443}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1419371009
@@ -11046,6 +11213,8 @@ Transform:
   - {fileID: 1373427740}
   - {fileID: 1325757546}
   - {fileID: 1631565995}
+  - {fileID: 511465365}
+  - {fileID: 1681632885}
   - {fileID: 1149034174}
   - {fileID: 713213433}
   - {fileID: 1871728200}
@@ -11434,6 +11603,12 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 3d4b8772a53d74a408443af996aa36f0, type: 3}
   - name: Sawmill
     sprite: {fileID: 21300000, guid: 7153d7f40b46ab04ead59b3273f92c98, type: 3}
+  - name: HealAura
+    sprite: {fileID: 21300000, guid: 511b7df189d509e4bbb3271bf1df0df5, type: 3}
+  - name: Healing
+    sprite: {fileID: 21300000, guid: 2e350bcef09f70943ba03de78d8c063a, type: 3}
+  - name: HealerGuardian
+    sprite: {fileID: 21300000, guid: 511b7df189d509e4bbb3271bf1df0df5, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -13834,6 +14009,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
   _material: {fileID: 2100000, guid: 37ddf28d4ed27fe44bfcbd75482efb49, type: 2}
   _key: ChilledOverlay
+--- !u!1 &1681632884
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1681632885}
+  - component: {fileID: 1681632886}
+  m_Layer: 0
+  m_Name: HealerGuardianProjectileRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1681632885
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1681632884}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1681632886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1681632884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22e9ad967d6af0d4e95983d697271995, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
+  _prefab: {fileID: 8077043507155612275, guid: 74041c5a3bf0f344cb2d284a30bdecd6, type: 3}
+  _rotationDegreesPerSecond: 1080
+  _groundOffset: 2
+  _launchSoundName: 
+  _impactSoundName: IceBlast
 --- !u!1 &1699900523
 GameObject:
   m_ObjectHideFlags: 0

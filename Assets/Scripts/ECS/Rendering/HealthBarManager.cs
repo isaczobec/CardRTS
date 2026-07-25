@@ -42,6 +42,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
         _troopStore = _ecs.GetComponentStore<TroopComponent>();
 
         _ecs.Requests.SubscribeExecuted<DamageRequest>(OnDamageRequestExecuted);
+        _ecs.Requests.SubscribeExecuted<HealRequest>(OnHealRequestExecuted);
     }
 
     void Update()
@@ -84,6 +85,14 @@ public class HealthBarManager : Singleton<HealthBarManager>
     private void OnEntityDeleted(EntityDeletedEvent e) => DestroyHealthBar(e.EntityId);
 
     private void OnDamageRequestExecuted(DamageRequest request, ECS ecs)
+    {
+        if (!_healthBars.TryGetValue(request.EntityId, out HealthBarPrefab bar)) return;
+        ApplyHealth(request.EntityId, bar);
+    }
+
+    // Same predicted-immediately reasoning as OnDamageRequestExecuted above, just for
+    // HealRequest instead.
+    private void OnHealRequestExecuted(HealRequest request, ECS ecs)
     {
         if (!_healthBars.TryGetValue(request.EntityId, out HealthBarPrefab bar)) return;
         ApplyHealth(request.EntityId, bar);
