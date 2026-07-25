@@ -19,6 +19,7 @@ public enum CardType : byte
     AoeRoot = 16,
     SantaClaus = 17,
     Cannon = 18,
+    MissileSilo = 19,
 }
 
 public enum CardLocation : byte

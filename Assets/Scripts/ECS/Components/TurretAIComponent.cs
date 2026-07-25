@@ -1,10 +1,26 @@
-// AI for a stationary defensive building (see CannonCard/TurretAISystem) — fires seeking
-// projectiles at whichever enemy troop is currently closest and within Range, staying locked
-// onto it across multiple attack cycles until it leaves Range, dies, or is otherwise
-// invalidated, at which point the turret locks onto the next-closest qualifying enemy.
-// Unlike BasicMeleeAIComponent/BasicRangedAIComponent, TargetEntityId is NEVER settable by
-// player input — TurretAISystem never reads SetTargetsInput/TargetingSystem at all, so a
-// turret can't be manually targeted the way a troop can.
+// Which style of projectile TurretAISystem.ResolveAttack fires with — see
+// TurretAIComponent.ProjectileMode.
+public enum TurretProjectileMode : byte
+{
+    // ProjectilePool.Fire — a real pooled SeekingProjectileComponent entity that homes in on
+    // TargetEntityId and collides with it (see CannonCard).
+    Pooled = 0,
+
+    // A cosmetic-only straight-line/arced entity (BallisticProjectileComponent) with no
+    // hitbox at all — travels for a fixed flight duration (its own LifetimeComponent) and,
+    // when that runs out, a ScheduledCallSystem call (scheduled at launch time, for exactly
+    // that same duration) deals AOE damage in a radius around wherever the target was at the
+    // moment of firing (see MissileSiloCard).
+    Ballistic = 1,
+}
+
+// AI for a stationary defensive building (see CannonCard/MissileSiloCard/TurretAISystem) —
+// fires at whichever enemy troop is currently closest and within Range, staying locked onto
+// it across multiple attack cycles until it leaves Range, dies, or is otherwise invalidated,
+// at which point the turret locks onto the next-closest qualifying enemy. Unlike
+// BasicMeleeAIComponent/BasicRangedAIComponent, TargetEntityId is NEVER settable by player
+// input — TurretAISystem never reads SetTargetsInput/TargetingSystem at all, so a turret
+// can't be manually targeted the way a troop can.
 public struct TurretAIComponent : IComponent
 {
     public ulong TargetEntityId;
@@ -22,4 +38,23 @@ public struct TurretAIComponent : IComponent
     // enough once the windup finishes, before actually firing — mirrors
     // BasicRangedAIComponent.AttackRangeMultiplier.
     public float AttackRangeMultiplier;
+
+    // Whether this turret may also engage a neutral-owned building (a world-gen resource
+    // node/tree — see TroopComponent.NEUTRAL_OWNER_PLAYER_ID) when no enemy troop is
+    // currently in range — see TurretAISystem's own targeting-priority comment. An enemy
+    // troop always takes over a currently-locked neutral building the instant one comes into
+    // range; defaults to false (a turret like CannonCard only ever engages enemy troops).
+    public bool CanTargetNeutralBuildings;
+
+    public TurretProjectileMode ProjectileMode;
+
+    // Ballistic-only fields (ignored entirely when ProjectileMode == Pooled):
+    public RenderableType BallisticRenderableType;
+    public float BallisticSpeedTilesPerSecond;
+    // Multiple of this turret's own Range stat — the AOE damage radius applied once a
+    // ballistic projectile's flight ends. Captured once per shot onto the projectile's own
+    // BallisticProjectileComponent.ImpactRadius at launch time (see TurretAISystem.
+    // FireBallistic), purely so the renderer can size its target-ground indicator correctly
+    // without needing to know this card's own constants.
+    public float BallisticImpactRadiusMultiplier;
 }

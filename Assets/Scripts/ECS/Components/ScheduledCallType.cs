@@ -10,4 +10,5 @@ public enum ScheduledCallType : byte
     StalkerAmbushResolve = 4,
     AoeRootResolve = 5,
     SantaSnatcherSpawnResolve = 6,
+    MissileImpactResolve = 7,
 }

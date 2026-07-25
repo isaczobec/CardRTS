@@ -4532,6 +4532,10 @@ MonoBehaviour:
     renderer: {fileID: 893038369}
   - type: 33
     renderer: {fileID: 529117643}
+  - type: 34
+    renderer: {fileID: 1100716341}
+  - type: 35
+    renderer: {fileID: 1822299835}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -7818,6 +7822,61 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1100716339
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1100716340}
+  - component: {fileID: 1100716341}
+  m_Layer: 0
+  m_Name: MissileRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1100716340
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1100716339}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1100716341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1100716339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e63bef65ab5555459eadcbabad854c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MissileProjectileRenderer
+  _missilePrefab: {fileID: 8077043507155612275, guid: c7195fadfec4f92408481d6f04d06f77, type: 3}
+  _targetIndicatorPrefab: {fileID: 7953956060509625171, guid: c6b69feb97dafb041960cdc76c8ba904, type: 3}
+  _impactEffectPrefab: {fileID: 8464950693656172981, guid: 6a50f6923590d78468133b7369b0c513, type: 3}
+  _impactEffectDestroyAfterSeconds: 3
+  _arcHeight: 6
+  _rotationDegreesPerSecond: 1080
+  _launchSoundName: 
+  _impactSoundName: Explosion
+  _flightLoopSoundName: Flying
+  _flightLoopCrossfadeDuration: 0.2
+  _flightLoopStopFadeOutDuration: 0.3
 --- !u!1 &1108821841
 GameObject:
   m_ObjectHideFlags: 0
@@ -8993,6 +9052,8 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: 942a5fa311096be4f9f0a7b7c682d07a, type: 3}
   - name: Cannon
     prefab: {fileID: 9030713940054835064, guid: dddb93cf2f44b8d42beacd9baecea5b6, type: 3}
+  - name: MissileSilo
+    prefab: {fileID: 9030713940054835064, guid: 28ce88c56d8207b41a888f40030de74c, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -10154,6 +10215,9 @@ MonoBehaviour:
   - renderableType: 32
     prefab: {fileID: 8464950693656172981, guid: 9777e9db405f34f48bea007f5164c046, type: 3}
     destroyAfterSeconds: 3
+  - renderableType: 35
+    prefab: {fileID: 8464950693656172981, guid: 9777e9db405f34f48bea007f5164c046, type: 3}
+    destroyAfterSeconds: 3
 --- !u!1 &1388428473
 GameObject:
   m_ObjectHideFlags: 0
@@ -10759,12 +10823,14 @@ Transform:
   - {fileID: 982359450}
   - {fileID: 1590831067}
   - {fileID: 529117642}
+  - {fileID: 1100716340}
   - {fileID: 1125712214}
   - {fileID: 745290410}
   - {fileID: 226858188}
   - {fileID: 506840436}
   - {fileID: 920356594}
   - {fileID: 893038368}
+  - {fileID: 1822299834}
   - {fileID: 1439762914}
   - {fileID: 868344196}
   - {fileID: 1661341881}
@@ -14762,6 +14828,60 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1817525111}
   m_CullTransparentMesh: 1
+--- !u!1 &1822299833
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1822299834}
+  - component: {fileID: 1822299835}
+  m_Layer: 0
+  m_Name: MissileSiloRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1822299834
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822299833}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1822299835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822299833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d95a1c1650845ed4da3abcc7bd459752, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingTurretRenderer
+  _prefab: {fileID: 4914947491880977956, guid: 28ce88c56d8207b41a888f40030de74c, type: 3}
+  _attackAnimations: []
+  _selectionMode: 1
+  _aimRotationDegreesPerSecond: 720
+  _attackWindupSoundName: 
+  _attackWindupFinishedSoundName: Explosion
+  _dealDamageSoundName: 
+  _takeDamageSoundName: StoneTakeDamage
+  _deathSoundName: 
+  _activationSoundName: 
 --- !u!1 &1834985529
 GameObject:
   m_ObjectHideFlags: 0
@@ -16044,6 +16164,13 @@ MonoBehaviour:
     minPitch: 0.9
     maxPitch: 1.1
     defaultVolume: 1
+    overlaySounds: []
+  - name: Flying
+    clips:
+    - {fileID: 8300000, guid: 3f57e647fa366f94d9bdb8fc5884cc36, type: 3}
+    minPitch: 1
+    maxPitch: 1
+    defaultVolume: 0.7
     overlaySounds: []
 --- !u!114 &1985718171
 MonoBehaviour:

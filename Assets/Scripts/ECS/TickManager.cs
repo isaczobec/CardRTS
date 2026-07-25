@@ -189,6 +189,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BarrierComponent>(47);
         _componentTypeRegistry.Register<RootedComponent>(48);
         _componentTypeRegistry.Register<TurretAIComponent>(49);
+        _componentTypeRegistry.Register<BallisticProjectileComponent>(50);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -323,6 +324,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RootedComponent>>(115);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<TurretAIComponent>>(116);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<TurretAIComponent>>(117);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BallisticProjectileComponent>>(118);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BallisticProjectileComponent>>(119);
 
         ECS = CreateSimulationECS();
     }
@@ -545,6 +548,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
         ecs.AddComponentStore(new ComponentStore<RootedComponent>());
         ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
+        ecs.AddComponentStore(new ComponentStore<BallisticProjectileComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -670,6 +674,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
         ecs.AddComponentStore(new ComponentStore<RootedComponent>());
         ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
+        ecs.AddComponentStore(new ComponentStore<BallisticProjectileComponent>());
 
         return ecs;
     }
