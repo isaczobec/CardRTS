@@ -31,6 +31,7 @@ public static class OnHitScheduleSystem
         ref OnHitScheduleComponent schedule = ref scheduleStore.GetComponent(dealerId);
 
         if (schedule.RequireEnemyTroopHit && !IsEnemyTroopHit(ecs, dealerId, request.EntityId)) return;
+        if (schedule.RequireEnemyOwnedHit && !IsEnemyOwnedHit(ecs, dealerId, request.EntityId)) return;
 
         schedule.HitsUntilProc--;
         if (schedule.HitsUntilProc > 0)
@@ -55,5 +56,20 @@ public static class OnHitScheduleSystem
         if (!target.IsPhysicalTroop) return false;
 
         return target.OwnerPlayerId != troopStore.GetComponent(dealerId).OwnerPlayerId;
+    }
+
+    // Unlike IsEnemyTroopHit, doesn't require the target to be a physical troop — a hit
+    // against an enemy BUILDING counts too. Only excludes a NEUTRAL-owned target (e.g. a
+    // resource node, or a neutral building — see TurretAISystem's own neutral-owner check).
+    private static bool IsEnemyOwnedHit(ECS ecs, ulong dealerId, ulong targetId)
+    {
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        if (troopStore == null) return false;
+        if (!troopStore.HasComponent(dealerId) || !troopStore.HasComponent(targetId)) return false;
+
+        ushort targetOwnerId = troopStore.GetComponent(targetId).OwnerPlayerId;
+        if (targetOwnerId == TroopComponent.NEUTRAL_OWNER_PLAYER_ID) return false;
+
+        return targetOwnerId != troopStore.GetComponent(dealerId).OwnerPlayerId;
     }
 }

@@ -46,7 +46,7 @@ public class PirateCard : SpawnAtPointCard
 
     // Hook on-hit pull — see ProjectileOnHitComponent/ProjectileOnHitSystem.ApplyHook.
     private const float HookPullBehindOffset = 2f;
-    private const float HookPullDurationSeconds = 0.15f;
+    private const float HookPullDurationSeconds = 1.0f;
 
     private const float HookAbilityCooldownSeconds = 6f;
 

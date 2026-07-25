@@ -26,4 +26,12 @@ public struct OnHitScheduleComponent : IComponent
     // troop) is ignored entirely, not even decrementing HitsUntilProc, when this is true.
     // Defaults to false (every hit counts, matching this component's original behavior).
     public bool RequireEnemyTroopHit;
+
+    // Whether only a hit against an entity owned by an actual ENEMY player counts toward
+    // PeriodHits at all — unlike RequireEnemyTroopHit, a hit against an enemy BUILDING still
+    // counts; only a NEUTRAL-owned target (TroopComponent.NEUTRAL_OWNER_PLAYER_ID — e.g. a
+    // resource node) is excluded, not even decrementing HitsUntilProc, when this is true. See
+    // HealerGuardianCard, which wants its heal aura to trigger on any enemy troop/building hit
+    // but not a neutral one. Defaults to false (every hit counts).
+    public bool RequireEnemyOwnedHit;
 }

@@ -18,13 +18,13 @@ using System.Collections.Generic;
 public class HealerGuardianCard : SpawnAtPointCard
 {
     // Unchanged from SkillshotRangedTroopCard ("the Ranger").
-    private const int MaxHealth = 150;
+    private const int MaxHealth = 90;
     private const int Armor = 20;
     private const float AttackSpeedMilliseconds = 900f;
     private const int SpellResist = 0;
 
     // Explicit design ask — vs. the Ranger's own Speed 50 / Damage 26 / Range 21.
-    private const int Speed = 40;
+    private const int Speed = 36;
     private const int Damage = 5;
     private const int Range = 12;
 
@@ -83,7 +83,8 @@ public class HealerGuardianCard : SpawnAtPointCard
     public override ResourceCost Cost => new ResourceCost
         {
             Metal = 100,
-            Wood = 40
+            Wood = 30,
+            Gems = 7,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
@@ -140,10 +141,14 @@ public class HealerGuardianCard : SpawnAtPointCard
             },
             // Innate trait, not a modifier — see OnHitScheduleComponent's own doc comment.
             // Fires on every qualifying hit (PeriodHits left at its 0/"every hit" default).
+            // RequireEnemyOwnedHit — explicit design ask: the aura should trigger off an
+            // enemy troop OR enemy building hit, just not a neutral one (e.g. a resource
+            // node).
             (e, id) => e.AddComponent(id, new OnHitScheduleComponent
             {
-                CallType   = ScheduledCallType.HealAuraApplyResolve,
-                DelayTicks = 0,
+                CallType           = ScheduledCallType.HealAuraApplyResolve,
+                DelayTicks         = 0,
+                RequireEnemyOwnedHit = true,
             }),
         });
     }

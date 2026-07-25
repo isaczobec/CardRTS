@@ -6,7 +6,7 @@
 // has no PositionComponent of its own).
 public class SpeedBoostCard : TargetEntityCard
 {
-    private const float SpeedBoostRatio = 0.4f;
+    private const float SpeedBoostRatio = 0.6f;
     private const float SpeedBoostDurationSeconds = 11f;
     private const float ActivationDelaySeconds = 1f;
 
@@ -30,7 +30,7 @@ public class SpeedBoostCard : TargetEntityCard
 
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 40
+            Metal = 55
         };
 
     // No range requirement at all — playable on any friendly troop anywhere on the map.

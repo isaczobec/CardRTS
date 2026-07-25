@@ -24,7 +24,7 @@ public class MissileSiloCard : SpawnAtPointCard
     private const int MaxHealth = 270;
     // Much higher than CannonCard's own Range (14) — explicit design ask.
     private const int Range = 300;
-    private const int Damage = 60;
+    private const int Damage = 32;
     // Slow reload — a long-range siege piece, not a rapid-fire defense.
     private const float AttackSpeedMilliseconds = 3000f;
 
@@ -50,7 +50,7 @@ public class MissileSiloCard : SpawnAtPointCard
     // BuildingDamageBonusComponent GoblinSnatcherCard/StoneConstructCard use for a bonus
     // (BuildingDamageBonusSystem's formula, Amount * (1 + BonusRatio), works the same either
     // direction): 1 + (-0.6) = 0.4, i.e. 40% of normal damage.
-    private const float BuildingDamageBonusRatio = -0.6f;
+    private const float BuildingDamageBonusRatio = -0.3f;
 
     // Gold dropped to whoever destroys this building — mirrors CannonCard/BuildingCard's own.
     private const int GoldDropOnDeath = 40;
