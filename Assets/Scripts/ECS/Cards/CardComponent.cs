@@ -18,6 +18,7 @@ public enum CardType : byte
     Barrier = 15,
     AoeRoot = 16,
     SantaClaus = 17,
+    Cannon = 18,
 }
 
 public enum CardLocation : byte

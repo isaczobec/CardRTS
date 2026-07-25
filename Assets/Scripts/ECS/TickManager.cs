@@ -188,6 +188,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<OnHitScheduleComponent>(46);
         _componentTypeRegistry.Register<BarrierComponent>(47);
         _componentTypeRegistry.Register<RootedComponent>(48);
+        _componentTypeRegistry.Register<TurretAIComponent>(49);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -320,6 +321,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<BarrierComponent>>(113);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RootedComponent>>(114);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RootedComponent>>(115);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<TurretAIComponent>>(116);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<TurretAIComponent>>(117);
 
         ECS = CreateSimulationECS();
     }
@@ -541,6 +544,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<OnHitScheduleComponent>());
         ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
         ecs.AddComponentStore(new ComponentStore<RootedComponent>());
+        ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -569,6 +573,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(SetAIModeSystem.Instance);
         ecs.RegisterSystem(new BasicMeleeAISystem());
         ecs.RegisterSystem(new BasicRangedAISystem());
+        ecs.RegisterSystem(new TurretAISystem());
         ecs.RegisterSystem(new PathfindingSystem());
         ecs.RegisterSystem(new BuildingBlockingSystem());
         ecs.RegisterSystem(SeekingProjectileSystem.Instance);
@@ -664,6 +669,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<OnHitScheduleComponent>());
         ecs.AddComponentStore(new ComponentStore<BarrierComponent>());
         ecs.AddComponentStore(new ComponentStore<RootedComponent>());
+        ecs.AddComponentStore(new ComponentStore<TurretAIComponent>());
 
         return ecs;
     }

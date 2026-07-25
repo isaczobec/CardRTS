@@ -34,6 +34,8 @@ public enum RenderableType : byte
     AoeRoot = 29,
     SantaClaus = 30,
     PresentProjectile = 31,
+    Cannon = 32,
+    CannonProjectile = 33,
 }
 
 public struct RenderableComponent : IComponent

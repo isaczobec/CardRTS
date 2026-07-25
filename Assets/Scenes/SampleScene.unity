@@ -3481,6 +3481,55 @@ MonoBehaviour:
   _attackAnimationTimeUntilImpact: 0.61
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
+--- !u!1 &529117641
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 529117642}
+  - component: {fileID: 529117643}
+  m_Layer: 0
+  m_Name: CannonProjectileRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &529117642
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529117641}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &529117643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529117641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22e9ad967d6af0d4e95983d697271995, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
+  _prefab: {fileID: 8077043507155612275, guid: c7195fadfec4f92408481d6f04d06f77, type: 3}
+  _rotationDegreesPerSecond: 10800
+  _groundOffset: 2
+  _launchSoundName: 
+  _impactSoundName: Explosion
 --- !u!1 &541862059
 GameObject:
   m_ObjectHideFlags: 0
@@ -4479,6 +4528,10 @@ MonoBehaviour:
     renderer: {fileID: 713213434}
   - type: 31
     renderer: {fileID: 1590831068}
+  - type: 32
+    renderer: {fileID: 893038369}
+  - type: 33
+    renderer: {fileID: 529117643}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -6049,6 +6102,60 @@ MonoBehaviour:
   _gemsText: {fileID: 35858628}
   _soulstonesText: {fileID: 987813835}
   _goldText: {fileID: 1809997187}
+--- !u!1 &893038367
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 893038368}
+  - component: {fileID: 893038369}
+  m_Layer: 0
+  m_Name: CannonRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &893038368
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893038367}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &893038369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893038367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d95a1c1650845ed4da3abcc7bd459752, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingTurretRenderer
+  _prefab: {fileID: 4914947491880977956, guid: dddb93cf2f44b8d42beacd9baecea5b6, type: 3}
+  _attackAnimations: []
+  _selectionMode: 1
+  _aimRotationDegreesPerSecond: 720
+  _attackWindupSoundName: 
+  _attackWindupFinishedSoundName: Explosion
+  _dealDamageSoundName: 
+  _takeDamageSoundName: WoodTakeDamage
+  _deathSoundName: 
+  _activationSoundName: 
 --- !u!1 &920356593
 GameObject:
   m_ObjectHideFlags: 0
@@ -8884,6 +8991,8 @@ MonoBehaviour:
     prefab: {fileID: 7953956060509625171, guid: 35e35ff25d9a7f74aa6256845d750492, type: 3}
   - name: SantaClaus
     prefab: {fileID: 6472282922783299243, guid: 942a5fa311096be4f9f0a7b7c682d07a, type: 3}
+  - name: Cannon
+    prefab: {fileID: 9030713940054835064, guid: dddb93cf2f44b8d42beacd9baecea5b6, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -10042,6 +10151,9 @@ MonoBehaviour:
   - renderableType: 30
     prefab: {fileID: 8464950693656172981, guid: 9777e9db405f34f48bea007f5164c046, type: 3}
     destroyAfterSeconds: 3
+  - renderableType: 32
+    prefab: {fileID: 8464950693656172981, guid: 9777e9db405f34f48bea007f5164c046, type: 3}
+    destroyAfterSeconds: 3
 --- !u!1 &1388428473
 GameObject:
   m_ObjectHideFlags: 0
@@ -10646,11 +10758,13 @@ Transform:
   - {fileID: 509328319}
   - {fileID: 982359450}
   - {fileID: 1590831067}
+  - {fileID: 529117642}
   - {fileID: 1125712214}
   - {fileID: 745290410}
   - {fileID: 226858188}
   - {fileID: 506840436}
   - {fileID: 920356594}
+  - {fileID: 893038368}
   - {fileID: 1439762914}
   - {fileID: 868344196}
   - {fileID: 1661341881}

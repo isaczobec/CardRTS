@@ -24,6 +24,7 @@ public static class CardRegistry
         { CardType.Barrier, new BarrierCard() },
         { CardType.AoeRoot, new AoeRootCard() },
         { CardType.SantaClaus, new SantaClausCard() },
+        { CardType.Cannon, new CannonCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

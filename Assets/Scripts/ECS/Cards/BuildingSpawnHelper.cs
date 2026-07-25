@@ -11,8 +11,12 @@ public static class BuildingSpawnHelper
     public const float BlockRadius = 3f;
     public const float SelectionScale = 3f;
 
+    // range/damage/attackSpeedTicks default to 0 — the original "buildings don't move or
+    // attack" behavior every existing caller (BuildingCard, world-gen player bases) still
+    // gets unchanged. A combat building (e.g. CannonCard) passes real values for whichever
+    // of these it actually uses.
     public static void AddBuildingComponents(ECS ecs, ulong id, ushort ownerPlayerId, RenderableType renderableType, int maxHealth, ulong ticksUntilActive,
-        float cardPlayRangeMultiplier = 1f, float cardPlayRangeBonus = 0f)
+        float cardPlayRangeMultiplier = 1f, float cardPlayRangeBonus = 0f, int range = 0, int damage = 0, int attackSpeedTicks = 0)
     {
         ecs.AddComponent(id, new TroopComponent
         {
@@ -34,7 +38,12 @@ public static class BuildingSpawnHelper
             MaxHealth   = maxHealth,
             Armor       = Armor,
             SpellResist = SpellResist,
-            // Speed/Range/Damage/AttackSpeed left at 0 — buildings don't move or attack.
+            // Speed left at 0 — buildings never move, full stop. Range/Damage/AttackSpeed
+            // default to 0 too (still "buildings don't attack") but a caller can pass real
+            // values for a combat building — see the params above.
+            Range       = range,
+            Damage      = damage,
+            AttackSpeed = attackSpeedTicks,
         });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = maxHealth });
         ecs.AddComponent(id, new BuildingComponent
