@@ -197,6 +197,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<GiantsbaneComponent>(55);
         _componentTypeRegistry.Register<FocusFireComponent>(56);
         _componentTypeRegistry.Register<LifestealComponent>(57);
+        _componentTypeRegistry.Register<DeflectionComponent>(58);
+        _componentTypeRegistry.Register<BruiserComponent>(59);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -579,6 +581,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<GiantsbaneComponent>());
         ecs.AddComponentStore(new ComponentStore<FocusFireComponent>());
         ecs.AddComponentStore(new ComponentStore<LifestealComponent>());
+        ecs.AddComponentStore(new ComponentStore<DeflectionComponent>());
+        ecs.AddComponentStore(new ComponentStore<BruiserComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -632,12 +636,18 @@ public class TickManager : Singleton<TickManager>
         // mitigates the (now-boosted) amount — see BuildingDamageBonusSystem's own comment.
         ecs.RegisterSystem(BuildingDamageBonusSystem.Instance);
         ecs.RegisterSystem(ArmorMitigationSystem.Instance);
+        // Right after ArmorMitigationSystem so it acts on the already-armor-mitigated Amount,
+        // same ordering reasoning as PeriodicDamageReductionSystem right below it — see
+        // DeflectionSystem's own doc comment.
+        ecs.RegisterSystem(DeflectionSystem.Instance);
         ecs.RegisterSystem(PeriodicDamageReductionSystem.Instance);
-        // Registered last among DamageRequest subscribers (Subscribe callbacks fire in
-        // registration order — see RequestManager's own doc comment) so it acts on the
-        // final, fully-mitigated Amount, right before DamageResolutionSystem's Flush
-        // actually applies it to HealthComponent — see BarrierSystem's own doc comment.
         ecs.RegisterSystem(BarrierSystem.Instance);
+        // Registered last among DamageRequest subscribers (Subscribe callbacks fire in
+        // registration order — see RequestManager's own doc comment) so it defers a fraction
+        // of the final, fully-mitigated Amount, right before DamageResolutionSystem's Flush
+        // actually applies whatever's left to HealthComponent — see BruiserSystem's own doc
+        // comment.
+        ecs.RegisterSystem(BruiserSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HealResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
@@ -724,6 +734,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<GiantsbaneComponent>());
         ecs.AddComponentStore(new ComponentStore<FocusFireComponent>());
         ecs.AddComponentStore(new ComponentStore<LifestealComponent>());
+        ecs.AddComponentStore(new ComponentStore<DeflectionComponent>());
+        ecs.AddComponentStore(new ComponentStore<BruiserComponent>());
 
         return ecs;
     }

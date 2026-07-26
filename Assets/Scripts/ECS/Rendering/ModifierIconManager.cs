@@ -39,6 +39,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Giantsbane, ResolveGiantsbane },
         { ModifierID.FocusFire, ResolveFocusFire },
         { ModifierID.Lifesteal, ResolveLifesteal },
+        { ModifierID.Deflection, ResolveDeflection },
+        { ModifierID.Bruiser, ResolveBruiser },
     };
 
     private ECS _ecs;
@@ -405,6 +407,41 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
 
         int percent = Mathf.RoundToInt(lifestealStore.GetComponent(modifierEntityId).LifestealRatio * 100f);
         return ("Lifesteal", "Lifesteal", $"Heals for {percent}% of damage dealt.");
+    }
+
+    // DeflectionComponent lives directly on this modifier entity (see that class's own doc
+    // comment) — states the current range/reduction numbers directly, mirroring
+    // ResolveGiantsbane/ResolveBarrier's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveDeflection(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Reduces incoming damage the further away the attacker is.";
+
+        ComponentStore<DeflectionComponent> deflectionStore = ecs.GetComponentStore<DeflectionComponent>();
+        if (deflectionStore == null || !deflectionStore.HasComponent(modifierEntityId))
+            return ("Deflection", "Deflection", fallback);
+
+        DeflectionComponent deflection = deflectionStore.GetComponent(modifierEntityId);
+        int percent = Mathf.RoundToInt(deflection.MaxReductionRatio * 100f);
+        return ("Deflection", "Deflection",
+            $"No reduction within {deflection.MinRange:0} tiles, scaling up to {percent}% at {deflection.MaxRange:0}+ tiles.");
+    }
+
+    // BruiserComponent lives directly on this modifier entity (see that class's own doc
+    // comment) — states the current deferral/drain numbers and banked amount directly,
+    // mirroring ResolveBarrier's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveBruiser(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Reduces incoming damage, taking it over time instead.";
+
+        ComponentStore<BruiserComponent> bruiserStore = ecs.GetComponentStore<BruiserComponent>();
+        if (bruiserStore == null || !bruiserStore.HasComponent(modifierEntityId))
+            return ("Bruiser", "Bruiser", fallback);
+
+        BruiserComponent bruiser = bruiserStore.GetComponent(modifierEntityId);
+        int percent = Mathf.RoundToInt(bruiser.DeferralRatio * 100f);
+        int banked = Mathf.CeilToInt(bruiser.StoredDamage);
+        return ("Bruiser", "Bruiser",
+            $"Reduces incoming damage by {percent}%, taking it over time instead at {bruiser.DrainPerSecond:0}/second. Banked damage: {banked}.");
     }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)

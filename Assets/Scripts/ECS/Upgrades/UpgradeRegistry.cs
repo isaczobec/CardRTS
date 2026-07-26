@@ -16,6 +16,8 @@ public static class UpgradeRegistry
         { UpgradeType.Giantsbane, new GiantsbaneUpgrade() },
         { UpgradeType.FocusFire, new FocusFireUpgrade() },
         { UpgradeType.Lifesteal, new LifestealUpgrade() },
+        { UpgradeType.Deflection, new DeflectionUpgrade() },
+        { UpgradeType.Bruiser, new BruiserUpgrade() },
     };
 
     public static bool TryGet(UpgradeType type, out CardUpgrade upgrade) => _upgrades.TryGetValue(type, out upgrade);

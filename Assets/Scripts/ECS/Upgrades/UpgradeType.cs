@@ -14,4 +14,6 @@ public enum UpgradeType : byte
     Giantsbane = 7,
     FocusFire = 8,
     Lifesteal = 9,
+    Deflection = 10,
+    Bruiser = 11,
 }

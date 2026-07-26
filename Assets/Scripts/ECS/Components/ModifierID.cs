@@ -18,4 +18,6 @@ public enum ModifierID
     Giantsbane = 10,
     FocusFire = 11,
     Lifesteal = 12,
+    Deflection = 13,
+    Bruiser = 14,
 }
