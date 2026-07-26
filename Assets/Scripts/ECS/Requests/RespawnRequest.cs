@@ -21,6 +21,7 @@ public class RespawnRequest : Request
         respawn.TicksUntilRespawn = respawn.CooldownTicks;
         ecs.Delta.MarkComponentDirty(EntityId, typeof(RespawnableInPlaceComponent));
 
-        ecs.FlagEvents.Add(new RespawnableEntityDiedEvent { EntityId = EntityId });
+        PositionQuery.TryGet(ecs, EntityId, out float x, out float y);
+        ecs.FlagEvents.Add(new RespawnableEntityDiedEvent { EntityId = EntityId, X = x, Y = y });
     }
 }

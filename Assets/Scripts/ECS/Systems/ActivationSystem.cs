@@ -48,7 +48,10 @@ public static class ActivationSystem
             ecs.Delta.MarkComponentDirty(id, typeof(ActivatableComponent));
 
             if (activatable._ticksUntilActive == 0)
-                flagEvents.Add(new EntityActivatedEvent { EntityId = id });
+            {
+                PositionQuery.TryGet(ecs, id, out float x, out float y);
+                flagEvents.Add(new EntityActivatedEvent { EntityId = id, X = x, Y = y });
+            }
         });
     }
 }

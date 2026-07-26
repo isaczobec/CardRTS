@@ -1201,6 +1201,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d01920675677b3842891ff4c8bab96ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoverEventForwarder
+--- !u!1 &190082899
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 190082900}
+  - component: {fileID: 190082901}
+  m_Layer: 0
+  m_Name: FlagEventEffectManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &190082900
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190082899}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &190082901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190082899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19845389b3e35fa43a6b7dc2328e9100, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlagEventEffectManager
+  _entries:
+  - flagEventTypeName: HealDealtEvent
+    prefab: {fileID: 3938369738910734278, guid: c56c6b31755bcaa4c8942f70c3c90339, type: 3}
+    destroyAfterSeconds: 0
+    soundNames:
+    - Heal
 --- !u!1 &206962675
 GameObject:
   m_ObjectHideFlags: 0
@@ -3030,6 +3080,69 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 450229022}
   m_CullTransparentMesh: 1
+--- !u!1 &450603124
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 450603125}
+  - component: {fileID: 450603126}
+  m_Layer: 0
+  m_Name: ShadowAngelRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &450603125
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 450603124}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &450603126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 450603124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 233fe9ce1dff7eb4788a60262eae6d48, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 1.3
+    TimeUntilImpact: 0.566
+  _selectionMode: 0
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 20
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &450785347
 GameObject:
   m_ObjectHideFlags: 0
@@ -4810,6 +4923,10 @@ MonoBehaviour:
     renderer: {fileID: 511465366}
   - type: 42
     renderer: {fileID: 1681632886}
+  - type: 43
+    renderer: {fileID: 450603126}
+  - type: 44
+    renderer: {fileID: 1389169576}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -6434,6 +6551,52 @@ MonoBehaviour:
   _takeDamageSoundName: WoodTakeDamage
   _deathSoundName: 
   _activationSoundName: 
+--- !u!1 &913628348
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 913628349}
+  - component: {fileID: 913628350}
+  m_Layer: 0
+  m_Name: ShadowShieldOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &913628349
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 913628348}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &913628350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 913628348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2dfa99c6b7de61499a18e52b14d46d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
+  _material: {fileID: 2100000, guid: 6b445cf27ac91e54a9bf851c451ac3dd, type: 2}
+  _key: ShadowShieldOverlay
 --- !u!1 &920356593
 GameObject:
   m_ObjectHideFlags: 0
@@ -6591,6 +6754,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 925982941}
   m_CullTransparentMesh: 1
+--- !u!1 &939994314
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 939994315}
+  - component: {fileID: 939994316}
+  m_Layer: 0
+  m_Name: ShadowAuraSound
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &939994315
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 939994314}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &939994316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 939994314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ea68cc2726bb19418f7e311c2285081, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundModifierRenderer
+  _soundName: HorrorAtmosphere
+  _volume: 1
+  _loop: 1
+  _crossfadeDuration: 0.2
+  _endSoundName: 
+  _endSoundVolume: 1
 --- !u!1 &946076997
 GameObject:
   m_ObjectHideFlags: 0
@@ -8059,6 +8272,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1244099536}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1071832461
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1071832462}
+  - component: {fileID: 1071832463}
+  m_Layer: 0
+  m_Name: ShadowAuraAura
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1071832462
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071832461}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1071832463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071832461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da68ee277b199494382cce97c7e2a01b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AreaEffectRadiusModifierRenderer
+  _prefab: {fileID: 7953956060509625171, guid: b1bbf71818ba6a9498b9ca8f12786a3d, type: 3}
+  _heightOffset: 0.01
 --- !u!1 &1074914389
 GameObject:
   m_ObjectHideFlags: 0
@@ -9508,6 +9767,8 @@ MonoBehaviour:
     prefab: {fileID: 9030713940054835064, guid: 14d56fc76e7e4fc42917da3ef4ebaf8a, type: 3}
   - name: HealerGuardian
     prefab: {fileID: 6472282922783299243, guid: 9deae98c1836c91428d5fbacb67b1b56, type: 3}
+  - name: ShadowAngel
+    prefab: {fileID: 6472282922783299243, guid: 233fe9ce1dff7eb4788a60262eae6d48, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -9817,6 +10078,9 @@ Transform:
   - {fileID: 523926793}
   - {fileID: 85099810}
   - {fileID: 995546732}
+  - {fileID: 1071832462}
+  - {fileID: 939994315}
+  - {fileID: 913628349}
   m_Father: {fileID: 1889187866}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1244099537
@@ -9868,6 +10132,12 @@ MonoBehaviour:
     renderer: {fileID: 85099811}
   - type: 8
     renderer: {fileID: 995546733}
+  - type: 10
+    renderer: {fileID: 1071832463}
+  - type: 10
+    renderer: {fileID: 939994316}
+  - type: 9
+    renderer: {fileID: 913628350}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -10756,6 +11026,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1388428473}
   m_CullTransparentMesh: 1
+--- !u!1 &1389169574
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1389169575}
+  - component: {fileID: 1389169576}
+  m_Layer: 0
+  m_Name: ShadowAngelProjectileRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1389169575
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389169574}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1389169576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389169574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22e9ad967d6af0d4e95983d697271995, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeekingProjectileRenderer
+  _prefab: {fileID: 8077043507155612275, guid: 7d880de6f7ff46848a9efb6f74e0c443, type: 3}
+  _rotationDegreesPerSecond: 1080
+  _groundOffset: 2
+  _launchSoundName: 
+  _impactSoundName: IceBlast
 --- !u!1 &1392493620
 GameObject:
   m_ObjectHideFlags: 0
@@ -11275,6 +11594,8 @@ Transform:
   - {fileID: 1631565995}
   - {fileID: 511465365}
   - {fileID: 1681632885}
+  - {fileID: 450603125}
+  - {fileID: 1389169575}
   - {fileID: 1149034174}
   - {fileID: 713213433}
   - {fileID: 1871728200}
@@ -11614,17 +11935,17 @@ MonoBehaviour:
   - name: IronKnight
     sprite: {fileID: 21300000, guid: 3253ad9deab97584d9f92d6a2fad17b4, type: 3}
   - name: IceMan
-    sprite: {fileID: 21300000, guid: fb9bcc3943d1ca94497fd61e5e8c2fde, type: 3}
+    sprite: {fileID: 21300000, guid: f8f4041f3be20b24486f68d0bf5e28e0, type: 3}
   - name: Chilled
     sprite: {fileID: 21300000, guid: 6f98b3e70c3ad8a48a0396785dad48e8, type: 3}
   - name: IceNova
-    sprite: {fileID: 21300000, guid: 6f98b3e70c3ad8a48a0396785dad48e8, type: 3}
+    sprite: {fileID: 21300000, guid: 91bf174d5ed4a5a4ab40b4d8541bef7d, type: 3}
   - name: Frozen
-    sprite: {fileID: 21300000, guid: 4184495d79c523148bd19006e6e88b2d, type: 3}
+    sprite: {fileID: 21300000, guid: 91bf174d5ed4a5a4ab40b4d8541bef7d, type: 3}
   - name: Scorched
     sprite: {fileID: 21300000, guid: 9725fb87facc42a4984598500f76e0fb, type: 3}
   - name: FireMan
-    sprite: {fileID: 21300000, guid: 9725fb87facc42a4984598500f76e0fb, type: 3}
+    sprite: {fileID: 21300000, guid: b00564e353aca3e4a853c66d5568c6ca, type: 3}
   - name: GoblinSnatcher
     sprite: {fileID: 21300000, guid: 43c039c3ce9d3a94eb99e8c982a7818e, type: 3}
   - name: StoneConstruct
@@ -11632,7 +11953,7 @@ MonoBehaviour:
   - name: GroundSlam
     sprite: {fileID: 21300000, guid: e32aad571b880e549a22b1cc2f2f84a2, type: 3}
   - name: Skeletons
-    sprite: {fileID: 21300000, guid: 1c728f7cc6548f24cadceb6478fa25cc, type: 3}
+    sprite: {fileID: 21300000, guid: 4fee6b88085fc6848af3890d46654f32, type: 3}
   - name: EphemeralSkeletons
     sprite: {fileID: 21300000, guid: 2531e15fe967a354d9d28c9cfc1d71ca, type: 3}
   - name: Stalker
@@ -11685,6 +12006,16 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 619fbe1fc6dd3da4096b2e061321c2ff, type: 3}
   - name: Lifesteal
     sprite: {fileID: 21300000, guid: dd9553335d5e8ac4f8cd1bf7715b004f, type: 3}
+  - name: Bruiser
+    sprite: {fileID: 21300000, guid: 2b908f5f20beff14fa10bdef4506d4d1, type: 3}
+  - name: Deflection
+    sprite: {fileID: 21300000, guid: 6402e62a7d64d494ca6f3fd91f490099, type: 3}
+  - name: ShadowAngel
+    sprite: {fileID: 21300000, guid: 4157f3295e1ae0b408164ae7fb67ceca, type: 3}
+  - name: ShadowShield
+    sprite: {fileID: 21300000, guid: 490cf4ff636f2024b89863e434474ab8, type: 3}
+  - name: ShadowAura
+    sprite: {fileID: 21300000, guid: 4157f3295e1ae0b408164ae7fb67ceca, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -15776,6 +16107,7 @@ Transform:
   - {fileID: 455464678}
   - {fileID: 1526962429}
   - {fileID: 1382151589}
+  - {fileID: 190082900}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1890897681
@@ -16941,6 +17273,13 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 51ba239908be76f4d8f9a80eb31d13b8, type: 3}
     minPitch: 1
     maxPitch: 1
+    defaultVolume: 1
+    overlaySounds: []
+  - name: Heal
+    clips:
+    - {fileID: 8300000, guid: ba39bf8baf6d13046889b2d64822381a, type: 3}
+    minPitch: 1.1
+    maxPitch: 0.9
     defaultVolume: 1
     overlaySounds: []
 --- !u!114 &1985718171

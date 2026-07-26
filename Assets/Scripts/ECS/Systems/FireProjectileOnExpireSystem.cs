@@ -47,7 +47,7 @@ public static class FireProjectileOnExpireSystem
             // through every projectile firing in the game via the generic
             // ProjectileActivatedEvent — see LinkedProjectileFiredEvent's own doc comment.
             if (projectileId != 0)
-                ecs.FlagEvents.Add(new LinkedProjectileFiredEvent { EntityId = projectileId, LinkedEntityId = casterId });
+                ecs.FlagEvents.Add(new LinkedProjectileFiredEvent { EntityId = projectileId, LinkedEntityId = casterId, X = pos.X, Y = pos.Y });
         });
     }
 }

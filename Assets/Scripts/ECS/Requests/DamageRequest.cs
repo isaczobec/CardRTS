@@ -31,11 +31,14 @@ public class DamageRequest : Request
         health.LastDamageDealer = DealerEntityId;
         ecs.Delta.MarkComponentDirty(EntityId, typeof(HealthComponent));
 
+        PositionQuery.TryGet(ecs, EntityId, out float x, out float y);
         ecs.FlagEvents.Add(new DamageDealtEvent
         {
             EntityId = EntityId,
             DealerEntityId = DealerEntityId,
             Amount = Amount,
+            X = x,
+            Y = y,
         });
     }
 }

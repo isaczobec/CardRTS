@@ -35,10 +35,13 @@ public class HealRequest : Request
         health.CurrentHealth = newHealth;
         ecs.Delta.MarkComponentDirty(EntityId, typeof(HealthComponent));
 
+        PositionQuery.TryGet(ecs, EntityId, out float x, out float y);
         ecs.FlagEvents.Add(new HealDealtEvent
         {
             EntityId = EntityId,
             Amount = actualHealed,
+            X = x,
+            Y = y,
         });
     }
 }

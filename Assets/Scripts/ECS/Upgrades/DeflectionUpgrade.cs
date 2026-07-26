@@ -15,7 +15,7 @@ public class DeflectionUpgrade : CardUpgrade
     public override string Description =>
         $"Reduces incoming damage the further away the attacker is — no reduction within {MinRange:0} tiles, scaling up to {MaxReductionRatio * 100f:0}% at {MaxRange:0}+ tiles.";
     public override string ImageName => "Deflection";
-    public override int ShopGoldCost => 150;
+    public override int ShopGoldCost => 165;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>
     {

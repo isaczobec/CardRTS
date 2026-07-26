@@ -223,7 +223,7 @@ public class BasicRangedAISystem : ISystem
             ai.AttackTicksRemaining = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
             _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
             _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
-            _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id, TargetEntityId = activeTarget });
+            _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id, TargetEntityId = activeTarget, X = myPos.x, Y = myPos.y });
         }
         else
         {
@@ -260,7 +260,7 @@ public class BasicRangedAISystem : ISystem
         ai.AttackTargetId = 0;
         ai.AttackTicksRemaining = 0;
         _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
-        _ecs.FlagEvents.Add(new AttackWindupFinishedEvent { EntityId = id });
+        _ecs.FlagEvents.Add(new AttackWindupFinishedEvent { EntityId = id, X = myPos.x, Y = myPos.y });
     }
 
     private void CancelAttack(ulong id, ref BasicRangedAIComponent ai)

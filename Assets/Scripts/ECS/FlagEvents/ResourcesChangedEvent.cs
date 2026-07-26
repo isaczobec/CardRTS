@@ -52,4 +52,7 @@ public class ResourcesChangedEvent : FlagEvent
         X = System.BitConverter.ToSingle(data, 34);
         Y = System.BitConverter.ToSingle(data, 38);
     }
+
+    public override (float X, float Y)? Position =>
+        X == ResourcesAdded.NO_WORLD_LOCATION || Y == ResourcesAdded.NO_WORLD_LOCATION ? null : (X, Y);
 }

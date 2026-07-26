@@ -12,11 +12,17 @@ public class LinkedProjectileFiredEvent : FlagEvent
     public ulong EntityId { get; set; }
     public ulong LinkedEntityId { get; set; }
 
+    // The fire position, captured at the moment this was raised — see PositionQuery.TryGet.
+    public float X { get; set; }
+    public float Y { get; set; }
+
     public override byte[] Serialize()
     {
-        byte[] data = new byte[16];
+        byte[] data = new byte[24];
         System.BitConverter.GetBytes(EntityId).CopyTo(data, 0);
         System.BitConverter.GetBytes(LinkedEntityId).CopyTo(data, 8);
+        System.BitConverter.GetBytes(X).CopyTo(data, 16);
+        System.BitConverter.GetBytes(Y).CopyTo(data, 20);
         return data;
     }
 
@@ -24,5 +30,9 @@ public class LinkedProjectileFiredEvent : FlagEvent
     {
         EntityId = System.BitConverter.ToUInt64(data, 0);
         LinkedEntityId = System.BitConverter.ToUInt64(data, 8);
+        X = System.BitConverter.ToSingle(data, 16);
+        Y = System.BitConverter.ToSingle(data, 20);
     }
+
+    public override (float X, float Y)? Position => (X, Y);
 }

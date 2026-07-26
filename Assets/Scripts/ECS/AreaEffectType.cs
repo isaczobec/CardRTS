@@ -3,6 +3,7 @@
 // PeriodicAreaEffectSystem.RegisterEffect. None (0) never fires.
 public enum AreaEffectType
 {
-    None     = 0,
-    HealPulse = 1,
+    None        = 0,
+    HealPulse   = 1,
+    ShadowShield = 2,
 }

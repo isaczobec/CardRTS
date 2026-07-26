@@ -41,6 +41,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Lifesteal, ResolveLifesteal },
         { ModifierID.Deflection, ResolveDeflection },
         { ModifierID.Bruiser, ResolveBruiser },
+        { ModifierID.ShadowShield, ResolveShadowShield },
+        { ModifierID.ShadowAura, ResolveShadowAura },
     };
 
     private ECS _ecs;
@@ -442,6 +444,38 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         int banked = Mathf.CeilToInt(bruiser.StoredDamage);
         return ("Bruiser", "Bruiser",
             $"Reduces incoming damage by {percent}%, taking it over time instead at {bruiser.DrainPerSecond:0}/second. Banked damage: {banked}.");
+    }
+
+    // ShadowAngelDamageShareComponent lives directly on this modifier entity (see that
+    // class's own doc comment) — states the current share ratio directly, mirroring
+    // ResolveBarrier/ResolveGiantsbane's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveShadowShield(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Shares a portion of a nearby Shadow Angel's incoming damage.";
+
+        ComponentStore<ShadowAngelDamageShareComponent> shareStore = ecs.GetComponentStore<ShadowAngelDamageShareComponent>();
+        if (shareStore == null || !shareStore.HasComponent(modifierEntityId))
+            return ("Shadow Shield", "ShadowShield", fallback);
+
+        int percent = Mathf.RoundToInt(shareStore.GetComponent(modifierEntityId).ShareRatio * 100f);
+        return ("Shadow Shield", "ShadowShield", $"Sharing {percent}% of a nearby Shadow Angel's incoming damage.");
+    }
+
+    // PeriodicAreaEffectComponent-carrying modifier from ShadowAngelCard's own permanent
+    // self-buff — states the current aura radius directly, mirroring ResolveHealAura's own
+    // wording.
+    private static (string name, string imageName, string description) ResolveShadowAura(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
+        ComponentStore<PeriodicAreaEffectComponent> areaStore = ecs.GetComponentStore<PeriodicAreaEffectComponent>();
+        if (modifierStore == null || areaStore == null || !areaStore.HasComponent(modifierEntityId))
+            return ("Shadow Aura", "ShadowAura", "This troop periodically shares its incoming damage with nearby friendly troops.");
+
+        ModifierComponent modifier = modifierStore.GetComponent(modifierEntityId);
+        PeriodicAreaEffectComponent effect = areaStore.GetComponent(modifierEntityId);
+        int radius = Mathf.RoundToInt(StatsQuery.GetRange(ecs, modifier.TargetEntityId, 5) * effect.RangeMultiplier);
+        int percent = Mathf.RoundToInt(effect.Param0 * 100f);
+        return ("Shadow Aura", "ShadowAura", $"Shares {percent}% of incoming damage with friendly troops within {radius} range.");
     }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)

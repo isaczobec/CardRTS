@@ -57,17 +57,28 @@ public static class PeriodicAreaEffectSystem
             Pulse(ecs, sourceId, effect);
     }
 
-    // An entity paired with a ModifierComponent (Healer Guardian-style) gates on
-    // ModifierQuery.IsActive, matching every other modifier payload in this codebase; one
-    // living directly on a permanent troop/building (DamageAuraComponent-style) gates on its
-    // own ActivationQuery instead, matching DamageAuraSystem.
+    // Always requires the scan's own SOURCE (see ResolveSource — the troop/building itself,
+    // whether this entity IS that source or a modifier targeting it) to be activated/able to
+    // act, same as DamageAuraSystem already requires for its own always-troop-direct pulse.
+    // A modifier-entity-attached effect (Healer Guardian/Shadow Angel-style) additionally
+    // gates on the modifier's OWN ModifierQuery.IsActive (duration/expiry), but that alone
+    // isn't enough on its own: a modifier entity created with no ActivatableComponent (e.g.
+    // a permanent aura granted at spawn — see ShadowAngelCard) reads as "always active"
+    // immediately, well before its source troop's own deploy delay finishes, which would let
+    // it start granting its effect on nearby troops before the source is even visible. Only
+    // skipped implicitly for a Healer Guardian-style effect (granted by landing a hit, which
+    // itself already requires the source to be active) — this still runs there too, just
+    // never actually gates anything since the source is already guaranteed active by then.
     private static bool IsEffectActive(ECS ecs, ulong id)
     {
+        if (!ResolveSource(ecs, id, out ulong sourceId)) return false;
+        if (!ActivationQuery.IsActivated(ecs, sourceId) || !ActivationQuery.CanPerform(ecs, sourceId)) return false;
+
         ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
         if (modifierStore != null && modifierStore.HasComponent(id))
             return ModifierQuery.IsActive(ecs, id);
 
-        return ActivationQuery.IsActivated(ecs, id) && ActivationQuery.CanPerform(ecs, id);
+        return true;
     }
 
     private static bool ResolveSource(ECS ecs, ulong id, out ulong sourceId)

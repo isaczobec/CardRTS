@@ -91,11 +91,14 @@ public static class BruiserSystem
             health.CurrentHealth -= wholeDamage;
             ecs.Delta.MarkComponentDirty(targetId, typeof(HealthComponent));
 
+            PositionQuery.TryGet(ecs, targetId, out float x, out float y);
             ecs.FlagEvents.Add(new DamageDealtEvent
             {
                 EntityId = targetId,
                 DealerEntityId = DamageRequest.NO_DEALER_ENTITYID,
                 Amount = wholeDamage,
+                X = x,
+                Y = y,
             });
         });
     }

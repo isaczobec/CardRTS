@@ -301,7 +301,7 @@ public static class AbilityManager
                 ProjectilePoolOwnerId = poolOwnerId,
             });
 
-            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId, X = firePosition.x, Y = firePosition.y });
         };
 
         return ability;
@@ -365,7 +365,7 @@ public static class AbilityManager
                 RangeOverride = HookAbilityRange,
             });
 
-            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId, X = firePosition.x, Y = firePosition.y });
         };
 
         return ability;
@@ -467,7 +467,8 @@ public static class AbilityManager
             ScheduledCallSystem.Schedule(ecs, ScheduledCallType.GroundSlamResolve, windupTicks,
                 input.CastingEntityId, param3: input.TargetEntityId);
 
-            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+            PositionQuery.TryGet(ecs, input.CastingEntityId, out float slamX, out float slamY);
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId, X = slamX, Y = slamY });
         },
     };
 
@@ -556,7 +557,8 @@ public static class AbilityManager
 
             ScheduledCallSystem.Schedule(ecs, ScheduledCallType.IceNovaResolve, windupTicks, input.CastingEntityId);
 
-            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId });
+            PositionQuery.TryGet(ecs, input.CastingEntityId, out float novaX, out float novaY);
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId, X = novaX, Y = novaY });
         },
     };
 

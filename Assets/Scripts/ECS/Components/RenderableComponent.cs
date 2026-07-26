@@ -45,6 +45,8 @@ public enum RenderableType : byte
     Mine = 40,
     HealerGuardian = 41,
     HealerGuardianProjectile = 42,
+    ShadowAngel = 43,
+    ShadowAngelProjectile = 44,
 }
 
 public struct RenderableComponent : IComponent

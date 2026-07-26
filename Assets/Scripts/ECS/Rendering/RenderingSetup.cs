@@ -29,6 +29,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         MinimapManager.instance.Initialize();
         FloatingTextManager.instance.Initialize();
         DamageImpactEffectManager.instance.Initialize();
+        FlagEventEffectManager.instance.Initialize();
         CardRangeIndicatorManager.instance.Initialize();
         CardPlacementIndicatorManager.instance.Initialize();
         CardTargetIndicatorManager.instance.Initialize();

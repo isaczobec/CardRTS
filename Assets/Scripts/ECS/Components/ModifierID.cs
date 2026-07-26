@@ -20,4 +20,6 @@ public enum ModifierID
     Lifesteal = 12,
     Deflection = 13,
     Bruiser = 14,
+    ShadowShield = 15,
+    ShadowAura = 16,
 }

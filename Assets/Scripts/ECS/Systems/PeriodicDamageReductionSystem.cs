@@ -44,7 +44,8 @@ public static class PeriodicDamageReductionSystem
             if (!triggers) return;
 
             request.Amount = Mathf.Max(0, Mathf.RoundToInt(request.Amount * (1f - reduction.ReductionRatio)));
-            ecs.FlagEvents.Add(new PeriodicDamageReductionProcEvent { EntityId = request.EntityId });
+            PositionQuery.TryGet(ecs, request.EntityId, out float x, out float y);
+            ecs.FlagEvents.Add(new PeriodicDamageReductionProcEvent { EntityId = request.EntityId, X = x, Y = y });
         });
     }
 }

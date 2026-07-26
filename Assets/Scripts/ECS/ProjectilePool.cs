@@ -171,7 +171,7 @@ public static class ProjectilePool
             ecs.Delta.MarkComponentDirty(projectileId, typeof(PositionComponent));
         }
 
-        ecs.FlagEvents.Add(new ProjectileActivatedEvent { EntityId = projectileId, OwnerEntityId = ownerId, TargetEntityId = targetId });
+        ecs.FlagEvents.Add(new ProjectileActivatedEvent { EntityId = projectileId, OwnerEntityId = ownerId, TargetEntityId = targetId, X = firePosition.x, Y = firePosition.y });
     }
 
     // Shared ring-building loop for CreatePool/CreateSkillshotPool: every pooled projectile

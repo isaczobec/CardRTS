@@ -1,14 +1,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// IModifierRenderer for any PeriodicAreaEffectComponent-carrying modifier (currently just
-// HealerGuardianCard's own heal aura self-buff) — mirrors PrefabModifierRenderer's own
+// IModifierRenderer for any PeriodicAreaEffectComponent-carrying modifier (HealerGuardianCard's
+// heal aura and ShadowAngelCard's shield aura self-buffs) — mirrors PrefabModifierRenderer's own
 // spawn-on-activate/follow-interpolated-position shape, but additionally rescales the spawned
 // prefab every frame so its radius always matches RangeMultiplier x the target's own Range
 // stat, i.e. the EXACT radius PeriodicAreaEffectSystem itself scans (so a Range-affecting
 // StatModifierComponent moves the visual in lockstep with the real effect area). _prefab is
-// assumed authored at unit scale — radius 1 at localScale (1,1,1) — so applying the computed
-// radius as a uniform localScale is enough, no separate mesh-size constant to configure.
+// assumed authored at unit scale — DIAMETER 1 (radius 0.5) at localScale (1,1,1), same
+// convention as CardRangeIndicatorManager's own range-circle indicators (see its "radius ->
+// diameter" comment) — so the computed radius needs doubling before it's applied as a
+// uniform localScale; applying it directly would render a circle at exactly half the true
+// effect radius, which is exactly what let troops outside the drawn circle still receive the
+// effect.
 public class AreaEffectRadiusModifierRenderer : MonoBehaviour, IModifierRenderer
 {
     [SerializeField] private GameObject _prefab;
@@ -96,7 +100,8 @@ public class AreaEffectRadiusModifierRenderer : MonoBehaviour, IModifierRenderer
     private void ApplyRadius(GameObject go, ulong targetEntityId)
     {
         if (!_radiusByTarget.TryGetValue(targetEntityId, out float radius)) return;
-        go.transform.localScale = Vector3.one * Mathf.Max(0.01f, radius);
+        // radius -> diameter — see the class doc comment for why.
+        go.transform.localScale = Vector3.one * Mathf.Max(0.01f, radius * 2f);
     }
 
     // One pass over every currently active PeriodicAreaEffectComponent modifier per frame,

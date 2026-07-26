@@ -35,4 +35,6 @@ public class AbilityPerformedEvent : FlagEvent
         WorldX = System.BitConverter.ToSingle(data, 12);
         WorldY = System.BitConverter.ToSingle(data, 16);
     }
+
+    public override (float X, float Y)? Position => (WorldX, WorldY);
 }

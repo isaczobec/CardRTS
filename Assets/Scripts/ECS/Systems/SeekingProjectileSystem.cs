@@ -74,6 +74,7 @@ public static class SeekingProjectileSystem
     {
         projectile.IsActive = false;
         ecs.Delta.MarkComponentDirty(id, typeof(ProjectileBaseComponent));
-        ecs.FlagEvents.Add(new ProjectileDeactivatedEvent { EntityId = id });
+        PositionQuery.TryGet(ecs, id, out float x, out float y);
+        ecs.FlagEvents.Add(new ProjectileDeactivatedEvent { EntityId = id, X = x, Y = y });
     }
 }

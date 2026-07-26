@@ -73,7 +73,8 @@ public static class RespawnSystem
                 ecs.Delta.MarkComponentDirty(id, typeof(HealthComponent));
             }
 
-            flagEvents.Add(new RespawnableEntityRespawnedEvent { EntityId = id });
+            PositionQuery.TryGet(ecs, id, out float x, out float y);
+            flagEvents.Add(new RespawnableEntityRespawnedEvent { EntityId = id, X = x, Y = y });
         });
     }
 }

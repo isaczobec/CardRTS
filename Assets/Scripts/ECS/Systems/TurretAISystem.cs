@@ -123,7 +123,7 @@ public class TurretAISystem : ISystem
 
         ai.AttackTicksRemaining = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
         _ecs.Delta.MarkComponentDirty(id, typeof(TurretAIComponent));
-        _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id, TargetEntityId = ai.TargetEntityId });
+        _ecs.FlagEvents.Add(new TroopBeginAttackEvent { EntityId = id, TargetEntityId = ai.TargetEntityId, X = myPos.x, Y = myPos.y });
     }
 
     private void ResolveAttack(ulong id, ref TurretAIComponent ai, ushort ownerPlayerId, Vector2 myPos, float range)
@@ -161,7 +161,7 @@ public class TurretAISystem : ISystem
         }
 
         _ecs.Delta.MarkComponentDirty(id, typeof(TurretAIComponent));
-        _ecs.FlagEvents.Add(new AttackWindupFinishedEvent { EntityId = id });
+        _ecs.FlagEvents.Add(new AttackWindupFinishedEvent { EntityId = id, X = myPos.x, Y = myPos.y });
     }
 
     // Spawns the cosmetic-only flight entity (BallisticProjectileComponent + its own

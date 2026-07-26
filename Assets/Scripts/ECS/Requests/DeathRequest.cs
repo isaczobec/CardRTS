@@ -22,7 +22,8 @@ public class DeathRequest : Request
         ref TroopComponent troop = ref troopStore.GetComponent(EntityId);
         troop.IsDead = true;
         ecs.Delta.MarkComponentDirty(EntityId, typeof(TroopComponent));
-        ecs.FlagEvents.Add(new TroopDiedEvent { EntityId = EntityId });
+        PositionQuery.TryGet(ecs, EntityId, out float x, out float y);
+        ecs.FlagEvents.Add(new TroopDiedEvent { EntityId = EntityId, X = x, Y = y });
 
         // Notify "executed" subscribers (e.g. OnDeathResourceDropSystem, RespawnSystem)
         // before possibly deleting the entity below — DeleteEntity strips every component

@@ -199,6 +199,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<LifestealComponent>(57);
         _componentTypeRegistry.Register<DeflectionComponent>(58);
         _componentTypeRegistry.Register<BruiserComponent>(59);
+        _componentTypeRegistry.Register<ShadowAngelDamageShareComponent>(60);
+        _componentTypeRegistry.Register<ShadowAngelComponent>(61);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -351,6 +353,14 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<FocusFireComponent>>(133);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<LifestealComponent>>(134);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<LifestealComponent>>(135);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<DeflectionComponent>>(136);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<DeflectionComponent>>(137);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BruiserComponent>>(138);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BruiserComponent>>(139);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ShadowAngelDamageShareComponent>>(140);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShadowAngelDamageShareComponent>>(141);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ShadowAngelComponent>>(142);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShadowAngelComponent>>(143);
 
         ECS = CreateSimulationECS();
     }
@@ -583,9 +593,16 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<LifestealComponent>());
         ecs.AddComponentStore(new ComponentStore<DeflectionComponent>());
         ecs.AddComponentStore(new ComponentStore<BruiserComponent>());
+        ecs.AddComponentStore(new ComponentStore<ShadowAngelDamageShareComponent>());
+        ecs.AddComponentStore(new ComponentStore<ShadowAngelComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
+        // Early — well before DamageResolutionSystem's Flush<DamageRequest> (much later this
+        // same tick) can invoke ShadowAngelDamageShareSystem's own subscriber — see
+        // ShadowAngelTickResetSystem's own doc comment for why it can't just live inside that
+        // system's Execute instead.
+        ecs.RegisterSystem(ShadowAngelTickResetSystem.Instance);
         ecs.RegisterSystem(LifetimeSystem.Instance);
         // Must run before ModifierSystem — it checks TicksRemaining <= 1 to fire on a
         // modifier's very last active tick, before ModifierSystem decrements it to 0 and
@@ -642,12 +659,15 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(DeflectionSystem.Instance);
         ecs.RegisterSystem(PeriodicDamageReductionSystem.Instance);
         ecs.RegisterSystem(BarrierSystem.Instance);
-        // Registered last among DamageRequest subscribers (Subscribe callbacks fire in
-        // registration order — see RequestManager's own doc comment) so it defers a fraction
-        // of the final, fully-mitigated Amount, right before DamageResolutionSystem's Flush
-        // actually applies whatever's left to HealthComponent — see BruiserSystem's own doc
-        // comment.
+        // So it defers a fraction of the final, fully-mitigated Amount — see BruiserSystem's
+        // own doc comment.
         ecs.RegisterSystem(BruiserSystem.Instance);
+        // Registered last among every DamageRequest subscriber (Subscribe callbacks fire in
+        // registration order — see RequestManager's own doc comment) so it redirects whatever
+        // Amount survived every other mitigation/deferral above, right before
+        // DamageResolutionSystem's Flush actually applies whatever's left to the Shadow
+        // Angel's own HealthComponent — see ShadowAngelDamageShareSystem's own doc comment.
+        ecs.RegisterSystem(ShadowAngelDamageShareSystem.Instance);
         ecs.RegisterSystem(DamageResolutionSystem.Instance);
         ecs.RegisterSystem(HealResolutionSystem.Instance);
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
@@ -736,6 +756,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<LifestealComponent>());
         ecs.AddComponentStore(new ComponentStore<DeflectionComponent>());
         ecs.AddComponentStore(new ComponentStore<BruiserComponent>());
+        ecs.AddComponentStore(new ComponentStore<ShadowAngelDamageShareComponent>());
+        ecs.AddComponentStore(new ComponentStore<ShadowAngelComponent>());
 
         return ecs;
     }
