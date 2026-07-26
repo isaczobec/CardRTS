@@ -113,12 +113,16 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _ShadowOpacity: 0.5
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _TileBlendRadius: 2.5
+    - _TileBlendSamples: 3
+    - _TileBlendWidth: 1
     - _TileDetailTiling: 8
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
