@@ -28,6 +28,12 @@ public class EntityClusterFeature : WorldGenFeature
     public float ClusterRadius = 5f;
     public TileType[] AllowedTileTypes = { TileType.Grass };
 
+    // Optional: if set, spawns one decorative ground-patch mesh (see TerrainPatchRegistry,
+    // looked up by this id) at each cluster's center, roughly sized to cover the cluster —
+    // e.g. a worn/dirt patch under a resource cluster. Leave null (the default) to skip.
+    public string ClusterPatchId;
+    public float ClusterPatchSize = 10f;
+
     // A cluster's center is re-rolled (up to MaxPlacementAttempts times) if any
     // already-spawned entity — from an earlier feature, or an earlier cluster in this same
     // feature — is closer than this. 0 disables the check. Looked up via the
@@ -60,6 +66,9 @@ public class EntityClusterFeature : WorldGenFeature
         {
             if (!TryPickClusterCenter(validTiles, rng, registry, out float centerX, out float centerY))
                 continue;
+
+            if (!string.IsNullOrEmpty(ClusterPatchId))
+                handler.EnqueueAction(new SpawnMeshPatchAction { X = centerX, Y = centerY, PatchId = ClusterPatchId, Size = ClusterPatchSize });
 
             int entitiesPerCluster = rng.Next(EntitiesPerClusterMin, EntitiesPerClusterMax + 1);
             var placed = new List<(float x, float y)>(entitiesPerCluster);

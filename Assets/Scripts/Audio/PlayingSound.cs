@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 /// <summary>
 /// Handle to a single clip started via CardRTSAudioSource.PlaySound(). Lets call sites
@@ -16,6 +17,7 @@ public class PlayingSound
     private readonly float _pitch;
     private readonly float _minDistance;
     private readonly float _maxDistance;
+    private readonly AudioMixerGroup _mixerGroup;
     private float _volume;
     private bool _stopped;
 
@@ -33,7 +35,8 @@ public class PlayingSound
     private float _fadeOutStartNextVolume;
 
     internal PlayingSound(Transform parent, AudioClip clip, AudioSource initialSource, GameObject initialGO,
-        float volume, bool loop, float crossfadeDuration, float spatialBlend, float pitch, float minDistance, float maxDistance)
+        float volume, bool loop, float crossfadeDuration, float spatialBlend, float pitch, float minDistance, float maxDistance,
+        AudioMixerGroup mixerGroup)
     {
         _parent = parent;
         _clip = clip;
@@ -44,6 +47,7 @@ public class PlayingSound
         _pitch = pitch;
         _minDistance = minDistance;
         _maxDistance = maxDistance;
+        _mixerGroup = mixerGroup;
 
         _current = initialSource;
         _currentGO = initialGO;
@@ -151,6 +155,7 @@ public class PlayingSound
         source.dopplerLevel = 0f;
         source.minDistance = _minDistance;
         source.maxDistance = _maxDistance;
+        source.outputAudioMixerGroup = _mixerGroup;
         source.Play();
 
         _next = source;

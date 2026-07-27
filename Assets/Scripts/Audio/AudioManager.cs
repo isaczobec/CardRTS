@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 /// <summary>
 /// Central entry point for spawning audio sources. Call AudioManager.instance.CreateAudioSource(...)
@@ -16,6 +17,12 @@ public class AudioManager : Singleton<AudioManager>
     [Header("3D Sound Falloff")]
     [SerializeField] private float _minDistance = 15f;
     [SerializeField] private float _maxDistance = 500f;
+
+    // Every AudioSource this manager (and the CardRTSAudioSources it creates) spawns routes
+    // through this group, so master/SFX volume and any effects live on the mixer instead of
+    // needing to be replicated per-source in code.
+    [Header("Mixing")]
+    [SerializeField] private AudioMixerGroup _sfxMixerGroup;
 
     private ComponentStore<PositionComponent> _positionStore;
 
@@ -47,7 +54,7 @@ public class AudioManager : Singleton<AudioManager>
         root.transform.SetParent(transform, false);
         root.transform.position = position;
 
-        CardRTSAudioSource source = new CardRTSAudioSource(root, entityId: null, followEntity: false, spatialBlend, _minDistance, _maxDistance);
+        CardRTSAudioSource source = new CardRTSAudioSource(root, entityId: null, followEntity: false, spatialBlend, _minDistance, _maxDistance, _sfxMixerGroup);
         _sources.Add(source);
         return source;
     }
@@ -61,7 +68,7 @@ public class AudioManager : Singleton<AudioManager>
         if (_positionStore != null && _positionStore.HasComponent(entityId))
             root.transform.position = GetWorldPosition(_positionStore.GetComponent(entityId));
 
-        CardRTSAudioSource source = new CardRTSAudioSource(root, entityId, followEntity, spatialBlend, _minDistance, _maxDistance);
+        CardRTSAudioSource source = new CardRTSAudioSource(root, entityId, followEntity, spatialBlend, _minDistance, _maxDistance, _sfxMixerGroup);
         _sources.Add(source);
         return source;
     }

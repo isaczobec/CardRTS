@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 /// <summary>
 /// A positioned audio emitter created via AudioManager.CreateAudioSource(...). Call
@@ -27,8 +28,9 @@ public class CardRTSAudioSource
     private readonly List<PlayingSound> _activeSounds = new List<PlayingSound>();
     private readonly float _minDistance;
     private readonly float _maxDistance;
+    private readonly AudioMixerGroup _mixerGroup;
 
-    internal CardRTSAudioSource(GameObject root, ulong? entityId, bool followEntity, float spatialBlend, float minDistance, float maxDistance)
+    internal CardRTSAudioSource(GameObject root, ulong? entityId, bool followEntity, float spatialBlend, float minDistance, float maxDistance, AudioMixerGroup mixerGroup)
     {
         _root = root;
         EntityId = entityId;
@@ -36,6 +38,7 @@ public class CardRTSAudioSource
         SpatialBlend = spatialBlend;
         _minDistance = minDistance;
         _maxDistance = maxDistance;
+        _mixerGroup = mixerGroup;
     }
 
     /// <param name="volume">
@@ -108,9 +111,10 @@ public class CardRTSAudioSource
         audioSource.dopplerLevel = 0f;
         audioSource.minDistance = _minDistance;
         audioSource.maxDistance = _maxDistance;
+        audioSource.outputAudioMixerGroup = _mixerGroup;
         audioSource.Play();
 
-        PlayingSound sound = new PlayingSound(_root.transform, clip, audioSource, soundObject, volume, loop, safeCrossfade, SpatialBlend, pitch, _minDistance, _maxDistance);
+        PlayingSound sound = new PlayingSound(_root.transform, clip, audioSource, soundObject, volume, loop, safeCrossfade, SpatialBlend, pitch, _minDistance, _maxDistance, _mixerGroup);
         _activeSounds.Add(sound);
         return sound;
     }

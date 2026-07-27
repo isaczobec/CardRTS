@@ -8,6 +8,8 @@ Shader "Custom/WorldMesh"
         _TileBlendRadius ("Tile Blend Radius (ID texels)", Float) = 1.5
         [IntRange] _TileBlendSamples ("Tile Blend Samples (ring count: 1=3x3, 2=5x5, 3=7x7)", Range(1, 3)) = 1
         _ShadowOpacity ("Shadow Opacity", Range(0, 1)) = 0.75
+        _TileBreakupStrength ("Tile Breakup Strength", Range(0, 1)) = 0.5
+        _TileBreakupNoiseScale ("Tile Breakup Noise Scale", Float) = 3.0
     }
 
     SubShader

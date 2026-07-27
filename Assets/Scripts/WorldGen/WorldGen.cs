@@ -65,6 +65,22 @@ public class WorldGenHandler
         return null;
     }
 
+    // Plural counterpart to GetPreviousFeature — returns every earlier feature of type T
+    // (in generation order) rather than just the nearest one. Used where a feature needs to
+    // see everything a whole family of earlier features produced, e.g.
+    // PatchScatterFeature.MinDistanceToOtherPatches reading every earlier
+    // PatchScatterFeature's Patches list, not just the last one.
+    public List<T> GetPreviousFeatures<T>(Func<WorldGenFeature, bool> predicate = null) where T : WorldGenFeature
+    {
+        var result = new List<T>();
+        for (int i = _currentFeatureIndex - 1; i >= 0; i--)
+        {
+            if (features[i] is T typed && (predicate == null || predicate(features[i])))
+                result.Add(typed);
+        }
+        return result;
+    }
+
     public void EnqueueFeature(WorldGenFeature feature)
     {
         features.Insert(_currentFeatureLastChildIndex+1, feature);

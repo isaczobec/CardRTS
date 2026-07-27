@@ -69,11 +69,13 @@ public class WorldManager : Singleton<WorldManager>
         NavMeshHandler.instance.CreateNavMesh(this);
         Renderer.Render(Handler);
 
-        // Actions are server-only: entities spawned here are included in the initial
-        // ECS snapshot sent to clients, so they propagate automatically.
-        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
-        if (isServer)
-            Handler.ExecuteActions(TickManager.instance.ECS);
+        // Every peer executes every action (unlike Generate/Render, which were always
+        // unconditional). Actions that touch shared ECS state — e.g. EntitySpawnAction —
+        // are responsible for gating themselves to the server internally (that entity is
+        // included in the initial ECS snapshot sent to clients, so it propagates over the
+        // network instead); purely cosmetic actions like SpawnMeshPatchAction have no such
+        // gate and just run locally on every machine, same as Renderer.Render/GoTileManager.
+        Handler.ExecuteActions(TickManager.instance.ECS);
     }
 
     // Builds a TileType -> TileType map from every colliding tile type to its nearest (by
@@ -216,6 +218,29 @@ public class WorldManager : Singleton<WorldManager>
                 // Repaint interior terrain with arid thresholds (more sand, no grass).
                 // Water is preserved so existing lakes/rivers remain as oases.
                 new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Sand },
+                // Scattered patches of cracked, sun-baked earth breaking up the flat sand.
+                new PatchScatterFeature
+                {
+                    PatchId          = "StoneField",
+                    CountMin         = 20,
+                    CountMax         = 30,
+                    PatchSizeMin     = 30f,
+                    PatchSizeMax     = 40f,
+                    MinDistanceToOtherPatches = 8f,
+                    MaxDistanceFromBiomeBorder = 25f,
+                    AllowedTileTypes = new[] { TileType.Sand },
+                },
+                new PatchScatterFeature
+                {
+                    PatchId          = "DryEarth",
+                    CountMin         = 20,
+                    CountMax         = 30,
+                    PatchSizeMin     = 30f,
+                    PatchSizeMax     = 40f,
+                    MinDistanceToOtherPatches = 20f,
+                    MaxDistanceFromBiomeBorder = 25f,
+                    AllowedTileTypes = new[] { TileType.Sand },
+                },
                 // Stones are the desert's dominant resource — a bit more common here than
                 // trees/ore, which still both appear.
                 new EntityClusterFeature
@@ -279,6 +304,18 @@ public class WorldManager : Singleton<WorldManager>
                         new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
                     },
                 },
+                // Scattered moss patches breaking up the flat grass.
+                new PatchScatterFeature
+                {
+                    PatchId          = "StoneField",
+                    CountMin         = 20,
+                    CountMax         = 25,
+                    PatchSizeMin     = 10f,
+                    PatchSizeMax     = 12f,
+                    MinDistanceToOtherPatches = 6f,
+                    MaxDistanceFromBiomeBorder = 25f,
+                    AllowedTileTypes = new[] { TileType.Grass },
+                },
                 // Trees are the wetland's dominant resource — a bit more common here than
                 // stones/ore, which still both appear.
                 new EntityClusterFeature
@@ -292,6 +329,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
                     AllowedTileTypes      = new[] { TileType.Grass },
+                    ClusterPatchId        = "MossPatch",
+                    ClusterPatchSize      = 45f,
                 },
                 new EntityClusterFeature
                 {
@@ -304,6 +343,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
+                    ClusterPatchId        = "GravelPatch",
+                    ClusterPatchSize      = 30f,
                 },
                 new EntityClusterFeature
                 {
@@ -316,6 +357,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
+                    ClusterPatchId        = "GravelPatch",
+                    ClusterPatchSize      = 30f,
                 },
             }
         });
@@ -357,6 +400,18 @@ public class WorldManager : Singleton<WorldManager>
                     {
                         new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
                     },
+                },
+                // Scattered wind-blown snow drifts breaking up the flat snow.
+                new PatchScatterFeature
+                {
+                    PatchId          = "StoneSnowField",
+                    CountMin         = 30,
+                    CountMax         = 40,
+                    PatchSizeMin     = 30f,
+                    PatchSizeMax     = 40f,
+                    MinDistanceToOtherPatches = 8f,
+                    MaxDistanceFromBiomeBorder = 25f,
+                    AllowedTileTypes = new[] { TileType.Snow },
                 },
                 new EntityClusterFeature
                 {

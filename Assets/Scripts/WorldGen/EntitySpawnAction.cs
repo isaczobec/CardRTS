@@ -256,6 +256,14 @@ public class EntitySpawnAction : IWorldGenAction
 
     public void Execute(ECS ecs)
     {
+        // Server-only: the entity created here is included in the initial ECS snapshot
+        // sent to clients, so it propagates over the network instead of being created
+        // independently on every machine (which would desync ids/ordering from the
+        // server's own ECS). See WorldManager.GenerateAndRender, which now runs every
+        // IWorldGenAction on every peer and relies on actions to self-gate like this.
+        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+        if (!isServer) return;
+
         EntityHandle entity = ecs.CreateEntity();
         ecs.AddComponent(entity.Id, new PositionComponent(X, Y));
         Spawner?.Invoke(entity.Id, ecs);

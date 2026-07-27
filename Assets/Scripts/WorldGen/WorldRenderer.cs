@@ -19,6 +19,10 @@ public class WorldRenderer : MonoBehaviour
     [SerializeField]
     private GoTileManager _goTileManager;
 
+    [SerializeField]
+    private TerrainPatchRegistry _terrainPatchRegistry;
+    public TerrainPatchRegistry TerrainPatchRegistry => _terrainPatchRegistry;
+
     public void Render(WorldGenHandler handler)
     {
         Clear();
