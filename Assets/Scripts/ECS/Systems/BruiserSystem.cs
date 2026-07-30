@@ -5,14 +5,14 @@ using UnityEngine;
 // targeting the hit entity, diverts DeferralRatio of the (already fully-mitigated) Amount
 // into StoredDamage rather than letting it through immediately, and stamps LastHitTick.
 //
-// Every tick, Execute then drains up to DrainPerSecond worth of any nonzero StoredDamage
-// straight onto the target's HealthComponent — bypassing DamageRequest entirely, unlike
-// DamageOverTimeSystem's usual "fresh DamageRequest per proc" convention. This is
-// deliberate: StoredDamage was already fully mitigated once when it was banked, so running
-// the drain back through the request pipeline (including this same system's own deferral
-// subscriber) would just re-defer another DeferralRatio of it forever instead of ever
-// actually draining out. A DamageDealtEvent is still raised manually so damage-number VFX
-// behaves the same as a real hit.
+// Once a second (TicksUntilNextDrain, same cadence pattern as DamageOverTimeComponent's own
+// TicksUntilNextProc), Execute then drains up to DrainPerSecond worth of any nonzero
+// StoredDamage in one lump via a fresh DamageRequest, same convention as DamageOverTimeSystem.
+// That request is created with PreMitigated = true (see DamageRequest's own doc comment) so
+// it skips every mitigation/redirection subscriber — including this same system's own
+// deferral callback below, which would otherwise re-defer another DeferralRatio of it forever
+// instead of ever actually draining out — and applies Amount straight to HealthComponent,
+// same as if it had been dealt directly.
 //
 // If the target goes ClearAfterSeconds without taking a fresh hit, the remaining
 // StoredDamage is wiped instead of continuing to bleed out — a Bruiser troop that survives a
@@ -22,11 +22,14 @@ public static class BruiserSystem
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute, Setup);
 
     private const float ClearAfterSeconds = 5f;
+    private static readonly int DrainPeriodTicks = TickManager.SecondsToTicks(1f);
 
     private static void Setup(ECS ecs) => ecs.Requests.Subscribe<DamageRequest>(DeferDamage);
 
     private static void DeferDamage(DamageRequest request, ECS ecs)
     {
+        if (request.PreMitigated) return;
+
         ComponentStore<BruiserComponent> bruiserStore = ecs.GetComponentStore<BruiserComponent>();
         if (bruiserStore == null) return;
 
@@ -40,6 +43,8 @@ public static class BruiserSystem
                 int deferred = Mathf.Min(request.Amount, Mathf.RoundToInt(request.Amount * bruiser.DeferralRatio));
                 if (deferred > 0)
                 {
+                    if (bruiser.StoredDamage <= 0f)
+                        bruiser.TicksUntilNextDrain = DrainPeriodTicks;
                     request.Amount -= deferred;
                     bruiser.StoredDamage += deferred;
                 }
@@ -69,36 +74,35 @@ public static class BruiserSystem
             if (ticksSinceHit < 0 || ticksSinceHit >= clearAfterTicks)
             {
                 bruiser.StoredDamage = 0f;
-                bruiser.DrainCarry = 0f;
                 ecs.Delta.MarkComponentDirty(modifierId, typeof(BruiserComponent));
                 return;
             }
 
+            bruiser.TicksUntilNextDrain--;
+            if (bruiser.TicksUntilNextDrain > 0)
+            {
+                ecs.Delta.MarkComponentDirty(modifierId, typeof(BruiserComponent));
+                return;
+            }
+            bruiser.TicksUntilNextDrain = DrainPeriodTicks;
+
             ulong targetId = modifierStore.GetComponent(modifierId).TargetEntityId;
-            if (!healthStore.HasComponent(targetId)) return;
+            if (!healthStore.HasComponent(targetId))
+            {
+                ecs.Delta.MarkComponentDirty(modifierId, typeof(BruiserComponent));
+                return;
+            }
 
-            float drainAmount = Mathf.Min(bruiser.DrainPerSecond * TickManager.TickInterval, bruiser.StoredDamage);
+            int drainAmount = Mathf.Min(Mathf.RoundToInt(bruiser.DrainPerSecond), Mathf.CeilToInt(bruiser.StoredDamage));
             bruiser.StoredDamage -= drainAmount;
-            bruiser.DrainCarry += drainAmount;
-
-            int wholeDamage = Mathf.FloorToInt(bruiser.DrainCarry);
-            bruiser.DrainCarry -= wholeDamage;
             ecs.Delta.MarkComponentDirty(modifierId, typeof(BruiserComponent));
 
-            if (wholeDamage <= 0) return;
+            if (drainAmount <= 0) return;
 
-            ref HealthComponent health = ref healthStore.GetComponent(targetId);
-            health.CurrentHealth -= wholeDamage;
-            ecs.Delta.MarkComponentDirty(targetId, typeof(HealthComponent));
-
-            PositionQuery.TryGet(ecs, targetId, out float x, out float y);
-            ecs.FlagEvents.Add(new DamageDealtEvent
+            ecs.Requests.CreateRequest(new DamageRequest(targetId, drainAmount)
             {
-                EntityId = targetId,
                 DealerEntityId = DamageRequest.NO_DEALER_ENTITYID,
-                Amount = wholeDamage,
-                X = x,
-                Y = y,
+                PreMitigated = true,
             });
         });
     }

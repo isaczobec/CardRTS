@@ -28,6 +28,7 @@ public static class BarrierSystem
 
     private static void ApplyBarrier(DamageRequest request, ECS ecs)
     {
+        if (request.PreMitigated) return;
         if (request.Amount <= 0) return;
 
         ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();

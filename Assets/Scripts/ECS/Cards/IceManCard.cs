@@ -34,11 +34,11 @@ public class IceManCard : SpawnAtPointCard
     // Chilled slow applied on every hit (see ProjectileOnHitSystem.ApplySlow) — judgment
     // calls, easy to retune.
     private const float SlowRatio = -0.35f;
-    private const float SlowDurationSeconds = 4f;
+    private const float SlowDurationSeconds = 6f;
 
     // Cooldown length lives on AbilityComponent rather than on Ability itself, so different
     // troops could equip the same ability with different cooldowns.
-    private const float IceNovaCooldownSeconds = 30f;
+    private const float IceNovaCooldownSeconds = 13f;
 
     private const float MaxDistanceFromBuilding = 20f;
 

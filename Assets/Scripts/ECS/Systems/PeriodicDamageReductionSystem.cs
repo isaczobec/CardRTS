@@ -24,6 +24,8 @@ public static class PeriodicDamageReductionSystem
 
     private static void ApplyReduction(DamageRequest request, ECS ecs)
     {
+        if (request.PreMitigated) return;
+
         ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
         ComponentStore<PeriodicDamageReductionComponent> reductionStore = ecs.GetComponentStore<PeriodicDamageReductionComponent>();
         if (modifierStore == null || reductionStore == null) return;

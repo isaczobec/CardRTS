@@ -3442,61 +3442,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: -20}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &501847213
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 501847214}
-  - component: {fileID: 501847215}
-  - component: {fileID: 501847216}
-  m_Layer: 0
-  m_Name: AudioListener
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &501847214
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 501847213}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!81 &501847215
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 501847213}
-  m_Enabled: 1
---- !u!114 &501847216
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 501847213}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f15d091401b51d11d82d76b363fef048, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AudioListenerFollower
-  _target: {fileID: 963194228}
-  _elevation: 40
 --- !u!1 &506363030
 GameObject:
   m_ObjectHideFlags: 0
@@ -6977,6 +6922,7 @@ GameObject:
   m_Component:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
+  - component: {fileID: 963194226}
   - component: {fileID: 963194229}
   - component: {fileID: 963194230}
   m_Layer: 0
@@ -6986,6 +6932,14 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!81 &963194226
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
 --- !u!20 &963194227
 Camera:
   m_ObjectHideFlags: 0
@@ -7116,9 +7070,6 @@ MonoBehaviour:
   _edgeThreshold: 0.05
   _dragPanSensitivity: 0.5
   _rotateSensitivity: 1
-  _zoomSensitivity: 15
-  _minDistance: 12
-  _maxDistance: 40
 --- !u!1 &982359449
 GameObject:
   m_ObjectHideFlags: 0
@@ -17311,28 +17262,28 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 94f1f6fb1a4ec6d4ab48a3fd9236c07d, type: 3}
     minPitch: 0.9
     maxPitch: 1.1
-    defaultVolume: 1
+    defaultVolume: 0.05
     overlaySounds: []
   - name: CardSelect
     clips:
     - {fileID: 8300000, guid: 5e7bc695c1adcf0489162823f2f1c7a9, type: 3}
     minPitch: 0.95
     maxPitch: 1.05
-    defaultVolume: 1
+    defaultVolume: 0.14
     overlaySounds: []
   - name: CardDraw
     clips:
     - {fileID: 8300000, guid: a634ee6fcac89124f92b1910dacfb922, type: 3}
     minPitch: 1
     maxPitch: 1
-    defaultVolume: 1
+    defaultVolume: 0.14
     overlaySounds: []
   - name: CardPlay
     clips:
     - {fileID: 8300000, guid: 323e15cfe809e114ab92c9f4b25e8bc2, type: 3}
     minPitch: 1
     maxPitch: 1
-    defaultVolume: 1
+    defaultVolume: 0.14
     overlaySounds: []
   - name: DeploySpawn
     clips:
@@ -17416,7 +17367,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: abdbbfd33a46f4549987385f85c536b5, type: 3}
     minPitch: 1.05
     maxPitch: 0.95
-    defaultVolume: 1
+    defaultVolume: 0.6
     overlaySounds: []
   - name: ShootArrow
     clips:
@@ -17636,8 +17587,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6b5059966606cc4aacb55899d3b4258, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
-  _minDistance: 30
-  _maxDistance: 100
+  _minDistance: 1.3
+  _maxDistance: 2.1
   _sfxMixerGroup: {fileID: 2559578684376346143, guid: b8addb8247ed06140b439f5837ef2d78, type: 2}
 --- !u!1 &1999478540
 GameObject:
@@ -18645,7 +18596,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 963194228}
-  - {fileID: 501847214}
   - {fileID: 705507995}
   - {fileID: 550189264}
   - {fileID: 649030908}

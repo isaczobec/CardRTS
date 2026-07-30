@@ -16,7 +16,7 @@ public class SpawnMeshPatchAction : IWorldGenAction
     // Added on top of the terrain height sampled at (X, Y) — lets patches that are meant to
     // sit on top of others (e.g. a small accent patch over a wider base patch) avoid
     // z-fighting via a small vertical separation instead of render-queue tricks.
-    public float YOffset = 0f;
+    public float YOffset = 0.00001f;
 
     public void Execute(ECS ecs)
     {

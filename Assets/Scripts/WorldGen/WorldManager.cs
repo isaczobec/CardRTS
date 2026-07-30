@@ -218,31 +218,6 @@ public class WorldManager : Singleton<WorldManager>
                 // Repaint interior terrain with arid thresholds (more sand, no grass).
                 // Water is preserved so existing lakes/rivers remain as oases.
                 new BiomeBorderFillFeature { Threshold = 1.0f, FillType = TileType.Sand },
-                // Scattered patches of cracked, sun-baked earth breaking up the flat sand.
-                new PatchScatterFeature
-                {
-                    PatchId          = "StoneField",
-                    CountMin         = 20,
-                    CountMax         = 30,
-                    PatchSizeMin     = 30f,
-                    PatchSizeMax     = 40f,
-                    MinDistanceToOtherPatches = 8f,
-                    MaxDistanceFromBiomeBorder = 25f,
-                    AllowedTileTypes = new[] { TileType.Sand },
-                },
-                new PatchScatterFeature
-                {
-                    PatchId          = "DryEarth",
-                    CountMin         = 20,
-                    CountMax         = 30,
-                    PatchSizeMin     = 30f,
-                    PatchSizeMax     = 40f,
-                    MinDistanceToOtherPatches = 20f,
-                    MaxDistanceFromBiomeBorder = 25f,
-                    AllowedTileTypes = new[] { TileType.Sand },
-                },
-                // Stones are the desert's dominant resource — a bit more common here than
-                // trees/ore, which still both appear.
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnRock,
@@ -254,6 +229,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Sand },
+                    ClusterPatchId        = "MesaPatch",
+                    ClusterPatchSize      = 20f,
                 },
                 new EntityClusterFeature
                 {
@@ -266,6 +243,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
                     AllowedTileTypes      = new[] { TileType.Sand },
+                    ClusterPatchId        = "MossPatch",
+                    ClusterPatchSize      = 45f,
                 },
                 new EntityClusterFeature
                 {
@@ -278,6 +257,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Sand },
+                    ClusterPatchId        = "MesaPatch",
+                    ClusterPatchSize      = 20f,
                 },
             }
         });
@@ -303,18 +284,6 @@ public class WorldManager : Singleton<WorldManager>
                     {
                         new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
                     },
-                },
-                // Scattered moss patches breaking up the flat grass.
-                new PatchScatterFeature
-                {
-                    PatchId          = "StoneField",
-                    CountMin         = 20,
-                    CountMax         = 25,
-                    PatchSizeMin     = 10f,
-                    PatchSizeMax     = 12f,
-                    MinDistanceToOtherPatches = 6f,
-                    MaxDistanceFromBiomeBorder = 25f,
-                    AllowedTileTypes = new[] { TileType.Grass },
                 },
                 // Trees are the wetland's dominant resource — a bit more common here than
                 // stones/ore, which still both appear.
@@ -344,7 +313,7 @@ public class WorldManager : Singleton<WorldManager>
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
                     ClusterPatchId        = "GravelPatch",
-                    ClusterPatchSize      = 30f,
+                    ClusterPatchSize      = 15f,
                 },
                 new EntityClusterFeature
                 {
@@ -358,7 +327,7 @@ public class WorldManager : Singleton<WorldManager>
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
                     ClusterPatchId        = "GravelPatch",
-                    ClusterPatchSize      = 30f,
+                    ClusterPatchSize      = 15f,
                 },
             }
         });
@@ -401,18 +370,6 @@ public class WorldManager : Singleton<WorldManager>
                         new NoiseThreshold { MaxValue = 1f, Type = TileType.Mountain },
                     },
                 },
-                // Scattered wind-blown snow drifts breaking up the flat snow.
-                new PatchScatterFeature
-                {
-                    PatchId          = "StoneSnowField",
-                    CountMin         = 30,
-                    CountMax         = 40,
-                    PatchSizeMin     = 30f,
-                    PatchSizeMax     = 40f,
-                    MinDistanceToOtherPatches = 8f,
-                    MaxDistanceFromBiomeBorder = 25f,
-                    AllowedTileTypes = new[] { TileType.Snow },
-                },
                 new EntityClusterFeature
                 {
                     Spawner               = EntitySpawnAction.SpawnTree,
@@ -436,6 +393,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Snow },
+                    ClusterPatchId        = "GravelPatch",
+                    ClusterPatchSize      = 15f,
                 },
                 // Ore is the tundra's dominant resource — a bit more common here than
                 // trees/stones, which still both appear.
@@ -450,6 +409,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Snow },
+                    ClusterPatchId        = "GravelPatch",
+                    ClusterPatchSize      = 15f,
                 },
             }
         });

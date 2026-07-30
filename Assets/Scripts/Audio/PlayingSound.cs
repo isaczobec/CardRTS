@@ -153,6 +153,7 @@ public class PlayingSound
         source.loop = false;
         source.spatialBlend = _spatialBlend;
         source.dopplerLevel = 0f;
+        source.rolloffMode = AudioRolloffMode.Linear;
         source.minDistance = _minDistance;
         source.maxDistance = _maxDistance;
         source.outputAudioMixerGroup = _mixerGroup;

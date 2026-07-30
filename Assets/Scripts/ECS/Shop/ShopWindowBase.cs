@@ -67,6 +67,13 @@ public abstract class ShopWindowBase<TSelf> : Singleton<TSelf> where TSelf : Sho
         PlayShopSound(_closeSoundName);
     }
 
+    /// <summary>
+    /// True while this shop's window is open — used by CameraController to suppress
+    /// scroll-wheel zoom so scrolling a shop list (see ScrollPanel) doesn't also zoom the
+    /// camera underneath it.
+    /// </summary>
+    public bool IsOpen => _shopWindow != null && _shopWindow.activeInHierarchy;
+
     protected void PlayShopSound(string soundName) => AudioSource?.PlaySound(soundName);
 
     protected ushort LocalPlayerId()

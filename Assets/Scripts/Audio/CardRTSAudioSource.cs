@@ -109,6 +109,9 @@ public class CardRTSAudioSource
         audioSource.loop = loop && safeCrossfade <= 0f;
         audioSource.spatialBlend = SpatialBlend;
         audioSource.dopplerLevel = 0f;
+        // Logarithmic (Unity's default) only asymptotically approaches 0 and never actually
+        // reaches it by maxDistance; Linear ramps volume down to exactly 0 there instead.
+        audioSource.rolloffMode = AudioRolloffMode.Linear;
         audioSource.minDistance = _minDistance;
         audioSource.maxDistance = _maxDistance;
         audioSource.outputAudioMixerGroup = _mixerGroup;

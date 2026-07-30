@@ -28,6 +28,9 @@ public class DamageImpactEffectManager : Singleton<DamageImpactEffectManager>
 
     [SerializeField] private List<DamagerPrefabEntry> _prefabEntries;
 
+    [Tooltip("Fallback entry used when the dealer's RenderableType has no entry in _prefabEntries. Leave prefab empty to spawn nothing for unlisted types.")]
+    [SerializeField] private DamagerPrefabEntry _defaultEntry;
+
     private readonly Dictionary<RenderableType, DamagerPrefabEntry> _entriesByDealerType = new Dictionary<RenderableType, DamagerPrefabEntry>();
 
     private ComponentStore<PositionComponent> _positionStore;
@@ -59,7 +62,9 @@ public class DamageImpactEffectManager : Singleton<DamageImpactEffectManager>
         if (!_renderableStore.HasComponent(dealerId)) return;
 
         RenderableType dealerType = _renderableStore.GetComponent(dealerId).Type;
-        if (!_entriesByDealerType.TryGetValue(dealerType, out DamagerPrefabEntry entry)) return;
+        if (!_entriesByDealerType.TryGetValue(dealerType, out DamagerPrefabEntry entry))
+            entry = _defaultEntry;
+        if (entry == null || entry.prefab == null) return;
 
         PositionComponent pos = _positionStore.GetComponent(e.EntityId);
         GameObject instance = Instantiate(entry.prefab, WorldPositionFor(pos.X, pos.Y), Quaternion.identity);

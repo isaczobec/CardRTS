@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: GravelPatch
-  m_Shader: {fileID: -6465566751694194690, guid: 73eb29f54f85fdb418e872edec51a614, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 97dbc36eecde9f64481499dcf5a2d316, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -38,7 +38,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _Tex:
-        m_Texture: {fileID: 2800000, guid: 5ed9d6d53a4874f4abd34017be06a111, type: 3}
+        m_Texture: {fileID: 2800000, guid: bb74078cb991d97409322627847e27e3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -55,8 +55,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _EdgeNoiseEdge1: 0.02
+    - _EdgeNoiseEdge2: 0.04
+    - _EdgeNoiseScale: 2.18
+    - _InnerNoiseEdge1: 0.64
+    - _InnerNoiseEdge2: 0.53
+    - _InnerNoiseScale: 0.53
+    - _NoiseScale: 1
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _TexScale: 2.55
     m_Colors:
     - _Offset: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []

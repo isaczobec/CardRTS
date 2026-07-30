@@ -84,7 +84,6 @@ public class ShadowAngelCard : SpawnAtPointCard
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
-    public override bool AllowsFriendlyTroopRange() => true;
 
     static ShadowAngelCard()
     {

@@ -29,8 +29,11 @@ public class EntityClusterFeature : WorldGenFeature
     public TileType[] AllowedTileTypes = { TileType.Grass };
 
     // Optional: if set, spawns one decorative ground-patch mesh (see TerrainPatchRegistry,
-    // looked up by this id) at each cluster's center, roughly sized to cover the cluster —
-    // e.g. a worn/dirt patch under a resource cluster. Leave null (the default) to skip.
+    // looked up by this id) at the average position of every entity actually placed in the
+    // cluster (not the rolled cluster center — some candidate positions can fail
+    // MinEntitySpacing and get skipped, so the two can differ), roughly sized to cover the
+    // cluster — e.g. a worn/dirt patch under a resource cluster. Leave null (the default) to
+    // skip. If every entity in the cluster failed to place, falls back to the cluster center.
     public string ClusterPatchId;
     public float ClusterPatchSize = 10f;
 
@@ -67,9 +70,6 @@ public class EntityClusterFeature : WorldGenFeature
             if (!TryPickClusterCenter(validTiles, rng, registry, out float centerX, out float centerY))
                 continue;
 
-            if (!string.IsNullOrEmpty(ClusterPatchId))
-                handler.EnqueueAction(new SpawnMeshPatchAction { X = centerX, Y = centerY, PatchId = ClusterPatchId, Size = ClusterPatchSize });
-
             int entitiesPerCluster = rng.Next(EntitiesPerClusterMin, EntitiesPerClusterMax + 1);
             var placed = new List<(float x, float y)>(entitiesPerCluster);
 
@@ -80,6 +80,12 @@ public class EntityClusterFeature : WorldGenFeature
 
                 placed.Add((x, y));
                 handler.EnqueueAction(new EntitySpawnAction { X = x, Y = y, Spawner = Spawner });
+            }
+
+            if (!string.IsNullOrEmpty(ClusterPatchId))
+            {
+                (float patchX, float patchY) = AveragePosition(placed, centerX, centerY);
+                handler.EnqueueAction(new SpawnMeshPatchAction { X = patchX, Y = patchY, PatchId = ClusterPatchId, Size = ClusterPatchSize });
             }
         }
     }
@@ -119,6 +125,23 @@ public class EntityClusterFeature : WorldGenFeature
         }
         x = y = 0f;
         return false;
+    }
+
+    // Centroid of every successfully-placed entity in the cluster, used to position the
+    // optional ClusterPatchId mesh. Falls back to the cluster center if nothing placed (e.g.
+    // MinEntitySpacing rejected every candidate), since averaging an empty list has no
+    // sensible result.
+    private static (float x, float y) AveragePosition(List<(float x, float y)> placed, float fallbackX, float fallbackY)
+    {
+        if (placed.Count == 0) return (fallbackX, fallbackY);
+
+        float sumX = 0f, sumY = 0f;
+        foreach (var (x, y) in placed)
+        {
+            sumX += x;
+            sumY += y;
+        }
+        return (sumX / placed.Count, sumY / placed.Count);
     }
 
     private bool IsFarEnoughFromAll(float x, float y, List<(float x, float y)> placed)

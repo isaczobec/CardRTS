@@ -57,10 +57,10 @@ Material:
     m_Floats:
     - _EdgeNoiseEdge1: 0.06
     - _EdgeNoiseEdge2: 0.1
-    - _EdgeNoiseScale: 7.61
-    - _InnerNoiseEdge1: 0.5
-    - _InnerNoiseEdge2: 0.55
-    - _InnerNoiseScale: -0.95
+    - _EdgeNoiseScale: 3.52
+    - _InnerNoiseEdge1: 0.37
+    - _InnerNoiseEdge2: 0.69
+    - _InnerNoiseScale: -0.71
     - _QueueControl: 0
     - _QueueOffset: 0
     - _TexScale: 6.2

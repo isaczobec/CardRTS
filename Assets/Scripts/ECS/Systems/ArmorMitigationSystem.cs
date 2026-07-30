@@ -21,6 +21,8 @@ public static class ArmorMitigationSystem
 
     private static void ApplyMitigation(DamageRequest request, ECS ecs)
     {
+        if (request.PreMitigated) return;
+
         int mitigationStat = request.Type == DamageType.Spell
             ? StatsQuery.GetSpellResist(ecs, request.EntityId, 0)
             : StatsQuery.GetArmor(ecs, request.EntityId, 0);

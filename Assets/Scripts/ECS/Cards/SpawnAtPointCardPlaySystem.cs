@@ -108,6 +108,21 @@ public static class SpawnAtPointCardPlaySystem
         UpgradeQuery.ForEachUpgradeOnCard(ecs, input.CardEntityId, upgrade =>
             upgrade.OnSpawnAtPointCardPlayed?.Invoke(spawnedEntityId, ecs));
 
+        // A just-applied upgrade (e.g. HealthBonusUpgrade) can raise this entity's effective
+        // max health via a StatModifierComponent — but TroopCardHelper/BuildingSpawnHelper
+        // already set CurrentHealth to the pre-upgrade base MaxHealth before any of the loop
+        // above ran (upgrades are applied to the entity AFTER it's spawned, not before), so
+        // without this the entity would spawn missing exactly the upgrade's bonus instead of
+        // at full health. Re-synced here, once, after every upgrade has had a chance to
+        // modify max health.
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        if (healthStore != null && healthStore.HasComponent(spawnedEntityId))
+        {
+            ref HealthComponent health = ref healthStore.GetComponent(spawnedEntityId);
+            health.CurrentHealth = StatsQuery.GetMaxHealth(ecs, spawnedEntityId, health.CurrentHealth);
+            ecs.Delta.MarkComponentDirty(spawnedEntityId, typeof(HealthComponent));
+        }
+
         // Recycle the card back into its owner's deck (at the back) rather than
         // deleting it.
         ref CardComponent playedCard = ref cardStore.GetComponent(input.CardEntityId);

@@ -11,13 +11,12 @@ public struct BruiserComponent : IComponent
     // Health points/second at which StoredDamage drains out.
     public float DrainPerSecond;
 
-    // Banked damage still owed, drained a little every tick.
+    // Banked damage still owed, drained in one lump once every second.
     public float StoredDamage;
 
-    // Sub-1-point remainder from a tick's drain amount (DrainPerSecond * TickInterval is
-    // rarely a whole number) — carried to the next tick so fractional drain isn't lost to
-    // per-tick rounding.
-    public float DrainCarry;
+    // Ticks remaining until the next drain proc — mirrors DamageOverTimeComponent's own
+    // TicksUntilNextProc cadence field.
+    public int TicksUntilNextDrain;
 
     // ECS.CurrentSimulationTick this troop last took a fresh incoming hit — BruiserSystem
     // wipes StoredDamage once this falls too far behind CurrentSimulationTick.

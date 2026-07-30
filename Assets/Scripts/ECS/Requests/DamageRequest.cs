@@ -15,6 +15,18 @@ public class DamageRequest : Request
     // set this keeps behaving exactly as before DamageType existed.
     public DamageType Type = DamageType.Normal;
 
+    // When true, every mitigation/redirection subscriber (ArmorMitigationSystem,
+    // PeriodicDamageReductionSystem, BarrierSystem, ShadowAngelDamageShareSystem,
+    // BruiserSystem's own deferral) skips this request entirely, so Amount goes straight to
+    // HealthComponent unchanged. For damage that was already fully mitigated once and is
+    // being re-applied later on its own schedule — e.g. BruiserSystem's banked-damage drain —
+    // where running it back through the full pipeline would mitigate it a second time (or,
+    // for BruiserSystem itself, re-defer a fraction of it forever instead of ever draining
+    // out). DeflectionSystem/BuildingDamageBonusSystem don't need to check this themselves —
+    // both already no-op whenever DealerEntityId == NO_DEALER_ENTITYID, which is what
+    // BruiserSystem's own PreMitigated drain request uses.
+    public bool PreMitigated;
+
     public DamageRequest(ulong entityId, int amount)
     {
         EntityId = entityId;

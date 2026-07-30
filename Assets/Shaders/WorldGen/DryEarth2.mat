@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-4987515964597010768
+--- !u!114 &-7008189132186078348
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: MossPatch
+  m_Name: DryEarth2
   m_Shader: {fileID: -6465566751694194690, guid: 97dbc36eecde9f64481499dcf5a2d316, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -38,7 +38,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _Tex:
-        m_Texture: {fileID: 2800000, guid: 54f20849f42aff94684d06c81abf4443, type: 3}
+        m_Texture: {fileID: 2800000, guid: 2e29874fe14efdb4681fbf7c164732c9, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -55,16 +55,15 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _EdgeNoiseEdge1: 0.05
-    - _EdgeNoiseEdge2: 0.27
-    - _EdgeNoiseScale: 2.33
-    - _InnerNoiseEdge1: 0.24
-    - _InnerNoiseEdge2: 0.43
-    - _InnerNoiseScale: 0.35
-    - _NoiseScale: -0.52
+    - _EdgeNoiseEdge1: 0.06
+    - _EdgeNoiseEdge2: 0.13
+    - _EdgeNoiseScale: 0.72
+    - _InnerNoiseEdge1: 0.63
+    - _InnerNoiseEdge2: 0.17
+    - _InnerNoiseScale: -0.44
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _TexScale: 3.85
+    - _TexScale: 3.94
     m_Colors:
     - _Offset: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []

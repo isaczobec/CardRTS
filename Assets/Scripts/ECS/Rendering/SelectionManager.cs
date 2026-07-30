@@ -876,7 +876,12 @@ public class SelectionManager : Singleton<SelectionManager>
     private static Vector3 WorldPositionFor(PositionComponent pos)
     {
         float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
-        return new Vector3(pos.X, height + 0.01f, pos.Y);
+        // Deliberately above TerrainPatchRegistry's own +0.01 ground offset — these rings
+        // are Opaque/ZWrite-on while ground patches are Transparent/ZWrite-off, so sitting
+        // at the exact same height caused a depth-test coin flip (z-fighting) that let
+        // patches render on top of the ring from some camera angles. A small but clearly
+        // distinct offset makes the ring the deterministic winner instead.
+        return new Vector3(pos.X, height + 0.03f, pos.Y);
     }
 
     private bool IsMoving(ulong entityId)

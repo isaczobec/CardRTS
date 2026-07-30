@@ -48,7 +48,7 @@ public class PirateCard : SpawnAtPointCard
     private const float HookPullBehindOffset = 2f;
     private const float HookPullDurationSeconds = 1.0f;
 
-    private const float HookAbilityCooldownSeconds = 6f;
+    private const float HookAbilityCooldownSeconds = 20f;
 
     public override int ShopGoldCost => 110;
 

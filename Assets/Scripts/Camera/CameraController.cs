@@ -13,6 +13,8 @@ using UnityEngine;
 ///   Space (held)                  — continuously follows the current selection every
 ///                                    frame (see SelectionManager.TryGetFocusPositionForSelection),
 ///                                    suppressing edge-scroll while it's actively tracking
+///   Scroll wheel                  — raise/lower the camera's elevation, clamped between
+///                                    _minDistance and _maxDistance
 /// </summary>
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
@@ -30,6 +32,11 @@ public class CameraController : MonoBehaviour
 
     [Header("Rotation")]
     [SerializeField] float _rotateSensitivity = 0.3f;
+
+    [Header("Zoom")]
+    [SerializeField] float _zoomSensitivity = 15f;
+    [SerializeField] float _minDistance = 8f;
+    [SerializeField] float _maxDistance = 40f;
 
     Vector3 _pivot;
     float _yaw;
@@ -98,6 +105,7 @@ public class CameraController : MonoBehaviour
         if (rotating)    HandleRotation();
 
         HandleTabHotkey();
+        HandleZoom();
 
         ApplyTransform();
     }
@@ -158,6 +166,28 @@ public class CameraController : MonoBehaviour
     void HandleRotation()
     {
         _yaw += Input.GetAxis("Mouse X") * _rotateSensitivity;
+    }
+
+    // Scroll up (positive delta) zooms in, lowering the camera's elevation; scroll down
+    // raises it back up. _distance already doubles as elevation here since ApplyTransform
+    // places the camera along a fixed pitch away from the pivot.
+    void HandleZoom()
+    {
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll == 0f) return;
+        if (IsShopMenuOpen()) return;
+
+        _distance = Mathf.Clamp(_distance - scroll * _zoomSensitivity, _minDistance, _maxDistance);
+    }
+
+    // Scrolling the shop/upgrade grid (see ScrollPanel) would otherwise also zoom the camera
+    // underneath it, since Input.GetAxis("Mouse ScrollWheel") fires regardless of what's under
+    // the cursor — simplest fix is just suppressing zoom entirely while either window is open.
+    static bool IsShopMenuOpen()
+    {
+        if (ShopUIManager.instance != null && ShopUIManager.instance.IsOpen) return true;
+        if (UpgradeShopUIManager.instance != null && UpgradeShopUIManager.instance.IsOpen) return true;
+        return false;
     }
 
     void ApplyTransform()

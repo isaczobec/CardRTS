@@ -35,6 +35,7 @@ public static class ShadowAngelDamageShareSystem
 
     private static void RedirectDamage(DamageRequest request, ECS ecs)
     {
+        if (request.PreMitigated) return;
         if (request.Amount <= 0) return;
 
         ComponentStore<ShadowAngelComponent> angelStore = ecs.GetComponentStore<ShadowAngelComponent>();
