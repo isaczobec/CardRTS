@@ -28,6 +28,8 @@ public enum CardType : byte
     ShadowAngel = 25,
     SleepingDraught = 26,
     Silence = 27,
+    ConstructionWorker = 28,
+    StrategyConsultant = 29,
 }
 
 public enum CardLocation : byte

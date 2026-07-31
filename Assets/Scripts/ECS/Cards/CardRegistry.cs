@@ -34,6 +34,8 @@ public static class CardRegistry
         { CardType.ShadowAngel, new ShadowAngelCard() },
         { CardType.SleepingDraught, new SleepingDraughtCard() },
         { CardType.Silence, new SilenceCard() },
+        { CardType.ConstructionWorker, new ConstructionWorkerCard() },
+        { CardType.StrategyConsultant, new StrategyConsultantCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

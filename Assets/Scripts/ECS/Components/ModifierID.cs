@@ -24,4 +24,6 @@ public enum ModifierID
     ShadowAura = 16,
     SleepingDraught = 17,
     Silence = 18,
+    StrategyAura = 19,
+    AttackSpeedAura = 20,
 }

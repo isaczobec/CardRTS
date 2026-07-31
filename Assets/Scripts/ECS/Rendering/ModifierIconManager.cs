@@ -45,6 +45,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.ShadowAura, ResolveShadowAura },
         { ModifierID.SleepingDraught, ResolveSleepingDraught },
         { ModifierID.Silence, ResolveSilence },
+        { ModifierID.StrategyAura, ResolveStrategyAura },
+        { ModifierID.AttackSpeedAura, ResolveAttackSpeedAura },
     };
 
     private ECS _ecs;
@@ -492,6 +494,40 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     // ResolveRooted/ResolveSleepingDraught.
     private static (string name, string imageName, string description) ResolveSilence(ECS ecs, ulong modifierEntityId)
         => ("Silence", "Silence", "Silenced — cannot attack or use abilities, but can still move.");
+
+    // PeriodicAreaEffectComponent-carrying modifier from StrategyConsultantCard's own
+    // permanent self-buff — states the current aura radius/bonus directly, mirroring
+    // ResolveHealAura/ResolveShadowAura's own wording.
+    private static (string name, string imageName, string description) ResolveStrategyAura(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
+        ComponentStore<PeriodicAreaEffectComponent> areaStore = ecs.GetComponentStore<PeriodicAreaEffectComponent>();
+        if (modifierStore == null || areaStore == null || !areaStore.HasComponent(modifierEntityId))
+            return ("Strategy Aura", "StrategyAura", "This troop periodically boosts the attack speed of nearby friendly troops.");
+
+        ModifierComponent modifier = modifierStore.GetComponent(modifierEntityId);
+        PeriodicAreaEffectComponent effect = areaStore.GetComponent(modifierEntityId);
+        int radius = Mathf.RoundToInt(StatsQuery.GetRange(ecs, modifier.TargetEntityId, 5) * effect.RangeMultiplier);
+        // Param0 is a NEGATIVE AttackSpeedRatioBonus (lower AttackSpeed = faster — see
+        // StatModifierComponent's own convention) — negate just for display so it reads as a
+        // positive "+X%" buff.
+        int percent = Mathf.RoundToInt(-effect.Param0 * 100f);
+        return ("Strategy Aura", "StrategyAura", $"Grants friendly troops within {radius} range +{percent}% attack speed.");
+    }
+
+    // StatAuraSourceComponent-carrying modifier granted by a Strategy Consultant's aura (see
+    // StrategyConsultantCard.ApplyAttackSpeedBuff) — states the current bonus directly,
+    // mirroring ResolveChilled's own "read StatModifierComponent directly" approach.
+    private static (string name, string imageName, string description) ResolveAttackSpeedAura(ECS ecs, ulong modifierEntityId)
+    {
+        ComponentStore<StatModifierComponent> statStore = ecs.GetComponentStore<StatModifierComponent>();
+        float ratioBonus = statStore != null && statStore.HasComponent(modifierEntityId)
+            ? statStore.GetComponent(modifierEntityId).AttackSpeedRatioBonus
+            : 0f;
+
+        int percent = Mathf.RoundToInt(-ratioBonus * 100f);
+        return ("Attack Speed Aura", "AttackSpeedAura", $"Attack speed increased by {percent}% from a nearby Strategy Consultant.");
+    }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {

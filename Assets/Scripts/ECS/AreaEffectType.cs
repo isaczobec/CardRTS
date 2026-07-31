@@ -6,4 +6,5 @@ public enum AreaEffectType
     None        = 0,
     HealPulse   = 1,
     ShadowShield = 2,
+    AttackSpeedAura = 3,
 }

@@ -211,6 +211,9 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<PlayerTotalResourceValueComponent>(63);
         _componentTypeRegistry.Register<SilenceComponent>(64);
         _componentTypeRegistry.Register<RemoveModifierOnDamageComponent>(65);
+        _componentTypeRegistry.Register<BuildingRefundAuraComponent>(66);
+        _componentTypeRegistry.Register<StatAuraSourceComponent>(67);
+        _componentTypeRegistry.Register<ResourceDropBoostComponent>(68);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -379,6 +382,12 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SilenceComponent>>(149);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RemoveModifierOnDamageComponent>>(150);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RemoveModifierOnDamageComponent>>(151);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<BuildingRefundAuraComponent>>(152);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<BuildingRefundAuraComponent>>(153);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<StatAuraSourceComponent>>(154);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<StatAuraSourceComponent>>(155);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceDropBoostComponent>>(156);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceDropBoostComponent>>(157);
 
         ECS = CreateSimulationECS();
     }
@@ -626,6 +635,9 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerTotalResourceValueComponent>());
         ecs.AddComponentStore(new ComponentStore<SilenceComponent>());
         ecs.AddComponentStore(new ComponentStore<RemoveModifierOnDamageComponent>());
+        ecs.AddComponentStore(new ComponentStore<BuildingRefundAuraComponent>());
+        ecs.AddComponentStore(new ComponentStore<StatAuraSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceDropBoostComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -722,6 +734,10 @@ public class TickManager : Singleton<TickManager>
         // ResourceGenerationSystem is what actually flushes every pending one this tick.
         ecs.RegisterSystem(ResourceGeneratorSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
+        // Subscribe-only (mutates ResourcesAdded.Multiplier before Execute) — no ordering
+        // dependency on anything else here, since it's the only subscriber that touches
+        // Multiplier today.
+        ecs.RegisterSystem(ResourceDropBoostSystem.Instance);
         // Pure read-and-report step over whatever ResourceValueComponents exist at the end
         // of the tick — no ordering dependency on anything above, so it's registered last.
         ecs.RegisterSystem(ResourceValueTotalSystem.Instance);
@@ -798,6 +814,9 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<PlayerTotalResourceValueComponent>());
         ecs.AddComponentStore(new ComponentStore<SilenceComponent>());
         ecs.AddComponentStore(new ComponentStore<RemoveModifierOnDamageComponent>());
+        ecs.AddComponentStore(new ComponentStore<BuildingRefundAuraComponent>());
+        ecs.AddComponentStore(new ComponentStore<StatAuraSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceDropBoostComponent>());
 
         return ecs;
     }

@@ -132,6 +132,12 @@ public static class SpawnAtPointCardPlaySystem
         if (resourceValueStore != null && ecs.HasEntity(spawnedEntityId) && !resourceValueStore.HasComponent(spawnedEntityId))
             ResourceValueHelper.Attach(ecs, spawnedEntityId, card.OwnerPlayerId, definition.Cost);
 
+        // Construction Worker's own aura — no-ops unless spawnedEntityId is actually a
+        // building and a qualifying worker is nearby (see BuildingRefundHelper). Placed after
+        // the ResourceValueComponent tagging above since it reads that component.
+        if (ecs.HasEntity(spawnedEntityId))
+            BuildingRefundHelper.TryRefund(ecs, spawnedEntityId, card.OwnerPlayerId);
+
         // Recycle the card back into its owner's deck (at the back) rather than
         // deleting it.
         ref CardComponent playedCard = ref cardStore.GetComponent(input.CardEntityId);
