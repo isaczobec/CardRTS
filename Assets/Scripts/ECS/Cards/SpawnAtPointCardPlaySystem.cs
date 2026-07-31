@@ -123,6 +123,15 @@ public static class SpawnAtPointCardPlaySystem
             ecs.Delta.MarkComponentDirty(spawnedEntityId, typeof(HealthComponent));
         }
 
+        // Tag the spawned entity with its own resource value (see ResourceValueComponent),
+        // valued at the full cost of the card that spawned it — skipped if OnPlayed already
+        // tagged it itself, which is how cards that spawn SEVERAL entities from one play
+        // (e.g. SkeletonsCard) get each one valued at an even split of the cost instead of
+        // the full amount N times over.
+        ComponentStore<ResourceValueComponent> resourceValueStore = ecs.GetComponentStore<ResourceValueComponent>();
+        if (resourceValueStore != null && ecs.HasEntity(spawnedEntityId) && !resourceValueStore.HasComponent(spawnedEntityId))
+            ResourceValueHelper.Attach(ecs, spawnedEntityId, card.OwnerPlayerId, definition.Cost);
+
         // Recycle the card back into its owner's deck (at the back) rather than
         // deleting it.
         ref CardComponent playedCard = ref cardStore.GetComponent(input.CardEntityId);

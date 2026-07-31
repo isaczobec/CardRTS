@@ -69,6 +69,11 @@ public class WorldManager : Singleton<WorldManager>
         NavMeshHandler.instance.CreateNavMesh(this);
         Renderer.Render(Handler);
 
+        // Render-side only (see WorldChunkVisibilityManager's own doc comment) — safe to run
+        // unconditionally on every machine, same as Renderer.Render/GoTileManager above. Not
+        // present in every scene (e.g. tests), so this is opt-in via the singleton existing.
+        WorldChunkVisibilityManager.instance?.Initialize();
+
         // Every peer executes every action (unlike Generate/Render, which were always
         // unconditional). Actions that touch shared ECS state — e.g. EntitySpawnAction —
         // are responsible for gating themselves to the server internally (that entity is
@@ -229,8 +234,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Sand },
-                    ClusterPatchId        = "MesaPatch",
-                    ClusterPatchSize      = 20f,
+                    // ClusterPatchId        = "MesaPatch",
+                    // ClusterPatchSize      = 20f,
                 },
                 new EntityClusterFeature
                 {
@@ -243,8 +248,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
                     AllowedTileTypes      = new[] { TileType.Sand },
-                    ClusterPatchId        = "MossPatch",
-                    ClusterPatchSize      = 45f,
+                    // ClusterPatchId        = "MossPatch",
+                    // ClusterPatchSize      = 45f,
                 },
                 new EntityClusterFeature
                 {
@@ -257,8 +262,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Sand },
-                    ClusterPatchId        = "MesaPatch",
-                    ClusterPatchSize      = 20f,
+                    // ClusterPatchId        = "MesaPatch",
+                    // ClusterPatchSize      = 20f,
                 },
             }
         });
@@ -298,8 +303,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 6f,
                     AllowedTileTypes      = new[] { TileType.Grass },
-                    ClusterPatchId        = "MossPatch",
-                    ClusterPatchSize      = 45f,
+                    // ClusterPatchId        = "MossPatch",
+                    // ClusterPatchSize      = 45f,
                 },
                 new EntityClusterFeature
                 {
@@ -312,8 +317,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
-                    ClusterPatchId        = "GravelPatch",
-                    ClusterPatchSize      = 15f,
+                    // ClusterPatchId        = "GravelPatch",
+                    // ClusterPatchSize      = 15f,
                 },
                 new EntityClusterFeature
                 {
@@ -326,8 +331,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Grass },
-                    ClusterPatchId        = "GravelPatch",
-                    ClusterPatchSize      = 15f,
+                    // ClusterPatchId        = "GravelPatch",
+                    // ClusterPatchSize      = 15f,
                 },
             }
         });
@@ -393,8 +398,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Snow },
-                    ClusterPatchId        = "GravelPatch",
-                    ClusterPatchSize      = 15f,
+                    // ClusterPatchId        = "GravelPatch",
+                    // ClusterPatchSize      = 15f,
                 },
                 // Ore is the tundra's dominant resource — a bit more common here than
                 // trees/stones, which still both appear.
@@ -409,8 +414,8 @@ public class WorldManager : Singleton<WorldManager>
                     MinDistanceToOtherEntities = 20f,
                     MinEntitySpacing = 1.5f,
                     AllowedTileTypes      = new[] { TileType.Snow },
-                    ClusterPatchId        = "GravelPatch",
-                    ClusterPatchSize      = 15f,
+                    // ClusterPatchId        = "GravelPatch",
+                    // ClusterPatchSize      = 15f,
                 },
             }
         });

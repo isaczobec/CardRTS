@@ -16,6 +16,7 @@ public class BruiserUpgrade : CardUpgrade
         "The banked damage clears if this troop goes 5 seconds without taking a hit.";
     public override string ImageName => "Bruiser";
     public override int ShopGoldCost => 185;
+    public override int MaxStackCount => 1;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>
     {

@@ -68,12 +68,18 @@ public class SkeletonsCard : SpawnAtPointCard
     public override void OnIndicatorSpawned(GameObject indicator)
         => CircleIndicatorHelper.ArrangeInRing(indicator, SkeletonCount, SpawnRadius);
 
+    private static readonly ResourceCost TotalCost = new ResourceCost
+    {
+        Wood = 50,
+        Stone = 100
+    };
+
+    // Each of the 8 skeletons (including ones later raised by ResolveSkeletonSummon) is
+    // worth an even split of the card's own cost — see ResourceValueComponent.
+    private static readonly ResourceCost PerSkeletonValue = ResourceValueHelper.Split(TotalCost, SkeletonCount);
+
     public override StatsComponent DefaultStats => BuildStats();
-    public override ResourceCost Cost => new ResourceCost
-        {
-            Wood = 50,
-            Stone = 100
-        };
+    public override ResourceCost Cost => TotalCost;
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
     private static StatsComponent BuildStats() => new StatsComponent
@@ -143,6 +149,9 @@ public class SkeletonsCard : SpawnAtPointCard
                 DelayTicks        = TickManager.SecondsToTicks(SkeletonResurrectDelaySeconds),
                 AllowBuildingKills = false,
             }),
+            // See ResourceValueComponent/PerSkeletonValue — applies to both the initial ring
+            // of 8 and any later resurrection, since both funnel through this same helper.
+            (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerSkeletonValue),
         });
     }
 

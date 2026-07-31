@@ -194,6 +194,10 @@ public class SantaClausCard : SpawnAtPointCard
         if (!CardRegistry.TryGet(CardType.GoblinSnatcher, out Card card)) return;
         StatsComponent goblinStats = card.DefaultStats;
 
+        // Not bought outright — valued as a fraction of a real Goblin Snatcher purchase,
+        // scaled by the same ratio its stats are (see ResourceValueComponent).
+        ResourceCost reinforcementValue = ResourceValueHelper.Scale(card.Cost, SnatcherReinforcementStatRatio);
+
         StatsComponent weakStats = new StatsComponent
         {
             MaxHealth   = Mathf.RoundToInt(goblinStats.MaxHealth * SnatcherReinforcementStatRatio),
@@ -238,6 +242,7 @@ public class SantaClausCard : SpawnAtPointCard
                 InitialTicksRemaining = lifetimeTicks,
                 ShowTimer              = true,
             }),
+            (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, reinforcementValue),
         });
     }
 }

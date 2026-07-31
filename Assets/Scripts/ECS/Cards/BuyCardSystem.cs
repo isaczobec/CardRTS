@@ -65,6 +65,7 @@ public static class BuyCardSystem
             Location      = CardLocation.Deck,
             OwnerPlayerId = input.ClientId,
         });
+        ResourceValueHelper.Attach(ecs, entity.Id, input.ClientId, shopCost);
 
         DeckHelper.EnqueueToDeck(ecs, input.ClientId, entity.Id);
 

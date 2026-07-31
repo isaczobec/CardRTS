@@ -14,7 +14,14 @@ public class WorldRenderer : MonoBehaviour
     [SerializeField] private RenderingLayerMask _terrainRenderingLayerMask = RenderingLayerMask.defaultRenderingLayerMask;
     public RenderingLayerMask TerrainRenderingLayerMask => _terrainRenderingLayerMask;
 
-    private readonly List<GameObject> _chunkObjects = new();
+    private readonly Dictionary<(int cx, int cy), GameObject> _chunkObjects = new();
+
+    // Read by WorldChunkVisibilityManager to know which chunk GameObject to toggle for a
+    // given chunk coordinate — see that class for why chunks are enabled/disabled instead
+    // of relying solely on Unity's own per-renderer frustum culling (shadow-caster passes
+    // don't respect the main camera's frustum, so an off-screen chunk can still cost GPU
+    // time rendering into a directional light's shadow map unless it's fully disabled).
+    public IReadOnlyDictionary<(int cx, int cy), GameObject> ChunkObjects => _chunkObjects;
 
     [SerializeField]
     private GoTileManager _goTileManager;
@@ -64,12 +71,12 @@ public class WorldRenderer : MonoBehaviour
         mpb.SetTexture("_TileIDTex", WorldMeshGenerator.BuildChunkTileTexture(handler, cx, cy));
         mr.SetPropertyBlock(mpb);
 
-        _chunkObjects.Add(go);
+        _chunkObjects[(cx, cy)] = go;
     }
 
     void Clear()
     {
-        foreach (var go in _chunkObjects)
+        foreach (var go in _chunkObjects.Values)
             Destroy(go);
         _chunkObjects.Clear();
     }

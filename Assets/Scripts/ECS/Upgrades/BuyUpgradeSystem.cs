@@ -78,5 +78,6 @@ public static class BuyUpgradeSystem
             TargetCardEntityId = input.TargetCardEntityId,
             Type               = input.UpgradeType,
         });
+        ResourceValueHelper.Attach(ecs, upgrade.Id, input.ClientId, shopCost);
     }
 }

@@ -23,6 +23,8 @@ public static class DeckHelper
                     Location      = CardLocation.Deck,
                     OwnerPlayerId = ownerPlayerId,
                 });
+                // Free starting card, not bought — see ResourceValueComponent.
+                ResourceValueHelper.Attach(ecs, entity.Id, ownerPlayerId, new ResourceCost());
 
                 EnqueueToDeck(ecs, ownerPlayerId, entity.Id);
             }

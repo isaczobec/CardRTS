@@ -64,12 +64,18 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     public override void OnIndicatorSpawned(GameObject indicator)
         => CircleIndicatorHelper.ArrangeInRing(indicator, SkeletonCount, SpawnRadius);
 
+    private static readonly ResourceCost TotalCost = new ResourceCost
+    {
+        Stone = 100,
+        Metal = 40
+    };
+
+    // Each of the 8 archers is worth an even split of the card's own cost — see
+    // ResourceValueComponent.
+    private static readonly ResourceCost PerSkeletonValue = ResourceValueHelper.Split(TotalCost, SkeletonCount);
+
     public override StatsComponent DefaultStats => BuildStats();
-    public override ResourceCost Cost => new ResourceCost
-        {
-            Stone = 100,
-            Metal = 40
-        };
+    public override ResourceCost Cost => TotalCost;
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
     private static StatsComponent BuildStats() => new StatsComponent
@@ -144,6 +150,8 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
                 DelayTicks         = TickManager.SecondsToTicks(SkeletonResurrectDelaySeconds),
                 AllowBuildingKills = false,
             }),
+            // See ResourceValueComponent/PerSkeletonValue.
+            (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerSkeletonValue),
         });
     }
 }

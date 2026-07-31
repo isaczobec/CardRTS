@@ -14,6 +14,10 @@ public class RenderingSetup : Singleton<RenderingSetup>
 
     public void SetupRendering()
     {
+        // Disable Vsync
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 1000;
+        
         // ActiveECS is ClientLocalECS on clients/host, ECS on standalone
         ECS ecs = TickManager.instance.ActiveECS;
         _renderableManager.Initialize(ecs);

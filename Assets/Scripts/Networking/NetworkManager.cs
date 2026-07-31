@@ -360,6 +360,7 @@ public class NetworkManager : Singleton<NetworkManager>
         //     Metal = 150,
         //     });
         ecs.AddComponent(entity.Id, new ShopPurchaseHistoryComponent());
+        ecs.AddComponent(entity.Id, new PlayerTotalResourceValueComponent());
 
         // Starting decks are intentionally empty — players buy their first cards from the
         // shop instead (see ShopPricingHelper for the discounted early-purchase pricing).

@@ -24,6 +24,14 @@ public class GoTileManager : MonoBehaviour
     [SerializeField]
     private GoTile[] _goTiles;
     private Dictionary<TileType, GoTile> _tileLookup;
+
+    // One parent per chunk coordinate, created lazily the first time a tile in that chunk
+    // actually spawns something — lets WorldChunkVisibilityManager toggle every decoration
+    // in a chunk (there can be hundreds) with a single SetActive call instead of one per
+    // object. See WorldRenderer.ChunkObjects for the terrain-side equivalent.
+    private readonly Dictionary<(int cx, int cy), Transform> _chunkRoots = new();
+    public IReadOnlyDictionary<(int cx, int cy), Transform> ChunkRoots => _chunkRoots;
+
     private void Initialize()
     {
         _tileLookup = new Dictionary<TileType, GoTile>();
@@ -76,8 +84,9 @@ public class GoTileManager : MonoBehaviour
         if (chosenSettings == null || chosenSettings.Prefab == null)
             return null;
 
-        // Spawn the prefab with optional random rotation and scale.
-        var instance = Instantiate(chosenSettings.Prefab);
+        // Spawn the prefab with optional random rotation and scale, parented under this
+        // tile's chunk root (see _chunkRoots) rather than left loose in the scene.
+        var instance = Instantiate(chosenSettings.Prefab, GetOrCreateChunkRoot(tileX, tileY));
         instance.transform.position = WorldManager.instance.TileToWorldPosition(tileX, tileY, center: true);
 
         if (chosenSettings.randomRotation)
@@ -89,4 +98,18 @@ public class GoTileManager : MonoBehaviour
         return instance;
     }
 
+    private Transform GetOrCreateChunkRoot(ushort tileX, ushort tileY)
+    {
+        int chunkX = tileX / WorldGenHandler.CHUNK_SIZE_TILES;
+        int chunkY = tileY / WorldGenHandler.CHUNK_SIZE_TILES;
+        var key = (chunkX, chunkY);
+
+        if (_chunkRoots.TryGetValue(key, out Transform root))
+            return root;
+
+        var go = new GameObject($"GoTileChunk_{chunkX}_{chunkY}");
+        go.transform.SetParent(transform, false);
+        _chunkRoots[key] = go.transform;
+        return go.transform;
+    }
 }

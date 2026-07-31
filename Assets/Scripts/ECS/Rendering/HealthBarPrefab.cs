@@ -38,6 +38,22 @@ public class HealthBarPrefab : MonoBehaviour
     [SerializeField] private float _widthExponent = 0.5f;
     [SerializeField] private float _minWidth = 20f;
 
+    [Header("Scale vs. Camera Height")]
+    // Multiplier applied on TOP of this bar's own authored (prefab) localScale — never an
+    // absolute override — so whatever baseline scale the prefab was set up with (e.g. a
+    // world-space canvas scaled down to convert pixel-sized UI into world units) is always
+    // preserved. 1 = no change at camera height 0.
+    [SerializeField] private float _baseScaleMultiplier = 1f;
+    // Multiplier gained (or lost, if negative) per world unit of Camera.main's height
+    // (transform.position.y). Positive values grow bars as the camera pulls back/zooms
+    // out, compensating for perspective shrinking distant objects so bars stay legible at
+    // any zoom; 0 = no height-based scaling at all (bars always render at their authored
+    // size, today's behavior).
+    [SerializeField] private float _scalePerHeightUnit = 0f;
+    [SerializeField] private float _minScaleMultiplier = 0.1f;
+
+    private Vector3 _baseLocalScale;
+
     private static readonly int CurrentHealthNormalizedId = Shader.PropertyToID("_CurrentHealthNormalized");
     private static readonly int MaxHealthId = Shader.PropertyToID("_MaxHealth");
 
@@ -53,6 +69,7 @@ public class HealthBarPrefab : MonoBehaviour
     {
         _material = Instantiate(_material);
         _image.material = _material;
+        _baseLocalScale = transform.localScale;
     }
 
     public void SetHealth(int currentHealth, int maxHealth)
@@ -90,6 +107,9 @@ public class HealthBarPrefab : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) return;
         transform.forward = transform.position - cam.transform.position;
+
+        float multiplier = Mathf.Max(_minScaleMultiplier, _baseScaleMultiplier + _scalePerHeightUnit * cam.transform.position.y);
+        transform.localScale = _baseLocalScale * multiplier;
     }
 
     // The instantiated material isn't a scene asset Unity tracks/destroys on its own —

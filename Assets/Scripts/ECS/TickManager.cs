@@ -30,6 +30,12 @@ public class TickManager : Singleton<TickManager>
 
     public const float TickInterval = 0.05f;
 
+    // Shared safety cap for both tick "catch up" loops below (prediction tick in Update,
+    // server tick in TryRunServerTick) — bounds how many ticks either loop will run in a
+    // single rendered frame so a big backlog (e.g. after a stall/hitch) drains over several
+    // frames instead of spending unbounded time in one Update() call.
+    private const int MaxTickCatchupPerFrame = 20;
+
     // ── Seconds ⇄ ticks conversions ─────────────────────────────────────────
     // Durations/rates should be authored as seconds constants at the call site and
     // converted here, rather than hard-coding raw tick counts throughout the codebase.
@@ -201,6 +207,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BruiserComponent>(59);
         _componentTypeRegistry.Register<ShadowAngelDamageShareComponent>(60);
         _componentTypeRegistry.Register<ShadowAngelComponent>(61);
+        _componentTypeRegistry.Register<ResourceValueComponent>(62);
+        _componentTypeRegistry.Register<PlayerTotalResourceValueComponent>(63);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -361,6 +369,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShadowAngelDamageShareComponent>>(141);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ShadowAngelComponent>>(142);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ShadowAngelComponent>>(143);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceValueComponent>>(144);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceValueComponent>>(145);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerTotalResourceValueComponent>>(146);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerTotalResourceValueComponent>>(147);
 
         ECS = CreateSimulationECS();
     }
@@ -396,9 +408,19 @@ public class TickManager : Singleton<TickManager>
 
         // Prediction tick — fires on timer for all clients and the host.
         // Also handles standalone (no networking) directly through the ECS.
+        //
+        // Must catch up (run more than once per frame) rather than cap at a single tick,
+        // mirroring TryRunServerTick's own maxCatchup loop below — otherwise, whenever the
+        // frame rate drops below the tick rate, _timer accumulates backlog faster than a
+        // single tick can drain it, permanently capping this machine's effective tick (and
+        // therefore SendClientTickInput/NotifyHostTickReady) rate at its frame rate instead
+        // of the intended tick rate. Since TryRunServerTick blocks on every connected
+        // client's input for a given server tick, one client's low frame rate throttling its
+        // own input-submission rate this way stalls the whole lockstep group behind it.
         _timer += Time.deltaTime;
         float effectiveInterval = TickInterval / _tickRateScale;
-        if (_timer >= effectiveInterval)
+        int predictionTicksRan = 0;
+        while (predictionTicksRan++ < MaxTickCatchupPerFrame && _timer >= effectiveInterval)
         {
             _timer -= effectiveInterval;
             DoPredictionTick(isServer, isClient);
@@ -475,9 +497,8 @@ public class TickManager : Singleton<TickManager>
     // possible given what all clients have sent (lockstep).
     void TryRunServerTick()
     {
-        const int maxCatchup = 20;
         int ran = 0;
-        while (ran++ < maxCatchup && NetworkManager.instance.IsAllClientsReadyForTick(_serverTick))
+        while (ran++ < MaxTickCatchupPerFrame && NetworkManager.instance.IsAllClientsReadyForTick(_serverTick))
         {
             NetworkManager.instance.ApplyClientInputsForTick(_serverTick);
 
@@ -595,6 +616,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BruiserComponent>());
         ecs.AddComponentStore(new ComponentStore<ShadowAngelDamageShareComponent>());
         ecs.AddComponentStore(new ComponentStore<ShadowAngelComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceValueComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerTotalResourceValueComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -689,6 +712,9 @@ public class TickManager : Singleton<TickManager>
         // ResourceGenerationSystem is what actually flushes every pending one this tick.
         ecs.RegisterSystem(ResourceGeneratorSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
+        // Pure read-and-report step over whatever ResourceValueComponents exist at the end
+        // of the tick — no ordering dependency on anything above, so it's registered last.
+        ecs.RegisterSystem(ResourceValueTotalSystem.Instance);
         ecs.SetupSystems();
         return ecs;
     }
@@ -758,6 +784,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BruiserComponent>());
         ecs.AddComponentStore(new ComponentStore<ShadowAngelDamageShareComponent>());
         ecs.AddComponentStore(new ComponentStore<ShadowAngelComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceValueComponent>());
+        ecs.AddComponentStore(new ComponentStore<PlayerTotalResourceValueComponent>());
 
         return ecs;
     }
