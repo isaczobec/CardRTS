@@ -14,6 +14,9 @@ public class HealCard : TargetEntityCard
     private const float HealDurationSeconds = 30f;
     // Mirrors HealerGuardianCard's own HealPeriodSeconds.
     private const float HealProcPeriodSeconds = 1f;
+    // Same short activation delay (ActivatableComponent) SpeedBoostCard/BarrierCard's own
+    // buffs get before actually kicking in.
+    private const float ActivationDelaySeconds = 1f;
 
     private const float TotalHealAdditive = 100f;
     private const float TotalHealRatio = 0.15f;
@@ -61,6 +64,13 @@ public class HealCard : TargetEntityCard
         // so this modifier entity is never predicted/duplicated client-side — same reasoning
         // as BarrierCard/SpeedBoostCard/SleepingDraughtCard.
         EntityHandle modifier = ecs.CreateEntity();
+
+        ulong ticksUntilActive = (ulong)TickManager.SecondsToTicks(ActivationDelaySeconds);
+        ecs.AddComponent(modifier.Id, new ActivatableComponent
+        {
+            _ticksUntilActive       = ticksUntilActive,
+            InitialTicksUntilActive = ticksUntilActive,
+        });
 
         ecs.AddComponent(modifier.Id, new ModifierComponent
         {

@@ -9,7 +9,7 @@ using UnityEngine;
 // RootedComponent, with a more powerful slow than the single-target version's own -30%.
 public class MassiveSleepingDraughtCard : SpawnAtPointCard
 {
-    private const float ActivationDelaySeconds = 2f;
+    private const float ActivationDelaySeconds = 1f;
     private const float MaxDistanceFromBuilding = 25f;
     private const float MaxDistanceFromTroop = 15f;
     private const int Range = 16;
@@ -17,10 +17,10 @@ public class MassiveSleepingDraughtCard : SpawnAtPointCard
 
     // How long after the entity ACTIVATES the sleep actually lands — mirrors AoeRootCard's
     // own RootDelaySeconds exactly ("exactly like the AOE Root" design ask).
-    private const float SleepDelaySeconds = 4f;
+    private const float SleepDelaySeconds = 3.5f;
     // How long an affected enemy sleeps once the effect lands — mirrors AoeRootCard's own
     // RootDurationSeconds.
-    private const float SleepDurationSeconds = 5f;
+    private const float SleepDurationSeconds = 9f;
     // Stronger than SleepingDraughtCard's own -30% — explicit "more powerful slow" design ask.
     private const float SlowRatio = -0.5f;
 
