@@ -35,6 +35,7 @@ public class AoeSpellCard : SpawnAtPointCard
 
 
     public override CardType Type => CardType.AoeSpell;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "AOE Spell";
     public override string ImageName => "AoeSpell";
     public override string Description => "A circular blast at the targeted point.";

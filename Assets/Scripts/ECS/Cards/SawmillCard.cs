@@ -15,6 +15,7 @@ public class SawmillCard : SpawnAtPointCard
     public override int ShopGoldCost => 120;
 
     public override CardType Type => CardType.Sawmill;
+    public override CardCategory Category => CardCategory.Building;
     public override string Title => "Sawmill";
     public override string ImageName => "Sawmill";
     public override string Description => "A stationary structure that periodically generates Wood — more, the further it is from your own base.";

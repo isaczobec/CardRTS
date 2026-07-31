@@ -205,8 +205,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardGameObject
   _image: {fileID: 557253800687735720}
+  _cardBackgroundImage: {fileID: 3429411968628377326}
   _titleText: {fileID: 719466515951953884}
   _text: {fileID: 7084027525402991318}
+  _cardTypeText: {fileID: 1164729080175197221}
   _statsPanel: {fileID: 0}
   _maxHealthRow:
     Root: {fileID: 0}

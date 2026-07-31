@@ -12,4 +12,7 @@ public enum ScheduledCallType : byte
     SantaSnatcherSpawnResolve = 6,
     MissileImpactResolve = 7,
     HealAuraApplyResolve = 8,
+    BallisticMissileLaunchResolve = 9,
+    BallisticMissileImpactResolve = 10,
+    MassiveSleepingDraughtResolve = 11,
 }

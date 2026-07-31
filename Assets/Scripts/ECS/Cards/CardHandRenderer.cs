@@ -241,7 +241,8 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         if (ImageRegistry.instance != null)
             ImageRegistry.instance.TryGet(definition.ImageName, out artwork);
 
-        go.BuildCard(definition.Title, definition.Description, artwork, definition.DefaultStats, definition.Cost);
+        go.BuildCard(definition.Title, definition.Description, artwork, definition.DefaultStats, definition.Cost,
+            definition.Category, definition.BackgroundColor, definition.TextBackgroundColor, definition.EdgeColor);
         go.SetUpgradeIcons(UpgradeIconResolver.Resolve(_ecs, cardEntityId));
 
         if (TryGetLocalPlayerResources(out PlayerResourcesComponent resources))

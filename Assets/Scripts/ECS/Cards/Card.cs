@@ -1,3 +1,5 @@
+using UnityEngine;
+
 // One instance per distinct card definition in the game — not one per card entity. Cards
 // are stateless: all per-instance state (whose deck/hand it's in, etc.) lives on the ECS
 // side in CardComponent, and whatever the card's OnPlayed creates. See CardRegistry for
@@ -26,6 +28,60 @@ public abstract class Card
     public abstract string ImageName { get; }
 
     public abstract string Description { get; }
+
+    // Broad category this card belongs to — drives the card face's title color (Building =
+    // burgundy, Spell = purple, Troop = dark blue — see CardGameObject.ResolveTitleColor)
+    // and the card-type label shown on its face (see CardGameObject.BuildCard). Troop is
+    // the default since most cards are one; override per building/spell card.
+    public virtual CardCategory Category => CardCategory.Troop;
+
+    // Key into CardColorRegistry for this card's BackgroundColor — defaults to ImageName
+    // (one registry entry per distinct card image covers most cases); override if a card
+    // needs a different lookup key instead (e.g. sharing a color entry with another card).
+    public virtual string ColorRegistryId => ImageName;
+
+    // Card-face shader background color (_BgColor on the card material — see
+    // CardGameObject.BuildCard) — looked up from CardColorRegistry by ColorRegistryId rather
+    // than a per-card C# override, so colors can be tuned/added in the Inspector without
+    // touching code. Falls back to this neutral default if the registry has no entry for
+    // ColorRegistryId (or the registry doesn't exist in the scene at all).
+    public virtual Color BackgroundColor
+    {
+        get
+        {
+            if (CardColorRegistry.instance != null && CardColorRegistry.instance.TryGetBG(ColorRegistryId, out Color color))
+                return color;
+            return new Color(0.02122641f, 0.1011946f, 0.5f);
+        }
+    }
+
+    // Stats/cost panel backing color (_TextBgColor) — always a darker shade of
+    // BackgroundColor itself (explicit design ask: the panel should read as recessed into
+    // the card face, not as an independently chosen color), so this is deliberately NOT
+    // overridden per card — override BackgroundColor instead and this follows automatically.
+    public virtual Color TextBackgroundColor
+    {
+        get
+        {
+            if (CardColorRegistry.instance != null && CardColorRegistry.instance.TryGetBG(ColorRegistryId, out Color color))
+                return color;
+            return new Color(0.08018869f, 0.1100438f, 1.0f);
+        }
+    }
+
+    // Border accent color (_EdgeColor) — a neutral, desaturated (gray/off-gray) tone derived
+    // from BackgroundColor's own brightness rather than a saturated per-card theme color
+    // (explicit design ask), so — like TextBackgroundColor — this is deliberately NOT
+    // overridden per card.
+    public virtual Color EdgeColor
+    {
+        get
+        {
+            if (CardColorRegistry.instance != null && CardColorRegistry.instance.TryGetBG(ColorRegistryId, out Color color))
+                return color;
+            return new Color(0.5f, 0.5f, 0.5f);
+        }
+    }
 
     // Stats to show on the card face (CardGameObject.BuildCard). Fields that don't apply
     // to this card (e.g. Speed on a building) should be set to StatsComponent.STAT_NA so

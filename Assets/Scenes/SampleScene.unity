@@ -2271,6 +2271,59 @@ MonoBehaviour:
   _crossfadeDuration: 0.2
   _endSoundName: 
   _endSoundVolume: 1
+--- !u!1 &340632595
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 340632596}
+  - component: {fileID: 340632597}
+  m_Layer: 0
+  m_Name: CardColorRegistry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &340632596
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340632595}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &340632597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340632595}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2157ce23cd1ae8845be9f7298dbb9714, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardColorRegistry
+  _entries:
+  - id: Heal
+    backgroundColor: {r: 0.5896226, g: 0.460981, b: 0.108468324, a: 1}
+    textBackgroundColor: {r: 0.740566, g: 0.5513061, b: 0.0034932443, a: 1}
+    edgeColor: {r: 0.4716981, g: 0.435542, b: 0.41384834, a: 1}
+  - id: HealerGuardian
+    backgroundColor: {r: 0.5882353, g: 0.46274513, b: 0.10980393, a: 1}
+    textBackgroundColor: {r: 0.7411765, g: 0.5529412, b: 0.003921569, a: 1}
+    edgeColor: {r: 0.4716981, g: 0.435542, b: 0.41384834, a: 1}
 --- !u!1 &350658741
 GameObject:
   m_ObjectHideFlags: 0
@@ -5102,6 +5155,8 @@ MonoBehaviour:
     renderer: {fileID: 613946997}
   - type: 46
     renderer: {fileID: 1522668400}
+  - type: 48
+    renderer: {fileID: 1944790033}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -10093,6 +10148,10 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: adef45812fff9a744a764f6e85473b3d, type: 3}
   - name: ConstructionWorker
     prefab: {fileID: 6472282922783299243, guid: d4e94ce528f4f5e4f92d482b71f31558, type: 3}
+  - name: BallisticMissile
+    prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
+  - name: MassiveSleepingDraught
+    prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -11970,6 +12029,7 @@ Transform:
   - {fileID: 1449116595}
   - {fileID: 73635955}
   - {fileID: 1291139277}
+  - {fileID: 1944790032}
   - {fileID: 1664291889}
   - {fileID: 700742497}
   m_Father: {fileID: 1889187866}
@@ -12369,6 +12429,14 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: c17805f8911a60848b487c77559dffc4, type: 3}
   - name: AttackSpeedAura
     sprite: {fileID: 21300000, guid: 1c467e4d8975db74d93c99737e38c07f, type: 3}
+  - name: BallisticMissile
+    sprite: {fileID: 21300000, guid: cd813f3c3924d0446b015fc157170d3a, type: 3}
+  - name: BallisticMissile
+    sprite: {fileID: 21300000, guid: cd813f3c3924d0446b015fc157170d3a, type: 3}
+  - name: Heal
+    sprite: {fileID: 21300000, guid: c16d3e5511c9e1341b0bd70dcb31fb81, type: 3}
+  - name: MassiveSleepingDraught
+    sprite: {fileID: 21300000, guid: 04ac785e6241d3140a6c0e00698d6f4c, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -16623,6 +16691,7 @@ Transform:
   - {fileID: 794510907}
   - {fileID: 80791956}
   - {fileID: 782628376}
+  - {fileID: 340632596}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1890897681
@@ -17304,6 +17373,55 @@ MonoBehaviour:
   - {fileID: 796652551}
   - {fileID: 450785347}
   maxConsoleMessages: 1000
+--- !u!1 &1944790031
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1944790032}
+  - component: {fileID: 1944790033}
+  m_Layer: 0
+  m_Name: MassiveSleepingDraughtRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1944790032
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944790031}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1944790033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944790031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc7dd912389450e43b1928ae9f159631, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AoeSpellRenderer
+  _prefab: {fileID: 4309100484666204601, guid: ffb5be6339a88db4abfc087653ee2c47, type: 3}
+  _loopCrossfadeDuration: 1.5
+  _stopFadeOutDuration: 1
+  _loopSoundName: BloodSpellLoop
+  _damageSoundName: BloodSpellDamage
 --- !u!1 &1976130023
 GameObject:
   m_ObjectHideFlags: 0

@@ -34,6 +34,7 @@ public class CannonCard : SpawnAtPointCard
     public override int ShopGoldCost => 160;
 
     public override CardType Type => CardType.Cannon;
+    public override CardCategory Category => CardCategory.Building;
     public override string Title => "Cannon";
     public override string ImageName => "Cannon";
     public override string Description => "A stationary cannon that automatically fires at the closest enemy troop within range.";

@@ -13,6 +13,7 @@ public class QuarryCard : SpawnAtPointCard
     public override int ShopGoldCost => 120;
 
     public override CardType Type => CardType.Quarry;
+    public override CardCategory Category => CardCategory.Building;
     public override string Title => "Quarry";
     public override string ImageName => "Quarry";
     public override string Description => "A stationary structure that periodically generates Stone — more, the further it is from your own base.";

@@ -13,7 +13,7 @@ using UnityEngine;
 // RootDurationSeconds.
 public class AoeRootCard : SpawnAtPointCard
 {
-    private const float ActivationDelaySeconds = 2f;
+    private const float ActivationDelaySeconds = 1f;
     private const float MaxDistanceFromBuilding = 25f;
     private const float MaxDistanceFromTroop = 15f;
 
@@ -21,6 +21,8 @@ public class AoeRootCard : SpawnAtPointCard
     private const float RootDelaySeconds = 4f;
     // How long an affected enemy is rooted in place once the effect lands.
     private const float RootDurationSeconds = 5f;
+    private const int Range = 16;
+
 
     // Scratch, reused across every resolve rather than reallocated each time — mirrors
     // AbilityManager's own _queryBuffer.
@@ -34,6 +36,7 @@ public class AoeRootCard : SpawnAtPointCard
     public override int ShopGoldCost => 100;
 
     public override CardType Type => CardType.AoeRoot;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "AOE Root";
     public override string ImageName => "AoeRoot";
     public override string Description => "Marks a point on the ground. After a delay, every enemy troop caught in the area is rooted in place.";
@@ -56,7 +59,7 @@ public class AoeRootCard : SpawnAtPointCard
     {
         MaxHealth   = StatsComponent.STAT_NA,
         Speed       = StatsComponent.STAT_NA,
-        Range       = AoeSpellCard.Range,
+        Range       = Range,
         Armor       = StatsComponent.STAT_NA,
         Damage      = StatsComponent.STAT_NA,
         AttackSpeed = StatsComponent.STAT_NA,

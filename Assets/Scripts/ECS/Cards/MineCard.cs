@@ -13,6 +13,7 @@ public class MineCard : SpawnAtPointCard
     public override int ShopGoldCost => 120;
 
     public override CardType Type => CardType.Mine;
+    public override CardCategory Category => CardCategory.Building;
     public override string Title => "Mine";
     public override string ImageName => "Mine";
     public override string Description => "A stationary structure that periodically generates Metal — more, the further it is from your own base.";

@@ -11,6 +11,7 @@ public class SpeedBoostCard : TargetEntityCard
     private const float ActivationDelaySeconds = 1f;
 
     public override CardType Type => CardType.SpeedBoost;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "Speed Boost";
     public override string ImageName => "SpeedBoost";
     public override string Description => "Gives a friendly troop a temporary movement speed boost.";

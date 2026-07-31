@@ -17,6 +17,7 @@ public class BuildingCard : SpawnAtPointCard
     private const float MaxDistanceFromBuilding = 45f;
 
     public override CardType Type => CardType.Building;
+    public override CardCategory Category => CardCategory.Building;
     public override string Title => "Building";
     public override string ImageName => "Building";
     public override string Description => "A stationary structure that blocks nearby idle troops from standing on it.";

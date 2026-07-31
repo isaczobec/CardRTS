@@ -14,6 +14,7 @@ public class BarrierCard : TargetEntityCard
     private const float BarrierDurationSeconds = 12f;
 
     public override CardType Type => CardType.Barrier;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "Barrier";
     public override string ImageName => "Barrier";
     public override string Description => "Shields a friendly troop with a barrier that fully blocks incoming damage until its own health runs out.";

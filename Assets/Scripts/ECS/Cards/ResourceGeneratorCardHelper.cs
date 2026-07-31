@@ -41,7 +41,7 @@ public static class ResourceGeneratorCardHelper
     {
         // No base found (e.g. already destroyed) — conservative fallback rather than
         // erroring out or dividing by an unknown reference distance.
-        if (!TryFindOwnBasePosition(ecs, ownerPlayerId, out float baseX, out float baseY))
+        if (!PlayerBaseQuery.TryFindPosition(ecs, ownerPlayerId, out float baseX, out float baseY))
             return MinRatePerMinute;
 
         float worldSize = WorldGenHandler.CHUNK_SIZE_TILES * WorldGenHandler.WorldSizeChunks;
@@ -56,34 +56,4 @@ public static class ResourceGeneratorCardHelper
         return Mathf.Lerp(MinRatePerMinute, MaxRatePerMinute, t);
     }
 
-    private static bool TryFindOwnBasePosition(ECS ecs, ushort ownerPlayerId, out float x, out float y)
-    {
-        x = 0f;
-        y = 0f;
-
-        ComponentStore<RenderableComponent> renderableStore = ecs.GetComponentStore<RenderableComponent>();
-        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
-        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
-        if (renderableStore == null || troopStore == null || posStore == null) return false;
-
-        bool found = false;
-        float foundX = 0f, foundY = 0f;
-
-        renderableStore.ForEach((ulong id) =>
-        {
-            if (found) return;
-            if (renderableStore.GetComponent(id).Type != RenderableType.PlayerBaseCore) return;
-            if (!troopStore.HasComponent(id) || troopStore.GetComponent(id).OwnerPlayerId != ownerPlayerId) return;
-            if (!posStore.HasComponent(id)) return;
-
-            PositionComponent pos = posStore.GetComponent(id);
-            foundX = pos.X;
-            foundY = pos.Y;
-            found = true;
-        });
-
-        x = foundX;
-        y = foundY;
-        return found;
-    }
 }

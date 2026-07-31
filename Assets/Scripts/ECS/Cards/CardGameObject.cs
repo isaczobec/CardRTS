@@ -42,9 +42,34 @@ public class CardGameObject : MonoBehaviour,
         [NonSerialized] public bool DefaultColorCaptured;
     }
 
+    // The card's own artwork/illustration sprite.
     [SerializeField] private Image _image;
+    // The Image on this GameObject's root carrying the card-frame material (the shader with
+    // _BgColor/_TextBgColor/_EdgeColor/_TitleColor — see ApplyCardColors) — a different Image
+    // than _image above, which only ever holds the artwork sprite.
+    [SerializeField] private RawImage _cardBackgroundImage;
     [SerializeField] private TMP_Text _titleText;
     [SerializeField] private TMP_Text _text;
+    // Shows Card.Category (Troop/Building/Spell) as text — set alongside the card's other
+    // shader colors in BuildCard.
+    [SerializeField] private TMP_Text _cardTypeText;
+
+    private static readonly int BgColorId = Shader.PropertyToID("_BgColor");
+    private static readonly int TextBgColorId = Shader.PropertyToID("_TextBgColor");
+    private static readonly int EdgeColorId = Shader.PropertyToID("_EdgeColor");
+    private static readonly int TitleColorId = Shader.PropertyToID("_TitleColor");
+
+    // Building = burgundy, Spell = purple, Troop = dark blue — explicit design ask. Derived
+    // purely from Category, unlike BackgroundColor/TextBackgroundColor/EdgeColor, which are
+    // themed per-card (see Card.cs).
+    private static readonly Color BuildingTitleColor = new Color(0.5424528f, 0.0567257f, 0f);
+    private static readonly Color SpellTitleColor = new Color(0.2792453f, 0f, 0.8254717f);
+    private static readonly Color TroopTitleColor = new Color(0.08018869f, 0.1100438f, 1.0f);
+
+    // Instantiated fresh per card in BuildCard (lazily, on first call) so each card's own
+    // colors don't fight over one shared material's property values — mirrors
+    // HealthBarPrefab's own per-instance _material pattern.
+    private Material _cardMaterial;
 
     // Deactivated by default; CardHandRenderer activates one/both while this card is
     // hovered or selected (see SetPanelsVisible). Every row below is looked up through its
@@ -119,7 +144,8 @@ public class CardGameObject : MonoBehaviour,
     public event Action<CardGameObject> HoverEntered;
     public event Action<CardGameObject> HoverExited;
 
-    public void BuildCard(string title, string description, Sprite image, StatsComponent stats, ResourceCost cost)
+    public void BuildCard(string title, string description, Sprite image, StatsComponent stats, ResourceCost cost,
+        CardCategory category, Color backgroundColor, Color textBackgroundColor, Color edgeColor)
     {
         if (_image != null)
             _image.sprite = image;
@@ -129,6 +155,11 @@ public class CardGameObject : MonoBehaviour,
 
         if (_text != null)
             _text.text = description;
+
+        if (_cardTypeText != null)
+            _cardTypeText.text = category.ToString();
+
+        ApplyCardColors(category, backgroundColor, textBackgroundColor, edgeColor);
 
         _cost = cost;
 
@@ -148,6 +179,42 @@ public class CardGameObject : MonoBehaviour,
         SetResourceRowAmount(_goldCostRow, cost.Gold);
 
         SetPanelsVisible(false);
+    }
+
+    // Lazily instantiates this card's own material (once — a second BuildCard call, if that
+    // ever happens, reuses it rather than leaking another instance) and pushes the resolved
+    // colors onto it. TitleColor is derived purely from category (see ResolveTitleColor),
+    // never passed in directly — Building/Spell/Troop always get the same title color
+    // regardless of which specific card it is.
+    private void ApplyCardColors(CardCategory category, Color backgroundColor, Color textBackgroundColor, Color edgeColor)
+    {
+        if (_cardBackgroundImage == null) return;
+
+        if (_cardMaterial == null)
+        {
+            _cardMaterial = Instantiate(_cardBackgroundImage.material);
+            _cardBackgroundImage.material = _cardMaterial;
+        }
+
+        _cardMaterial.SetColor(BgColorId, backgroundColor);
+        _cardMaterial.SetColor(TextBgColorId, textBackgroundColor);
+        _cardMaterial.SetColor(EdgeColorId, edgeColor);
+        _cardMaterial.SetColor(TitleColorId, ResolveTitleColor(category));
+    }
+
+    private static Color ResolveTitleColor(CardCategory category) => category switch
+    {
+        CardCategory.Building => BuildingTitleColor,
+        CardCategory.Spell    => SpellTitleColor,
+        _                     => TroopTitleColor,
+    };
+
+    // The instantiated material isn't a scene asset Unity tracks/destroys on its own —
+    // without this it'd leak one Material object per card for the life of the process
+    // (mirrors HealthBarPrefab's own OnDestroy).
+    private void OnDestroy()
+    {
+        if (_cardMaterial != null) Destroy(_cardMaterial);
     }
 
     // Rebuilds the upgrade-icon row from a caller-resolved (icon, shopGoldCost) pair per

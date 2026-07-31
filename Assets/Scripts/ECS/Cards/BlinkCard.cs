@@ -25,6 +25,7 @@ public class BlinkCard : MultiPointCard
     public override int ShopGoldCost => 100;
 
     public override CardType Type => CardType.Blink;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "Blink";
     public override string ImageName => "Blink";
     public override string Description => "Teleports friendly troops near the first point to the second point.";

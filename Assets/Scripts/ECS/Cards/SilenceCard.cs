@@ -14,6 +14,7 @@ public class SilenceCard : TargetEntityCard
     private const float MaxDistanceFromTroop = 15f;
 
     public override CardType Type => CardType.Silence;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "Silence";
     public override string ImageName => "Silence";
     public override string Description => "Silences an enemy or neutral troop for 8 seconds — it cannot attack or use abilities, but can still move.";

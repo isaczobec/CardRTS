@@ -1462,8 +1462,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardGameObject
   _image: {fileID: 557253800687735720}
+  _cardBackgroundImage: {fileID: 3429411968628377326}
   _titleText: {fileID: 719466515951953884}
   _text: {fileID: 7084027525402991318}
+  _cardTypeText: {fileID: 1164729080175197221}
   _statsPanel: {fileID: 2400289949917966514}
   _maxHealthRow:
     Root: {fileID: 2152840993328328272}
@@ -1508,6 +1510,8 @@ MonoBehaviour:
   _insufficientResourceColor: {r: 1, g: 0, b: 0, a: 1}
   _unaffordableOverlay: {fileID: 4758801058616178964}
   _shopGoldCostText: {fileID: 560471540443606632}
+  _upgradeIconContainer: {fileID: 0}
+  _upgradeIconPrefab: {fileID: 0}
 --- !u!222 &5651176906125492499
 CanvasRenderer:
   m_ObjectHideFlags: 0

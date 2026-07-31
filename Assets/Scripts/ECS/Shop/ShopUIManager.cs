@@ -63,7 +63,8 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
             if (ImageRegistry.instance != null)
                 ImageRegistry.instance.TryGet(card.ImageName, out artwork);
 
-            go.BuildCard(card.Title, card.Description, artwork, card.DefaultStats, card.Cost);
+            go.BuildCard(card.Title, card.Description, artwork, card.DefaultStats, card.Cost,
+                card.Category, card.BackgroundColor, card.TextBackgroundColor, card.EdgeColor);
             go.ShopGoldCost = ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, LocalPlayerId(), card);
 
             go.HoverEntered += OnShopCardHovered;
@@ -98,7 +99,8 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
         if (ImageRegistry.instance != null)
             ImageRegistry.instance.TryGet(card.ImageName, out artwork);
 
-        _hoverPreviewCard.BuildCard(card.Title, card.Description, artwork, card.DefaultStats, card.Cost);
+        _hoverPreviewCard.BuildCard(card.Title, card.Description, artwork, card.DefaultStats, card.Cost,
+            card.Category, card.BackgroundColor, card.TextBackgroundColor, card.EdgeColor);
         _hoverPreviewCard.ShopGoldCost = ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, LocalPlayerId(), card);
         // BuildCard hides the stats/cost panels by default (the behavior CardHandRenderer
         // wants for cards in hand) — the preview card should always show them while active.

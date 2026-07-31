@@ -73,6 +73,7 @@ public class MissileSiloCard : SpawnAtPointCard
     public override int ShopGoldCost => 100;
 
     public override CardType Type => CardType.MissileSilo;
+    public override CardCategory Category => CardCategory.Building;
     public override string Title => "Missile Silo";
     public override string ImageName => "MissileSilo";
     public override string Description => "A long-range stationary silo that fires missiles dealing area damage on impact. Can also strike neutral structures, but prefers enemy troops.";

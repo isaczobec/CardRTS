@@ -800,7 +800,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 39.315, y: -274.327}
+  m_AnchoredPosition: {x: 39.315, y: -81.53195}
   m_SizeDelta: {x: 78.63, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1338549938934795118
@@ -1433,8 +1433,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardGameObject
   _image: {fileID: 557253800687735720}
+  _cardBackgroundImage: {fileID: 3429411968628377326}
   _titleText: {fileID: 719466515951953884}
   _text: {fileID: 7084027525402991318}
+  _cardTypeText: {fileID: 1164729080175197221}
   _statsPanel: {fileID: 2400289949917966514}
   _maxHealthRow:
     Root: {fileID: 2152840993328328272}
@@ -3130,7 +3132,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 39.315, y: -128.388}
+  m_AnchoredPosition: {x: 39.315, y: -60}
   m_SizeDelta: {x: 78.63, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4392524768999114058

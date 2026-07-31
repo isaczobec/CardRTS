@@ -12,12 +12,13 @@ public class SleepingDraughtCard : TargetEntityCard
 {
     private const float DurationSeconds = 10f;
     private const float SlowRatio = -0.3f;
-    private const float ActivationDelaySeconds = 2f;
+    private const float ActivationDelaySeconds = 1f;
 
     private const float MaxDistanceFromBuilding = 20f;
     private const float MaxDistanceFromTroop = 15f;
 
     public override CardType Type => CardType.SleepingDraught;
+    public override CardCategory Category => CardCategory.Spell;
     public override string Title => "Sleeping Draught";
     public override string ImageName => "SleepingDraught";
     public override string Description => "Puts an enemy or neutral troop to sleep for 10 seconds: silenced and 30% slowed. Wakes up early if it takes any damage.";
