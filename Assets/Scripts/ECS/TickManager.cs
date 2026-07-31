@@ -209,6 +209,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ShadowAngelComponent>(61);
         _componentTypeRegistry.Register<ResourceValueComponent>(62);
         _componentTypeRegistry.Register<PlayerTotalResourceValueComponent>(63);
+        _componentTypeRegistry.Register<SilenceComponent>(64);
+        _componentTypeRegistry.Register<RemoveModifierOnDamageComponent>(65);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -373,6 +375,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceValueComponent>>(145);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PlayerTotalResourceValueComponent>>(146);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<PlayerTotalResourceValueComponent>>(147);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<SilenceComponent>>(148);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<SilenceComponent>>(149);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RemoveModifierOnDamageComponent>>(150);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RemoveModifierOnDamageComponent>>(151);
 
         ECS = CreateSimulationECS();
     }
@@ -618,6 +624,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ShadowAngelComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceValueComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerTotalResourceValueComponent>());
+        ecs.AddComponentStore(new ComponentStore<SilenceComponent>());
+        ecs.AddComponentStore(new ComponentStore<RemoveModifierOnDamageComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -645,6 +653,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(ShadowCloakSystem.Instance);
         ecs.RegisterSystem(DisplacementSystem.Instance);
         ecs.RegisterSystem(RootedSystem.Instance);
+        ecs.RegisterSystem(SilenceSystem.Instance);
         ecs.RegisterSystem(new ScheduledCallSystem());
         ecs.RegisterSystem(new TeleportingModifierSystem());
         ecs.RegisterSystem(new BlinkSystem());
@@ -706,6 +715,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(GiantsbaneSystem.Instance);
         ecs.RegisterSystem(FocusFireSystem.Instance);
         ecs.RegisterSystem(LifestealSystem.Instance);
+        ecs.RegisterSystem(RemoveModifierOnDamageSystem.Instance);
         ecs.RegisterSystem(ProjectilePoolCleanupSystem.Instance);
         // Must run BEFORE ResourceGenerationSystem — see ResourceGeneratorSystem's own doc
         // comment: that system only enqueues ResourcesAdded requests, and
@@ -786,6 +796,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ShadowAngelComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceValueComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerTotalResourceValueComponent>());
+        ecs.AddComponentStore(new ComponentStore<SilenceComponent>());
+        ecs.AddComponentStore(new ComponentStore<RemoveModifierOnDamageComponent>());
 
         return ecs;
     }

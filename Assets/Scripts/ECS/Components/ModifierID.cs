@@ -22,4 +22,6 @@ public enum ModifierID
     Bruiser = 14,
     ShadowShield = 15,
     ShadowAura = 16,
+    SleepingDraught = 17,
+    Silence = 18,
 }

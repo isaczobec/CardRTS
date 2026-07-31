@@ -80,7 +80,7 @@ public class ShadowAngelCard : SpawnAtPointCard
         {
             Metal = 150,
             Wood = 40,
-            Gems = 10,
+            Soulstones = 1,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;

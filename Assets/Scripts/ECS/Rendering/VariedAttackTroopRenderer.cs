@@ -70,6 +70,13 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     [SerializeField] private BasicTroopGameObject _prefab;
     [SerializeField] private float _rotationDegreesPerSecond = 540f;
 
+    [Header("Position Smoothing")]
+    // How far (world units) the visually-smoothed position may drift from the true,
+    // authoritative tick position before it's forced back in line — see
+    // TickPositionInterpolator's lenient Update overload.
+    [SerializeField] private float _maxPositionDriftDistance = 1.5f;
+    [SerializeField] private float _maxPositionDriftSeconds = 0.5f;
+
     [Header("Attack Animation")]
     // Animations to pick from on each attack — see _selectionMode for how. An entry with a
     // blank TriggerName is skipped (treated as "no trigger fired that attack") rather than
@@ -348,7 +355,20 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
                 && movStore.GetComponent(id).TeleportedTick == _ecs.CurrentSimulationTick;
 
             Vector3 worldPos = ToWorldPosition(posStore.GetComponent(id));
-            go.transform.position = _interpolator.Update(id, worldPos, isMoving, teleported);
+
+            // Displacement (knockback) needs the strict tick-to-tick lerp, not the lenient
+            // extrapolating one — see TickPositionInterpolator's lenient overload's own doc
+            // comment for why.
+            if (isMoving && !isDisplaced)
+            {
+                float speedWorldUnitsPerSecond = StatsQuery.GetSpeed(_ecs, id, DefaultSpeed) / StatsQuery.SpeedScale;
+                go.transform.position = _interpolator.Update(id, worldPos, isMoving, teleported,
+                    speedWorldUnitsPerSecond, _maxPositionDriftDistance, _maxPositionDriftSeconds);
+            }
+            else
+            {
+                go.transform.position = _interpolator.Update(id, worldPos, isMoving, teleported);
+            }
 
             if (isMoving)
             {

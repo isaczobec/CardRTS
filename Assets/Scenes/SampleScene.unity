@@ -3176,6 +3176,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 233fe9ce1dff7eb4788a60262eae6d48, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 1.3
@@ -3792,6 +3794,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: d2e438824aa35d04eaadc1d098b344ac, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackWindupSoundName: DefaultTroopWindup
   _dealDamageSoundName: 
   _takeDamageSoundName: DefaultTroopTakeDamage
@@ -3846,6 +3850,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 9deae98c1836c91428d5fbacb67b1b56, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 1.3
@@ -5425,6 +5431,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 942a5fa311096be4f9f0a7b7c682d07a, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.167
@@ -5616,6 +5624,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 766207495}
   m_CullTransparentMesh: 1
+--- !u!1 &767685867
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 767685868}
+  - component: {fileID: 767685869}
+  m_Layer: 0
+  m_Name: SleepingOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &767685868
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 767685867}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &767685869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 767685867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2dfa99c6b7de61499a18e52b14d46d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
+  _material: {fileID: 2100000, guid: c10a7d788f47a7a45b321d0627a1f770, type: 2}
+  _key: SleepingOverlayMaterial
 --- !u!1 &773604080
 GameObject:
   m_ObjectHideFlags: 0
@@ -8093,6 +8147,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 2d6c103e7fd22454389a58391c254984, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.13
@@ -8162,6 +8218,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 5e94ac261b7b540419e8b9345782f32a, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.167
@@ -9254,6 +9312,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 0e771a1a1c0b56d4bb6915d1583bbbc2, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.167
@@ -10285,6 +10345,8 @@ Transform:
   - {fileID: 1071832462}
   - {fileID: 939994315}
   - {fileID: 913628349}
+  - {fileID: 767685868}
+  - {fileID: 1814116838}
   m_Father: {fileID: 1889187866}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1244099537
@@ -10342,6 +10404,10 @@ MonoBehaviour:
     renderer: {fileID: 939994316}
   - type: 9
     renderer: {fileID: 913628350}
+  - type: 11
+    renderer: {fileID: 767685869}
+  - type: 12
+    renderer: {fileID: 1814116839}
 --- !u!1 &1245617724
 GameObject:
   m_ObjectHideFlags: 0
@@ -10893,6 +10959,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 3524fd7b85d2f304f9cd7fd7d86ed6da, type: 3}
   _rotationDegreesPerSecond: 160
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.3667
@@ -11063,6 +11131,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 9dc2afea966cee64a9cebc92fbbe0e92, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 3
@@ -12224,6 +12294,10 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 490cf4ff636f2024b89863e434474ab8, type: 3}
   - name: ShadowAura
     sprite: {fileID: 21300000, guid: 4157f3295e1ae0b408164ae7fb67ceca, type: 3}
+  - name: SleepingDraught
+    sprite: {fileID: 21300000, guid: dff8a4611ab389f4fa10bffe391b5169, type: 3}
+  - name: Silence
+    sprite: {fileID: 21300000, guid: adcbb6fd30eb7654fb00a39c92e11d2d, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -14171,6 +14245,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 684ae309e370a094a9587958efa47f97, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.167
@@ -14237,6 +14313,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: b36f8271a1e418445b45fcf4ee159666, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 1.167
@@ -14571,6 +14649,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: 3ed22e2c4cbcfa14582110c357d666aa, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackWindupSoundName: DefaultTroopWindup
   _dealDamageSoundName: 
   _takeDamageSoundName: DefaultTroopTakeDamage
@@ -15899,6 +15979,52 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
   m_Padding: {x: -8, y: -5, z: -8, w: -5}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &1814116837
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1814116838}
+  - component: {fileID: 1814116839}
+  m_Layer: 0
+  m_Name: SilenceOverlay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1814116838
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1814116837}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1244099536}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1814116839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1814116837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2dfa99c6b7de61499a18e52b14d46d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OverlayMaterialModifierRenderer
+  _material: {fileID: 2100000, guid: ab5affc8e85d73448a0a9bb20c42028b, type: 2}
+  _key: SilenceOverlayMaterial
 --- !u!1 &1817525111
 GameObject:
   m_ObjectHideFlags: 0
@@ -16189,6 +16315,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: a3f7bbc830cb42542b272ab6f1401fdd, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 1.367
@@ -16368,6 +16496,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 1050b06ff83869e4e899335636832b3e, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.167
@@ -16434,6 +16564,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasicMeleeRenderer
   _prefab: {fileID: 9082625173468486924, guid: 5e19c257e7d7515438efa3458bc5ecaf, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackWindupSoundName: DefaultTroopWindup
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
@@ -16613,6 +16745,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: 494c48cbb01bd9b4c95202304c2501ea, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 1.167
@@ -18328,6 +18462,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
   _prefab: {fileID: 9082625173468486924, guid: eb3afefd8bb0e6e4ba884dda7a6d1ad0, type: 3}
   _rotationDegreesPerSecond: 540
+  _maxPositionDriftDistance: 1.5
+  _maxPositionDriftSeconds: 0.5
   _attackAnimations:
   - TriggerName: Attack1
     Duration: 2.13

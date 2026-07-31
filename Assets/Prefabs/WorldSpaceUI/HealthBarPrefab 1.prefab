@@ -136,6 +136,9 @@ MonoBehaviour:
   _widthScale: 5
   _widthExponent: 0.7
   _minWidth: 8
+  _baseScaleMultiplier: 0.2
+  _scalePerHeightUnit: 0.1
+  _minScaleMultiplier: 0.05
 --- !u!223 &3521526497451360897
 Canvas:
   m_ObjectHideFlags: 0

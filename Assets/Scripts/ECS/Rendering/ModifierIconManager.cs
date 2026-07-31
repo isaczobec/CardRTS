@@ -43,6 +43,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Bruiser, ResolveBruiser },
         { ModifierID.ShadowShield, ResolveShadowShield },
         { ModifierID.ShadowAura, ResolveShadowAura },
+        { ModifierID.SleepingDraught, ResolveSleepingDraught },
+        { ModifierID.Silence, ResolveSilence },
     };
 
     private ECS _ecs;
@@ -477,6 +479,19 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         int percent = Mathf.RoundToInt(effect.Param0 * 100f);
         return ("Shadow Aura", "ShadowAura", $"Shares {percent}% of incoming damage with friendly troops within {radius} range.");
     }
+
+    // SilenceComponent-carrying modifier from SleepingDraughtCard, always paired with a
+    // StatModifierComponent slow and a RemoveModifierOnDamageComponent — no payload worth
+    // reading per-instance (the slow ratio/wake-on-damage are always the same), so the
+    // name/description are fixed, mirroring ResolveFrozen/ResolveRooted.
+    private static (string name, string imageName, string description) ResolveSleepingDraught(ECS ecs, ulong modifierEntityId)
+        => ("Sleeping Draught", "SleepingDraught", "Silenced and 30% slowed — cannot attack or use abilities. Wakes up early if it takes any damage.");
+
+    // SilenceComponent-carrying modifier from SilenceCard, with no other payload — no
+    // payload to read, so the name/description are fixed, mirroring ResolveFrozen/
+    // ResolveRooted/ResolveSleepingDraught.
+    private static (string name, string imageName, string description) ResolveSilence(ECS ecs, ulong modifierEntityId)
+        => ("Silence", "Silence", "Silenced — cannot attack or use abilities, but can still move.");
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)
     {
