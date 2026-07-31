@@ -10,15 +10,15 @@ using UnityEngine;
 /// object lagging back and forth in place.
 ///
 /// The plain Update(entityId, worldPos, isMoving, teleported) overload does exactly that
-/// strict two-sample lerp. The extra overload below — Update(..., speedWorldUnitsPerSecond,
-/// ...) — is more lenient: instead of being strictly locked to a lerp between the last two
-/// tick samples, the returned position keeps extrapolating along the most recently observed
-/// tick-to-tick direction every frame, independent of exactly when the next tick sample
-/// lands. See that overload's own doc comment for why (irregular tick cadence — e.g.
-/// TickManager's own catch-up loop running several ticks in one rendered frame after a stall
-/// — makes the strict lerp jump/snap almost every frame instead of smoothly gliding, since a
-/// whole burst of ticks can land between two rendered frames with no intermediate alpha left
-/// to lerp across).
+/// strict two-sample lerp. The extra overload below — Update(..., speedWorldUnitsPerSecond)
+/// — is more lenient: instead of being strictly locked to a lerp between the last two tick
+/// samples, the returned position continuously chases the true, authoritative current tick
+/// position at up to speedWorldUnitsPerSecond every frame, independent of exactly when the
+/// next tick sample lands. See that overload's own doc comment for why (irregular tick
+/// cadence — e.g. TickManager's own catch-up loop running several ticks in one rendered
+/// frame after a stall — makes the strict lerp jump/snap almost every frame instead of
+/// smoothly gliding, since a whole burst of ticks can land between two rendered frames with
+/// no intermediate alpha left to lerp across).
 /// </summary>
 public class TickPositionInterpolator
 {
@@ -27,11 +27,10 @@ public class TickPositionInterpolator
         public Vector3 Previous;
         public Vector3 Current;
 
-        // Extra state for the lenient overload only — the actual visual position (which can
-        // differ from a strict Previous/Current lerp) and how long it's currently been
-        // drifting too far from Current (the true, authoritative tick-sampled position).
+        // Extra state for the lenient overload only — the actual visual position, which can
+        // lag behind Current (never ahead of it — see that overload's own doc comment) while
+        // catching up.
         public Vector3 Visual;
-        public float DriftSeconds;
     }
 
     private readonly Dictionary<ulong, Sample> _samples = new();
@@ -55,42 +54,35 @@ public class TickPositionInterpolator
 
     // Lenient counterpart to the plain Update above — same not-moving/teleported snap
     // behavior, but while genuinely moving under its own power (isMoving true), the returned
-    // position keeps extrapolating along the direction of the most recent actual tick-to-tick
-    // step, at up to speedWorldUnitsPerSecond, instead of being strictly confined to a lerp
-    // between the two most recent tick samples.
+    // position continuously CHASES the true, authoritative current tick position (via
+    // Vector3.MoveTowards) at up to speedWorldUnitsPerSecond, instead of being strictly
+    // confined to a lerp between the two most recent tick samples.
     //
-    // Deliberately extrapolates the last observed STEP direction rather than aiming straight
-    // at the entity's final MovableComponent destination — PathfindingSystem walks a computed
-    // path that can bend around obstacles, so a beeline to a far-off destination is shorter
-    // than the true path and consistently cuts the corner, running the visual ahead of the
-    // real position until a hard correction snaps it back (this was tried and produced
-    // exactly that "runs fast, periodically teleports back" artifact). Extrapolating only the
-    // most recent local step tracks the true path closely as long as it stays straight, and
-    // lets the correction below handle it whenever a turn (or a stop, stun, teleport, etc.)
-    // invalidates that guess. Height (Y) is snapped straight to the true current tick's
-    // height every call rather than extrapolated — terrain height isn't a straight-line
-    // function of horizontal distance, so guessing it would just reintroduce the same kind of
-    // error this whole overload exists to avoid.
+    // An earlier version of this extrapolated forward along a remembered direction/speed
+    // instead of chasing Current directly — that's an OPEN-LOOP prediction, and it turned out
+    // to be fragile to anything that makes the true tick-to-tick step even slightly irregular:
+    // reconciliation replaying predicted ticks after a server correction, PathfindingSystem's
+    // waypoint-to-waypoint steps (Vector2.MoveTowards clamps the last step into each
+    // waypoint, so even a visually straight path isn't perfectly uniform tick to tick), and
+    // the tick catch-up loop compressing several ticks into what looks like one step to this
+    // class. Any of those made the open-loop guess run ahead of the truth, which needed a
+    // periodic hard "snap back" correction once it drifted too far — that snap was itself the
+    // visible teleport.
     //
-    // Trade-off: the visual position is no longer a pure function of the last two tick
-    // samples, so it CAN still drift from the true, authoritative one — e.g. the path turns a
-    // corner, the entity gets stunned/rooted mid-step, or a reconciliation replay nudges it.
-    // maxDriftDistance/maxDriftSeconds bound that: once the visual position has been further
-    // than maxDriftDistance from the true tick-sampled position for longer than
-    // maxDriftSeconds, it's snapped straight back to truth rather than left to keep drifting.
-    // A single frame (or even a few tenths of a second) of minor drift is invisible/
-    // unimportant; a large or sustained one reads as the visual having "lost track" of the
-    // entity and needs correcting.
+    // Chasing Current directly (this version) is CLOSED-LOOP and self-correcting by
+    // construction: Vector3.MoveTowards can never overshoot its target, so the visual
+    // literally cannot get ahead of the true position, and there's nothing left to
+    // periodically snap back from. If a burst of ticks lands in one rendered frame, the
+    // visual just visibly (and smoothly) catches up over the next few frames instead of
+    // teleporting.
     //
     // Callers MUST NOT use this while the entity is displaced (MovableComponent.IsDisplaced)
-    // — a knockback's direction can differ tick-to-tick from ordinary path-following motion
-    // in ways this overload has no way to anticipate; fall back to the plain Update overload
-    // for that case (the strict tick-to-tick lerp already tracks a knockback's constant-
-    // velocity step correctly on its own, so there's nothing for the lenient path to improve
-    // there anyway).
+    // — a knockback's velocity is independent of (and can exceed) the troop's own Speed stat,
+    // so chasing at Speed could lag behind a fast knockback; fall back to the plain Update
+    // overload for that case (the strict tick-to-tick lerp already tracks a knockback's own
+    // step correctly regardless of how fast it is).
     public Vector3 Update(ulong entityId, Vector3 worldPos, bool isMoving, bool teleported,
-        float speedWorldUnitsPerSecond,
-        float maxDriftDistance = 1.5f, float maxDriftSeconds = 0.5f)
+        float speedWorldUnitsPerSecond)
     {
         if (!isMoving || teleported || speedWorldUnitsPerSecond <= 0f)
         {
@@ -99,36 +91,22 @@ public class TickPositionInterpolator
         }
 
         Sample sample = AdvanceSample(entityId, worldPos);
-
-        Vector3 direction = sample.Current - sample.Previous;
-        direction.y = 0f;
-        if (direction.sqrMagnitude > 0.0001f)
-            sample.Visual += direction.normalized * speedWorldUnitsPerSecond * Time.deltaTime;
-        sample.Visual.y = sample.Current.y;
-
-        float error = Vector3.Distance(sample.Visual, sample.Current);
-        sample.DriftSeconds = error > maxDriftDistance ? sample.DriftSeconds + Time.deltaTime : 0f;
-
-        if (sample.DriftSeconds > maxDriftSeconds)
-        {
-            sample.Visual = sample.Current;
-            sample.DriftSeconds = 0f;
-        }
+        sample.Visual = Vector3.MoveTowards(sample.Visual, sample.Current, speedWorldUnitsPerSecond * Time.deltaTime);
 
         _samples[entityId] = sample;
         return sample.Visual;
     }
 
     // Shared "roll Previous/Current forward if the tick sample actually changed" bookkeeping
-    // both Update overloads need — Visual/DriftSeconds carry over unchanged (a brand new
-    // entity gets Visual = worldPos, same as Previous/Current).
+    // both Update overloads need — Visual carries over unchanged (a brand new entity gets
+    // Visual = worldPos, same as Previous/Current).
     private Sample AdvanceSample(ulong entityId, Vector3 worldPos)
     {
         if (!_samples.TryGetValue(entityId, out Sample sample))
             return new Sample { Previous = worldPos, Current = worldPos, Visual = worldPos };
 
         if (sample.Current != worldPos)
-            sample = new Sample { Previous = sample.Current, Current = worldPos, Visual = sample.Visual, DriftSeconds = sample.DriftSeconds };
+            sample = new Sample { Previous = sample.Current, Current = worldPos, Visual = sample.Visual };
 
         return sample;
     }
