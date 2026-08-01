@@ -12,6 +12,7 @@ using UnityEngine;
 /// </summary>
 public static class MultiPointCardPlaySystem
 {
+    public const float DistanceLeniency = 0.1f;
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
@@ -81,7 +82,7 @@ public static class MultiPointCardPlaySystem
         for (int i = 1; i < input.Points.Count; i++)
         {
             float distance = Vector2.Distance(input.Points[i - 1], input.Points[i]);
-            if (distance > maxRangeFromPreviousPoint)
+            if (distance > maxRangeFromPreviousPoint + DistanceLeniency)
             {
                 DebugLogger.LogWarning($"[MultiPointCardPlaySystem] Rejected: point {i} is {distance} from point {i - 1}, exceeding MaxRangeFromPreviousPoint {maxRangeFromPreviousPoint} for card type {card.Type} (client {input.ClientId}).", "cards");
                 return;

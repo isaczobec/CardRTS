@@ -214,6 +214,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<BuildingRefundAuraComponent>(66);
         _componentTypeRegistry.Register<StatAuraSourceComponent>(67);
         _componentTypeRegistry.Register<ResourceDropBoostComponent>(68);
+        _componentTypeRegistry.Register<TornadoProjectileComponent>(69);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -388,6 +389,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<StatAuraSourceComponent>>(155);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceDropBoostComponent>>(156);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceDropBoostComponent>>(157);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<TornadoProjectileComponent>>(158);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<TornadoProjectileComponent>>(159);
 
         ECS = CreateSimulationECS();
     }
@@ -638,6 +641,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BuildingRefundAuraComponent>());
         ecs.AddComponentStore(new ComponentStore<StatAuraSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceDropBoostComponent>());
+        ecs.AddComponentStore(new ComponentStore<TornadoProjectileComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -663,6 +667,9 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(ActionWindupSystem.Instance);
         ecs.RegisterSystem(StunnedSystem.Instance);
         ecs.RegisterSystem(ShadowCloakSystem.Instance);
+        // Must run before DisplacementSystem — see TornadoProjectileSystem's own doc comment
+        // on why a pull it issues needs to be applied by DisplacementSystem the SAME tick.
+        ecs.RegisterSystem(TornadoProjectileSystem.Instance);
         ecs.RegisterSystem(DisplacementSystem.Instance);
         ecs.RegisterSystem(RootedSystem.Instance);
         ecs.RegisterSystem(SilenceSystem.Instance);
@@ -817,6 +824,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<BuildingRefundAuraComponent>());
         ecs.AddComponentStore(new ComponentStore<StatAuraSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceDropBoostComponent>());
+        ecs.AddComponentStore(new ComponentStore<TornadoProjectileComponent>());
 
         return ecs;
     }

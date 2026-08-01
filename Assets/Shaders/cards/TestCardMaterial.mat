@@ -82,10 +82,10 @@ Material:
     - _UIMaskSoftnessX: 1
     - _UIMaskSoftnessY: 1
     m_Colors:
-    - _BgColor: {r: 0.02122641, g: 0.1011946, b: 0.5, a: 1}
+    - _BgColor: {r: 0.3207547, g: 0.2516488, b: 0.12406551, a: 1}
     - _ClipRect: {r: 0, g: 0, b: 0, a: 0}
-    - _EdgeColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _TextBgColor: {r: 0.08018869, g: 0.1100438, b: 1, a: 1}
+    - _EdgeColor: {r: 0.5424528, g: 0.5424528, b: 0.5424528, a: 1}
+    - _TextBgColor: {r: 0.32156864, g: 0.2509804, b: 0.1254902, a: 1}
     - _TitleColor: {r: 0.5424528, g: 0.0567257, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

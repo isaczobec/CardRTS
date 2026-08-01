@@ -5,6 +5,9 @@ using UnityEngine.EventSystems;
 public class SelectionManager : Singleton<SelectionManager>
 {
     private const float SingleSelectRadius = 2.2f;
+
+    // Fallback for StatsQuery.GetSpeed below, mirrors BasicTroopRenderer's own DefaultSpeed.
+    private const int DefaultSpeed = 100;
     // Deliberately generous: a plain click that twitches a few pixels while releasing
     // the mouse button should never be misread as the start of a drag-select.
     private const float DragThresholdPixels = 130f;
@@ -861,16 +864,36 @@ public class SelectionManager : Singleton<SelectionManager>
         _targetingObjects.Remove(entityId);
     }
 
+    // Same closed-loop "chase the true tick position at the entity's own Speed stat" style
+    // BasicTroopRenderer/VariedAttackTroopRenderer use for the 3D model itself (see
+    // TickPositionInterpolator's own doc comment on why that's self-correcting where the
+    // old strict-lerp-only approach could drift) — falls back to the plain strict-lerp
+    // overload while not moving, teleported, or displaced (a knockback's velocity isn't
+    // bounded by the Speed stat, so chasing at Speed could lag behind it — same guard
+    // BasicTroopRenderer's own branch uses).
     public void ApplySelectionPosition(ulong entityId, ref PositionComponent pos, SelectionPrefab selection)
     {
-        Vector3 worldPos = WorldPositionFor(pos);
-        selection.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId), IsTeleported(entityId));
+        selection.transform.position = InterpolatedPosition(entityId, pos);
     }
 
     public void ApplyTargetingPosition(ulong entityId, ref PositionComponent pos, TargetingPrefab targeting)
     {
+        targeting.transform.position = InterpolatedPosition(entityId, pos);
+    }
+
+    private Vector3 InterpolatedPosition(ulong entityId, PositionComponent pos)
+    {
         Vector3 worldPos = WorldPositionFor(pos);
-        targeting.transform.position = _interpolator.Update(entityId, worldPos, IsMoving(entityId), IsTeleported(entityId));
+        bool isMoving = IsMoving(entityId);
+        bool teleported = IsTeleported(entityId);
+
+        if (isMoving && !IsDisplaced(entityId))
+        {
+            float speedWorldUnitsPerSecond = StatsQuery.GetSpeed(_ecs, entityId, DefaultSpeed) / StatsQuery.SpeedScale;
+            return _interpolator.Update(entityId, worldPos, isMoving, teleported, speedWorldUnitsPerSecond);
+        }
+
+        return _interpolator.Update(entityId, worldPos, isMoving, teleported);
     }
 
     private static Vector3 WorldPositionFor(PositionComponent pos)
@@ -891,4 +914,8 @@ public class SelectionManager : Singleton<SelectionManager>
     private bool IsTeleported(ulong entityId)
         => _movableStore != null && _movableStore.HasComponent(entityId)
             && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
+
+    private bool IsDisplaced(ulong entityId)
+        => _movableStore != null && _movableStore.HasComponent(entityId)
+            && _movableStore.GetComponent(entityId).IsDisplaced;
 }

@@ -33,6 +33,7 @@ public enum CardType : byte
     Heal = 30,
     BallisticMissile = 31,
     MassiveSleepingDraught = 32,
+    Tornado = 33,
 }
 
 public enum CardLocation : byte

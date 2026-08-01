@@ -19,6 +19,9 @@ public class HealthBarManager : Singleton<HealthBarManager>
 {
     [SerializeField] private GameObject _healthBarPrefab;
 
+    // Fallback for StatsQuery.GetSpeed below, mirrors BasicTroopRenderer's own DefaultSpeed.
+    private const int DefaultSpeed = 100;
+
     private readonly Dictionary<ulong, HealthBarPrefab> _healthBars = new();
     private readonly TickPositionInterpolator _interpolator = new();
 
@@ -107,6 +110,13 @@ public class HealthBarManager : Singleton<HealthBarManager>
         bar.SetHealth(currentHealth, maxHealth);
     }
 
+    // Same closed-loop "chase the true tick position at the entity's own Speed stat" style
+    // BasicTroopRenderer/VariedAttackTroopRenderer use for the 3D model itself (see
+    // TickPositionInterpolator's own doc comment on why that's self-correcting where the
+    // old strict-lerp-only approach could drift) — falls back to the plain strict-lerp
+    // overload while not moving, teleported, or displaced (a knockback's velocity isn't
+    // bounded by the Speed stat, so chasing at Speed could lag behind it — same guard
+    // BasicTroopRenderer's own branch uses).
     private void ApplyPosition(ulong entityId, PositionComponent pos, HealthBarPrefab bar)
     {
         float height = WorldManager.instance.Handler.GetHeight(pos.TileX, pos.TileY);
@@ -115,8 +125,21 @@ public class HealthBarManager : Singleton<HealthBarManager>
             && _movableStore.GetComponent(entityId).IsMoving;
         bool teleported = _movableStore != null && _movableStore.HasComponent(entityId)
             && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
+        bool displaced = _movableStore != null && _movableStore.HasComponent(entityId)
+            && _movableStore.GetComponent(entityId).IsDisplaced;
 
-        bar.transform.position = _interpolator.Update(entityId, worldPos, isMoving, teleported) + bar.WorldOffset;
+        Vector3 interpolated;
+        if (isMoving && !displaced)
+        {
+            float speedWorldUnitsPerSecond = StatsQuery.GetSpeed(_ecs, entityId, DefaultSpeed) / StatsQuery.SpeedScale;
+            interpolated = _interpolator.Update(entityId, worldPos, isMoving, teleported, speedWorldUnitsPerSecond);
+        }
+        else
+        {
+            interpolated = _interpolator.Update(entityId, worldPos, isMoving, teleported);
+        }
+
+        bar.transform.position = interpolated + bar.WorldOffset;
     }
 
     private void OnRespawnableEntityDied(RespawnableEntityDiedEvent e)
