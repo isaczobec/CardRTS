@@ -126,4 +126,17 @@ public abstract class Card
     // EITHER a friendly building OR (when this returns true) a friendly troop. Defaults to
     // false — most cards are building-range-only.
     public virtual bool AllowsFriendlyTroopRange() => false;
+
+    // Whether playing this card puts at least one permanent, physical troop into play — the
+    // card-level counterpart to ResourceValueComponent.CanCollectResources, which is the
+    // same "IsPhysicalTroop with no LifetimeComponent" check but per spawned ENTITY rather
+    // than per card definition (see that field's own doc comment for why it matters: a
+    // permanent troop could eventually go kill a map resource node and earn its owner
+    // resources, a short-lived one can't be relied on to). Read by
+    // ResourceCollectorTrickleSystem to find a card in a resource-starved player's hand/deck
+    // worth boosting them toward. Defaults to true for any ordinary Troop-category card;
+    // Building/Spell cards never spawn a troop at all, so the default already excludes them
+    // via Category — override to false on the handful of Troop-category cards whose ENTIRE
+    // spawn is lifetime-limited (EphemeralSkeletonsCard, HealerGuardianCard).
+    public virtual bool CanCollectResources => Category == CardCategory.Troop;
 }

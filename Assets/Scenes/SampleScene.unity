@@ -5090,7 +5090,7 @@ MonoBehaviour:
   - type: 2
     renderer: {fileID: 1631565997}
   - type: 3
-    renderer: {fileID: 1671680054}
+    renderer: {fileID: 1633224623}
   - type: 4
     renderer: {fileID: 982359451}
   - type: 5
@@ -5179,6 +5179,10 @@ MonoBehaviour:
     renderer: {fileID: 1944790033}
   - type: 49
     renderer: {fileID: 1850184572}
+  - type: 51
+    renderer: {fileID: 1650025325}
+  - type: 50
+    renderer: {fileID: 1389977677}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -6613,7 +6617,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 76.82373, y: 18.698608}
+  m_AnchoredPosition: {x: 76.82373, y: 18.698853}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &867664181
@@ -10119,7 +10123,7 @@ MonoBehaviour:
   - name: BasicTroop
     prefab: {fileID: 6472282922783299243, guid: 684ae309e370a094a9587958efa47f97, type: 3}
   - name: BasicRangedTroop
-    prefab: {fileID: 6472282922783299243, guid: 3ed22e2c4cbcfa14582110c357d666aa, type: 3}
+    prefab: {fileID: 6472282922783299243, guid: e831544cceddb0f4485bf47e6a37f4d9, type: 3}
   - name: Building
     prefab: {fileID: 9030713940054835064, guid: b19127ebbad5b3a47a3c240a52bc3532, type: 3}
   - name: AoeSpell
@@ -10176,6 +10180,10 @@ MonoBehaviour:
     prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
   - name: Tornado
     prefab: {fileID: 7953956060509625171, guid: 32cea1cdc8748d94ea4e38d58ec03477, type: 3}
+  - name: KineticKnight
+    prefab: {fileID: 6472282922783299243, guid: edc38d70a55b2f8418cedc9c5ce4bb09, type: 3}
+  - name: Orcs
+    prefab: {fileID: 6472282922783299243, guid: 1afce2bc24b0b464c95a5f8d5cd9eaf4, type: 3}
 --- !u!1 &1218237521
 GameObject:
   m_ObjectHideFlags: 0
@@ -11497,6 +11505,72 @@ MonoBehaviour:
   _groundOffset: 2
   _launchSoundName: 
   _impactSoundName: IceBlast
+--- !u!1 &1389977675
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1389977676}
+  - component: {fileID: 1389977677}
+  m_Layer: 0
+  m_Name: OrcRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1389977676
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389977675}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1389977677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389977675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 1afce2bc24b0b464c95a5f8d5cd9eaf4, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.167
+    TimeUntilImpact: 0.5
+  - TriggerName: Attack2
+    Duration: 2.4
+    TimeUntilImpact: 0.5
+  _selectionMode: 1
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 70
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &1392493620
 GameObject:
   m_ObjectHideFlags: 0
@@ -11809,7 +11883,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1, y: -12.000366}
+  m_AnchoredPosition: {x: -1, y: -12.00061}
   m_SizeDelta: {x: -18.968, y: -13.929443}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1419371009
@@ -12014,6 +12088,8 @@ Transform:
   - {fileID: 1373427740}
   - {fileID: 1325757546}
   - {fileID: 1631565995}
+  - {fileID: 1389977676}
+  - {fileID: 1650025324}
   - {fileID: 613946998}
   - {fileID: 1522668401}
   - {fileID: 511465365}
@@ -12027,6 +12103,7 @@ Transform:
   - {fileID: 1044113394}
   - {fileID: 1671680053}
   - {fileID: 1036075494}
+  - {fileID: 1633224622}
   - {fileID: 2122440088}
   - {fileID: 1934511542}
   - {fileID: 1640101355}
@@ -12464,6 +12541,14 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 04ac785e6241d3140a6c0e00698d6f4c, type: 3}
   - name: Tornado
     sprite: {fileID: 21300000, guid: 2bf67b30afa6a6b4681094ea0cba6239, type: 3}
+  - name: KineticKnight
+    sprite: {fileID: 21300000, guid: 1985b1e01973d504c8339c792cba7673, type: 3}
+  - name: KineticShield
+    sprite: {fileID: 21300000, guid: 337b27b1e51bebf4697e111b91d1084b, type: 3}
+  - name: KineticPull
+    sprite: {fileID: 21300000, guid: fa2e13df7e1fed941835a6ffca0bcc83, type: 3}
+  - name: Orcs
+    sprite: {fileID: 21300000, guid: 3488b33dd528c2c44953de75a09d3ee4, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -13502,7 +13587,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -21.999756, y: 11}
+  m_AnchoredPosition: {x: -21.999878, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567
@@ -14543,6 +14628,69 @@ MonoBehaviour:
   _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.25
+--- !u!1 &1633224621
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1633224622}
+  - component: {fileID: 1633224623}
+  m_Layer: 0
+  m_Name: ArcherRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1633224622
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1633224621}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1633224623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1633224621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: e831544cceddb0f4485bf47e6a37f4d9, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.13
+    TimeUntilImpact: 1.167
+  _selectionMode: 0
+  _abilityAnimationTriggers: []
+  _attackWindupSoundName: DrawArrow
+  _attackWindupFinishedSoundName: ShootArrow
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: 
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 70
+  _speedParamUpdateInterval: 0.1
 --- !u!1 &1640101354
 GameObject:
   m_ObjectHideFlags: 0
@@ -14615,6 +14763,78 @@ MonoBehaviour:
   _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
   _speedParamUpdateInterval: 0.1
+--- !u!1 &1650025323
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1650025324}
+  - component: {fileID: 1650025325}
+  m_Layer: 0
+  m_Name: KineticKnightRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1650025324
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650025323}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1650025325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650025323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: edc38d70a55b2f8418cedc9c5ce4bb09, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 2.167
+    TimeUntilImpact: 0.5
+  - TriggerName: Attack2
+    Duration: 2.4
+    TimeUntilImpact: 0.5
+  _selectionMode: 1
+  _abilityAnimationTriggers:
+  - AbilitySlot: 0
+    TriggerName: Ability0
+    SpeedParam: Ability0
+    SpeedMultiplier: 1
+    RotateTowardPosition: 1
+    SoundName: WindLaunch
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: 
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: DefaultTroopDealDamage
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 70
+  _speedParamUpdateInterval: 0.25
 --- !u!1 &1656309795
 GameObject:
   m_ObjectHideFlags: 0

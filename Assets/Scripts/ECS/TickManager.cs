@@ -739,12 +739,19 @@ public class TickManager : Singleton<TickManager>
         // Must run BEFORE ResourceGenerationSystem — see ResourceGeneratorSystem's own doc
         // comment: that system only enqueues ResourcesAdded requests, and
         // ResourceGenerationSystem is what actually flushes every pending one this tick.
+        // ResourceCollectorTrickleSystem is the same shape (CreateRequest only queues,
+        // doesn't flush — see RequestManager) so it needs the same ordering.
         ecs.RegisterSystem(ResourceGeneratorSystem.Instance);
+        ecs.RegisterSystem(ResourceCollectorTrickleSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
         // Subscribe-only (mutates ResourcesAdded.Multiplier before Execute) — no ordering
         // dependency on anything else here, since it's the only subscriber that touches
         // Multiplier today.
         ecs.RegisterSystem(ResourceDropBoostSystem.Instance);
+        // Subscribe-only (mutates ResourcesAdded.Multiplier before Execute), same shape as
+        // ResourceDropBoostSystem right above — order between the two doesn't matter, since
+        // both just multiply the same float.
+        ecs.RegisterSystem(ComebackResourceBoostSystem.Instance);
         // Pure read-and-report step over whatever ResourceValueComponents exist at the end
         // of the tick — no ordering dependency on anything above, so it's registered last.
         ecs.RegisterSystem(ResourceValueTotalSystem.Instance);

@@ -15,12 +15,12 @@ public class BlinkCard : MultiPointCard
 
     // How far from the source point a friendly troop must be to get teleported. Public so
     // the indicator (both range circles) previews the exact same radius.
-    public const int Range = 5;
+    public const int Range = 10;
 
     // How far apart the two points may be — i.e. the max distance a troop can blink.
     // Enforced client-side (clamped, both visually and on the point actually captured — see
     // MultiPointCard.ClampToPreviousPoint) and re-checked server-side (MultiPointCardPlaySystem).
-    private const float MaxBlinkDistance = 20f;
+    private const float MaxBlinkDistance = 33f;
 
     public override int ShopGoldCost => 100;
 

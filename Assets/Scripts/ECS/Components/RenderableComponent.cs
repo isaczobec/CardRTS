@@ -52,6 +52,8 @@ public enum RenderableType : byte
     BallisticMissileMarker = 47,
     MassiveSleepingDraught = 48,
     Tornado = 49,
+    Orc = 50,
+    KineticKnight = 51,
 }
 
 public struct RenderableComponent : IComponent

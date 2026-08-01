@@ -15,9 +15,13 @@ public static class TroopCardHelper
     private const float DefaultActivationDelaySeconds = 2f;
     private const float SelectionScale = 1f;
 
-    // Every troop card drops this much Gold to whoever kills it (see
-    // OnDeathResourceDropComponent/OnDeathResourceDropSystem).
-    private const int GoldDropOnDeath = 40;
+    // Default Gold a troop drops to whoever kills it (see OnDeathResourceDropComponent/
+    // OnDeathResourceDropSystem) — override via goldDropOnDeath below for a card whose own
+    // balance calls for something different. Public so a card whose single play spawns
+    // SEVERAL troops at once (SkeletonsCard/EphemeralSkeletonsCard) can divide this evenly
+    // across them, so the whole card still only drops this much total if every one of them
+    // is killed, rather than that amount N times over.
+    public const int DefaultGoldDropOnDeath = 23;
 
     public static ulong SpawnTroop(
         ECS ecs,
@@ -26,7 +30,8 @@ public static class TroopCardHelper
         RenderableType renderableType,
         StatsComponent stats,
         List<Action<ECS, ulong>> extraComponents,
-        float SelectionScale = SelectionScale)
+        float SelectionScale = SelectionScale,
+        int goldDropOnDeath = DefaultGoldDropOnDeath)
     {
         EntityHandle entity = ecs.CreateEntity();
         ulong id = entity.Id;
@@ -64,7 +69,7 @@ public static class TroopCardHelper
 
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Gold = GoldDropOnDeath
+            Gold = goldDropOnDeath
         } } );
 
         if (extraComponents != null)

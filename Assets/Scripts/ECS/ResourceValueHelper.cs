@@ -8,14 +8,32 @@ public static class ResourceValueHelper
     {
         ecs.AddComponent(entityId, new ResourceValueComponent
         {
-            OwnerPlayerId = ownerPlayerId,
-            Wood          = value.Wood,
-            Stone         = value.Stone,
-            Metal         = value.Metal,
-            Gems          = value.Gems,
-            Soulstones    = value.Soulstones,
-            Gold          = value.Gold,
+            OwnerPlayerId       = ownerPlayerId,
+            Wood                = value.Wood,
+            Stone               = value.Stone,
+            Metal               = value.Metal,
+            Gems                = value.Gems,
+            Soulstones          = value.Soulstones,
+            Gold                = value.Gold,
+            CanCollectResources = CanEntityCollectResources(ecs, entityId),
         });
+    }
+
+    // See ResourceValueComponent.CanCollectResources's own doc comment. Computed here (once,
+    // at attach time) rather than re-derived on every read — every troop that will ever get
+    // a LifetimeComponent already has it by the time Attach runs (added earlier in the same
+    // spawn call, before the automatic SpawnAtPointCardPlaySystem tag-on-play or a card's own
+    // manual Attach call — see each's own comment), and nothing in this codebase adds a
+    // LifetimeComponent to an entity after the fact, so the flag stays accurate for the
+    // entity's whole life.
+    private static bool CanEntityCollectResources(ECS ecs, ulong entityId)
+    {
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        if (troopStore == null || !troopStore.HasComponent(entityId)) return false;
+        if (!troopStore.GetComponent(entityId).IsPhysicalTroop) return false;
+
+        ComponentStore<LifetimeComponent> lifetimeStore = ecs.GetComponentStore<LifetimeComponent>();
+        return lifetimeStore == null || !lifetimeStore.HasComponent(entityId);
     }
 
     // Multiplies every field by ratio (rounded) — e.g. a weaker/temporary reinforcement

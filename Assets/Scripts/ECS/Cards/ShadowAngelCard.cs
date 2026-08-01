@@ -28,7 +28,7 @@ public class ShadowAngelCard : SpawnAtPointCard
 {
     // Explicit design ask — vs. Healer Guardian's own MaxHealth 90 / AttackSpeed 900ms /
     // Speed 36 / Damage 5.
-    private const int MaxHealth = 250;
+    private const int MaxHealth = 150;
     private const float AttackSpeedMilliseconds = 600f;
     private const int Speed = 40;
     private const int Damage = 80;

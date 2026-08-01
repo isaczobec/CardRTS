@@ -59,6 +59,11 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     public override string Description => "Raises 8 short-lived skeleton archers in a ring that crumble after 20 seconds. Any enemy troop one kills rises again as a permanent friendly skeleton.";
     public override string IndicatorPrefabName => "EphemeralSkeletons";
 
+    // Every skeleton this card spawns carries a LifetimeComponent (see SpawnSingleEphemeralSkeleton
+    // below) — none of them count toward ResourceCollectorTrickleSystem's "does this player
+    // have a permanent troop" check, so this card shouldn't either.
+    public override bool CanCollectResources => false;
+
     // Previews all 8 landing spots (same radius/angles OnPlayed itself spawns at) instead
     // of a single indicator sitting at the cursor — see CircleIndicatorHelper.
     public override void OnIndicatorSpawned(GameObject indicator)
@@ -107,6 +112,11 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
         return firstId;
     }
 
+    // Even split of TroopCardHelper's own default per-troop Gold drop, across all 8 archers
+    // this card spawns — so the whole card still only drops that much total if every one of
+    // them is killed, rather than that amount 8x over.
+    private static readonly int GoldDropOnDeath = Mathf.RoundToInt((float)TroopCardHelper.DefaultGoldDropOnDeath / SkeletonCount);
+
     private static ulong SpawnSingleEphemeralSkeleton(ECS ecs, ushort ownerPlayerId, float x, float y)
     {
         StatsComponent stats = BuildStats();
@@ -152,6 +162,6 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
             }),
             // See ResourceValueComponent/PerSkeletonValue.
             (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerSkeletonValue),
-        });
+        }, goldDropOnDeath: GoldDropOnDeath);
     }
 }

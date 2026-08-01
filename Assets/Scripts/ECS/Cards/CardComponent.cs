@@ -34,6 +34,8 @@ public enum CardType : byte
     BallisticMissile = 31,
     MassiveSleepingDraught = 32,
     Tornado = 33,
+    Orcs = 34,
+    KineticKnight = 35,
 }
 
 public enum CardLocation : byte

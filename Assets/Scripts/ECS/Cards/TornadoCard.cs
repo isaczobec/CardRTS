@@ -15,12 +15,12 @@ public class TornadoCard : MultiPointCard
     // How long after being played the tornado takes to actually start forming/moving —
     // slightly longer than the standard 1s (SpeedBoostCard/BarrierCard/HealCard/...) since
     // this is a strong area-control effect, mirrors BallisticMissileCard's own longer windup.
-    private const float ActivationDelaySeconds = 1.5f;
+    private const float ActivationDelaySeconds = 2f;
 
     // Deliberately slow — the tornado needs to linger long enough over troops caught in it
     // to actually drag them along, not just clip past them.
     private const float TilesPerSecond = 10f;
-    public const float HitRadius = 6f;
+    public const float HitRadius = 8f;
 
     // How far apart the two clicked points may be — i.e. the max distance the tornado can
     // sweep in one cast. Enforced client-side (CardHandRenderer/CardPlacementIndicatorManager
@@ -28,10 +28,10 @@ public class TornadoCard : MultiPointCard
     // (MultiPointCardPlaySystem) — same shape as BlinkCard's own MaxBlinkDistance.
     private const float MaxTornadoDistance = 40f;
 
-    private const float MaxDistanceFromBuilding = 25f;
-    private const float MaxDistanceFromTroop = 15f;
+    private const float MaxDistanceFromBuilding = 80f;
+    private const float MaxDistanceFromTroop = 45f;
 
-    public override int ShopGoldCost => 150;
+    public override int ShopGoldCost => 100;
 
     public override CardType Type => CardType.Tornado;
     public override CardCategory Category => CardCategory.Spell;

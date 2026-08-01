@@ -112,6 +112,12 @@ public class SkeletonsCard : SpawnAtPointCard
         return firstId;
     }
 
+    // Even split of TroopCardHelper's own default per-troop Gold drop, across every skeleton
+    // this card can ever field (the initial ring of 8 AND any later resurrection — both
+    // funnel through this same helper) — so the whole card still only drops that much total
+    // if every one of them is killed, rather than that amount 8x over.
+    private static readonly int GoldDropOnDeath = Mathf.RoundToInt((float)TroopCardHelper.DefaultGoldDropOnDeath / SkeletonCount);
+
     private static ulong SpawnSingleSkeleton(ECS ecs, ushort ownerPlayerId, float x, float y)
     {
         StatsComponent stats = BuildStats();
@@ -152,7 +158,7 @@ public class SkeletonsCard : SpawnAtPointCard
             // See ResourceValueComponent/PerSkeletonValue — applies to both the initial ring
             // of 8 and any later resurrection, since both funnel through this same helper.
             (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerSkeletonValue),
-        });
+        }, goldDropOnDeath: GoldDropOnDeath);
     }
 
     // The actual resurrection — deferred out to ScheduledCallSystem by OnKillScheduleSystem

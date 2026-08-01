@@ -60,6 +60,20 @@ public static class AbilityManager
     // dealing damage. See PirateCard, the only troop that currently equips this.
     public const int HookAbilityId = 9;
 
+    // Target entity (enemy/neutral only), winds up for KineticPullWindupSeconds
+    // (ActionWindupComponent, same shape as GroundSlamAbilityId) then pulls the target
+    // toward the caster's own position via DisplacementSystem — the exact same primitive
+    // GroundSlamAbilityId's push uses, just with the direction vector flipped (toward the
+    // caster instead of away from it). See KineticKnightCard, the only troop that currently
+    // equips this.
+    public const int KineticPullAbilityId = 10;
+
+    // Instant, self-target — grants the caster a BarrierComponent-carrying modifier (same
+    // absorption-shield primitive BarrierCard grants a target — see BarrierSystem) for
+    // KineticShieldDurationSeconds. See KineticKnightCard, the only troop that currently
+    // equips this.
+    public const int KineticShieldAbilityId = 11;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     // The shot always travels the caster's second projectile pool's own Range (see
@@ -102,7 +116,7 @@ public static class AbilityManager
     // effect) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
     private const float IceNovaCastTimeSeconds = 1f;
 
-    private const float PushRange = 6f;
+    private const float PushRange = 18f;
     // World units/second — DisplacementSystem steps the target by this every tick for
     // PushDurationSeconds, in the direction straight away from the caster at the moment the
     // push lands.
@@ -130,6 +144,27 @@ public static class AbilityManager
     // blocks the caster's own CanMove/CanPerform for the duration.
     private const float HookWindupSeconds = 0.4f;
 
+    // How far a target may be from the caster to be a legal Kinetic Pull cast — also used
+    // (alongside KineticPullSpeed/KineticPullDurationSeconds below) so a max-range target
+    // ends up pulled almost exactly to the caster's own position rather than under- or
+    // over-shooting it.
+    private const float KineticPullRange = 25f;
+    // Mirrors GroundSlamAbilityId's own GroundSlamWindupSeconds — "a short windup" per the
+    // explicit design ask.
+    private const float KineticPullWindupSeconds = 0.6f;
+    // World units/second — DisplacementSystem steps the target by this every tick for
+    // KineticPullDurationSeconds, in the direction straight toward the caster's current
+    // position at the moment the pull lands. KineticPullSpeed * KineticPullDurationSeconds
+    // == KineticPullRange, so a target at the very edge of Range travels almost exactly far
+    // enough to reach the caster (a closer target simply arrives sooner/passes nearer it —
+    // same "constant vector, not a precisely-computed landing point" simplification
+    // PushAbilityId/GroundSlamAbilityId already use).
+    private const float KineticPullSpeed = 20f;
+    private const float KineticPullDurationSeconds = KineticPullRange / KineticPullSpeed;
+
+    private const float KineticShieldMaxHealth = 100f;
+    private const float KineticShieldDurationSeconds = 7f;
+
     // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
 
@@ -144,6 +179,8 @@ public static class AbilityManager
         { GroundSlamAbilityId, BuildGroundSlamAbility() },
         { ShadowCloakAbilityId, BuildShadowCloakAbility() },
         { HookAbilityId, BuildHookAbility() },
+        { KineticPullAbilityId, BuildKineticPullAbility() },
+        { KineticShieldAbilityId, BuildKineticShieldAbility() },
     };
 
     // Runs after the field initializers above (C# guarantees static field initializers run
@@ -158,6 +195,7 @@ public static class AbilityManager
     {
         ScheduledCallSystem.RegisterCall(ScheduledCallType.IceNovaResolve, ResolveIceNova);
         ScheduledCallSystem.RegisterCall(ScheduledCallType.GroundSlamResolve, ResolveGroundSlam);
+        ScheduledCallSystem.RegisterCall(ScheduledCallType.KineticPullResolve, ResolveKineticPull);
     }
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
@@ -493,6 +531,111 @@ public static class AbilityManager
         DisplacementSystem.BeginDisplacement(ecs, targetId,
             direction.x * GroundSlamSpeed, direction.y * GroundSlamSpeed, TickManager.SecondsToTicks(GroundSlamDisplacementDurationSeconds));
     }
+
+    // Same windup-then-resolve shape as BuildGroundSlamAbility, but the direction ResolveKineticPull
+    // computes is flipped (toward the caster, not away from it) — enemy/neutral-only per the
+    // explicit design ask ("targets an enemy entity"), unlike GroundSlamAbilityId/PushAbilityId
+    // which allow friendly targets too. Deterministic and side-effect-free itself (the windup
+    // modifier and the scheduled call both act through TargetEntityId/ScheduledCall matching,
+    // not the entities' own ids), so no isServer guard is needed here — same reasoning as
+    // BuildGroundSlamAbility.
+    private static Ability BuildKineticPullAbility() => new Ability
+    {
+        Type = AbilityType.TargetEntity,
+        Name = "Kinetic Pull",
+        Description = "Winds up briefly, then pulls a nearby enemy toward the Kinetic Knight.",
+        Range = KineticPullRange,
+        ImageName = "KineticPull",
+        CanTargetFriendly = false,
+        CanTargetEnemyOrNeutral = true,
+        ShowRangeCircle = true,
+        ShowTargetIndicator = true,
+        ExecuteOnEntity = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null) return;
+            if (!posStore.HasComponent(input.CastingEntityId) || !posStore.HasComponent(input.TargetEntityId)) return;
+
+            int windupTicks = Mathf.Max(1, TickManager.SecondsToTicks(KineticPullWindupSeconds));
+
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = windupTicks,
+            });
+            ecs.AddComponent(modifier.Id, new ActionWindupComponent());
+
+            // param0 = caster, param3 = the originally-targeted entity — both re-read live
+            // at resolve time (ResolveKineticPull), not captured here, so the pull direction
+            // reflects where they actually are once the windup ends rather than where they
+            // stood when the cast began — mirrors ResolveGroundSlam exactly.
+            ScheduledCallSystem.Schedule(ecs, ScheduledCallType.KineticPullResolve, windupTicks,
+                input.CastingEntityId, param3: input.TargetEntityId);
+
+            PositionQuery.TryGet(ecs, input.CastingEntityId, out float pullX, out float pullY);
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId, X = pullX, Y = pullY });
+        },
+    };
+
+    // The actual Kinetic Pull — deferred out of BuildKineticPullAbility's ExecuteOnEntity so
+    // it can be scheduled to run once the windup above ends, via ScheduledCallSystem
+    // (registered against ScheduledCallType.KineticPullResolve in the static constructor
+    // above). Mirrors ResolveGroundSlam exactly, just toward the caster instead of away from
+    // it (see BuildPushAbility for the "away" version this is the mirror image of).
+    private static void ResolveKineticPull(ECS ecs, ScheduledCallComponent call)
+    {
+        ulong casterId = call.Param0;
+        ulong targetId = call.Param3;
+
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        if (posStore == null) return;
+        if (!posStore.HasComponent(casterId) || !posStore.HasComponent(targetId)) return;
+
+        PositionComponent casterPos = posStore.GetComponent(casterId);
+        PositionComponent targetPos = posStore.GetComponent(targetId);
+        Vector2 direction = new Vector2(casterPos.X - targetPos.X, casterPos.Y - targetPos.Y);
+        direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
+
+        DisplacementSystem.BeginDisplacement(ecs, targetId,
+            direction.x * KineticPullSpeed, direction.y * KineticPullSpeed, TickManager.SecondsToTicks(KineticPullDurationSeconds));
+    }
+
+    // Instant, self-target — grants the caster its own BarrierComponent-carrying modifier
+    // (see BarrierComponent/BarrierSystem — the exact same absorption-shield primitive
+    // BarrierCard grants a target, just self-cast here instead of played from hand). No
+    // ActivatableComponent/activation-delay on the modifier — unlike a card-played buff
+    // (BarrierCard/SpeedBoostCard/...), an ability's own cast already gates when it takes
+    // effect, mirrors BuildShadowCloakAbility's own self-buff shape exactly. Deterministic
+    // and side-effect-free like that ability (acts through ModifierComponent.TargetEntityId,
+    // not the modifier entity's own id), so no isServer guard is needed here either.
+    private static Ability BuildKineticShieldAbility() => new Ability
+    {
+        Type = AbilityType.Instant,
+        Name = "Kinetic Shield",
+        Description = "Grants the Kinetic Knight a 100 HP shield that fully blocks incoming damage for 7 seconds.",
+        ImageName = "KineticShield",
+        ExecuteInstant = (ecs, input) =>
+        {
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = TickManager.SecondsToTicks(KineticShieldDurationSeconds),
+                ModifierID     = ModifierID.Barrier,
+            });
+            ecs.AddComponent(modifier.Id, new BarrierComponent
+            {
+                MaxHealth       = KineticShieldMaxHealth,
+                HealthRemaining = KineticShieldMaxHealth,
+                DamageMultiplier = 1f,
+            });
+            ecs.AddComponent(modifier.Id, new RenderableModifierComponent
+            {
+                Type = RenderableModifierType.Barrier,
+            });
+        },
+    };
 
     // Instant, self-targeted, deterministic and side-effect-free like RingOfProjectilesAbility
     // (spawns a modifier entity acting through ModifierComponent.TargetEntityId, not the

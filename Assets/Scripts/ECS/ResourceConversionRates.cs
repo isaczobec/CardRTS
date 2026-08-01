@@ -6,10 +6,10 @@
 // one system's output, so they're safe to retune freely.
 public static class ResourceConversionRates
 {
-    public const float Wood       = 0.2f;
-    public const float Stone      = 0.25f;
-    public const float Metal      = 0.5f;
-    public const float Gems       = 2f;
-    public const float Soulstones = 3f;
-    public const float Gold       = 1f;
+    public const float Wood       = 1.0f;
+    public const float Stone      = 1.0f;
+    public const float Metal      = 1.0f;
+    public const float Gems       = 3.5f;
+    public const float Soulstones = 400.0f;
+    public const float Gold       = 1.0f;
 }

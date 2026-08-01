@@ -79,6 +79,11 @@ public class HealerGuardianCard : SpawnAtPointCard
     public override string Description => "A short-lived ranged support troop with no abilities. Landing a hit grants it a 12-second aura that periodically heals nearby friendly troops.";
     public override string IndicatorPrefabName => "HealerGuardian";
 
+    // Carries its own LifetimeComponent (see LifetimeSeconds above) — a 60-second troop
+    // doesn't count toward ResourceCollectorTrickleSystem's "does this player have a
+    // permanent troop" check, so this card shouldn't either.
+    public override bool CanCollectResources => false;
+
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
         {

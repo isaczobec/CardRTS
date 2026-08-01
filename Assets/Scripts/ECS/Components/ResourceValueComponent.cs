@@ -28,4 +28,15 @@ public struct ResourceValueComponent : IComponent
     public int Gems;
     public int Soulstones;
     public int Gold;
+
+    // True only for a real, permanent physical troop (TroopComponent.IsPhysicalTroop) with
+    // no LifetimeComponent — i.e. one that will stick around indefinitely rather than
+    // expiring on its own (a short-lived summon like EphemeralSkeletonsCard's archers or
+    // HealerGuardianCard's own troop doesn't count), so it could eventually go kill a map
+    // resource node (Tree/Rock/Ore/...) and earn its owner resources. Buildings, cards,
+    // upgrades, and telegraph/effect entities are always false — see
+    // ResourceValueHelper.Attach, which computes this automatically. Read by
+    // ResourceCollectorTrickleSystem to tell whether a player currently has any troop that
+    // could be collecting resources for them.
+    public bool CanCollectResources;
 }

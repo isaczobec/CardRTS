@@ -40,6 +40,8 @@ public static class CardRegistry
         { CardType.BallisticMissile, new BallisticMissileCard() },
         { CardType.MassiveSleepingDraught, new MassiveSleepingDraughtCard() },
         { CardType.Tornado, new TornadoCard() },
+        { CardType.Orcs, new OrcsCard() },
+        { CardType.KineticKnight, new KineticKnightCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

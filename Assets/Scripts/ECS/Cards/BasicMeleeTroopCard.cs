@@ -34,7 +34,7 @@ public class BasicMeleeTroopCard : SpawnAtPointCard
     public override int ShopGoldCost => 100; 
 
     public override CardType Type => CardType.BasicMeleeTroop;
-    public override string Title => "Melee Troop";
+    public override string Title => "Warrior";
     public override string ImageName => "BasicMeleeTroop";
     public override string Description => "A sturdy melee troop that charges the nearest enemy.";
     public override string IndicatorPrefabName => "BasicTroop";
