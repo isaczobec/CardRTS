@@ -15,6 +15,7 @@ public enum RenderableModifierType : byte
     Silence = 12,
     StrategyAura = 13,
     AttackSpeedAura = 14,
+    Corrosion = 15,
 }
 
 // Attached to a modifier entity (alongside its ModifierComponent) to say which visual

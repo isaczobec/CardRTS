@@ -1301,6 +1301,11 @@ MonoBehaviour:
     destroyAfterSeconds: 0
     soundNames:
     - Heal
+  - flagEventTypeName: CleaveActivatedEvent
+    prefab: {fileID: 3938369738910734278, guid: 3948ab4930ee41a49ae89f5445241f09, type: 3}
+    destroyAfterSeconds: 0
+    soundNames:
+    - Scythe
 --- !u!1 &206962675
 GameObject:
   m_ObjectHideFlags: 0
@@ -11560,13 +11565,13 @@ MonoBehaviour:
     TimeUntilImpact: 0.5
   _selectionMode: 1
   _abilityAnimationTriggers: []
-  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupSoundName: OrcWindup
   _attackWindupFinishedSoundName: 
   _abilityWindupSoundName: 
   _dealDamageSoundName: DefaultTroopDealDamage
   _takeDamageSoundName: DefaultTroopTakeDamage
   _deathSoundName: DefaultDeath
-  _activationSoundName: 
+  _activationSoundName: OrcGrunt
   _walkSoundName: 
   _walkSoundCrossfadeDuration: 0.2
   _runAnimationSpeedStat: 70
@@ -12549,6 +12554,12 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: fa2e13df7e1fed941835a6ffca0bcc83, type: 3}
   - name: Orcs
     sprite: {fileID: 21300000, guid: 3488b33dd528c2c44953de75a09d3ee4, type: 3}
+  - name: Siegebreaker
+    sprite: {fileID: 21300000, guid: c786dc73e248ab34b8d486229edab055, type: 3}
+  - name: Cleave
+    sprite: {fileID: 21300000, guid: 160c18127b3009049a7051246df659f1, type: 3}
+  - name: Corrosion
+    sprite: {fileID: 21300000, guid: 9fb3e1e3995ea7b43b71d0f8f0b540cb, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -18054,6 +18065,23 @@ MonoBehaviour:
     maxPitch: 0.95
     defaultVolume: 4
     overlaySounds: []
+  - name: GoblinSnatcherWindup
+    clips:
+    - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+    minPitch: 1.3
+    maxPitch: 1.4
+    defaultVolume: 3
+    overlaySounds:
+    - clip: {fileID: 8300000, guid: 9e0bc36ec7bc7874a9d27c1c2fa9be50, type: 3}
+      probability: 0.228
+      volume: 1
+      minPitch: 2.2
+      maxPitch: 2.4
+    - clip: {fileID: 8300000, guid: 1ae9233cccc26e440ba221c03b6efc46, type: 3}
+      probability: 0.256
+      volume: 1
+      minPitch: 2.1
+      maxPitch: 2.2
   - name: IronKnightWindup
     clips:
     - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
@@ -18073,23 +18101,6 @@ MonoBehaviour:
     maxPitch: 0.95
     defaultVolume: 4
     overlaySounds: []
-  - name: GoblinSnatcherWindup
-    clips:
-    - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
-    minPitch: 1.3
-    maxPitch: 1.4
-    defaultVolume: 3
-    overlaySounds:
-    - clip: {fileID: 8300000, guid: 9e0bc36ec7bc7874a9d27c1c2fa9be50, type: 3}
-      probability: 0.228
-      volume: 1
-      minPitch: 2.2
-      maxPitch: 2.4
-    - clip: {fileID: 8300000, guid: 1ae9233cccc26e440ba221c03b6efc46, type: 3}
-      probability: 0.256
-      volume: 1
-      minPitch: 2.1
-      maxPitch: 2.2
   - name: StoneRumbling
     clips:
     - {fileID: 8300000, guid: b4278225fec45c141b50c21ea84cb31e, type: 3}
@@ -18224,6 +18235,38 @@ MonoBehaviour:
     minPitch: 0.9
     maxPitch: 1.1
     defaultVolume: 1
+    overlaySounds: []
+  - name: OrcWindup
+    clips:
+    - {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 3
+    overlaySounds:
+    - clip: {fileID: 8300000, guid: 9e0bc36ec7bc7874a9d27c1c2fa9be50, type: 3}
+      probability: 0.228
+      volume: 1
+      minPitch: 0.95
+      maxPitch: 1.05
+    - clip: {fileID: 8300000, guid: 1ae9233cccc26e440ba221c03b6efc46, type: 3}
+      probability: 0.256
+      volume: 1
+      minPitch: 0.95
+      maxPitch: 1.05
+  - name: OrcGrunt
+    clips:
+    - {fileID: 8300000, guid: 9e0bc36ec7bc7874a9d27c1c2fa9be50, type: 3}
+    - {fileID: 8300000, guid: 1ae9233cccc26e440ba221c03b6efc46, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 3
+    overlaySounds: []
+  - name: Scythe
+    clips:
+    - {fileID: 8300000, guid: 8a51e27fcfc0d5a45bff346b32f2e115, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 0.8
     overlaySounds: []
 --- !u!114 &1985718171
 MonoBehaviour:

@@ -2,6 +2,17 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Runs after NetworkManager/MessageConsumer (see their own [DefaultExecutionOrder]) but
+// before every renderer that reads PositionComponent off ECS/ClientLocalECS each frame
+// (RenderableManager, SelectionManager, HealthBarManager, ... — all left at Unity's default
+// order, 0) — without this, those renderers' relative execution order versus this class's own
+// Update (where the prediction tick catch-up loop, and any reconciliation, actually mutates
+// PositionComponent) was unspecified, so in a given frame some renderers could read this
+// frame's freshly-ticked position while others still read last frame's, a skew that shows up
+// most visibly as one troop's selection ring/health bar visibly leading or lagging its own
+// 3D model during rapid direction changes. Pinning this class to run first guarantees every
+// renderer sees the exact same already-ticked position on every frame.
+[DefaultExecutionOrder(-100)]
 public class TickManager : Singleton<TickManager>
 {
     // Authoritative simulation — ticked on server and standalone.
@@ -215,6 +226,10 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<StatAuraSourceComponent>(67);
         _componentTypeRegistry.Register<ResourceDropBoostComponent>(68);
         _componentTypeRegistry.Register<TornadoProjectileComponent>(69);
+        _componentTypeRegistry.Register<CleaveComponent>(70);
+        _componentTypeRegistry.Register<CorrosionSourceComponent>(71);
+        _componentTypeRegistry.Register<CorrosionComponent>(72);
+        _componentTypeRegistry.Register<ResourceGainDebuffComponent>(73);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -230,6 +245,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<SetAIModeInput>(11);
         _inputTypeRegistry.Register<MultiPointInput>(12);
         _inputTypeRegistry.Register<BuyUpgradeInput>(13);
+        _inputTypeRegistry.Register<DiscardCardInput>(14);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -391,6 +407,16 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceDropBoostComponent>>(157);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<TornadoProjectileComponent>>(158);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<TornadoProjectileComponent>>(159);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<CleaveComponent>>(160);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<CleaveComponent>>(161);
+        _flagEventTypeRegistry.Register<CleaveActivatedEvent>(162);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<CorrosionSourceComponent>>(163);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<CorrosionSourceComponent>>(164);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<CorrosionComponent>>(165);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<CorrosionComponent>>(166);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceGainDebuffComponent>>(167);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceGainDebuffComponent>>(168);
+        _flagEventTypeRegistry.Register<CardDiscardedEvent>(169);
 
         ECS = CreateSimulationECS();
     }
@@ -445,10 +471,10 @@ public class TickManager : Singleton<TickManager>
         }
 
         // Server (authoritative) tick — driven by lockstep: fires as soon as all
-        // connected clients (and the host) have sent their inputs for _serverTick.
-        // NOTE: for best results set this script to execute AFTER NetworkManager
-        // and MessageConsumer in Unity's Script Execution Order settings so that
-        // incoming ClientTickInput messages are processed before TryRunServerTick.
+        // connected clients (and the host) have sent their inputs for _serverTick. Runs
+        // after NetworkManager/MessageConsumer (see this class's own [DefaultExecutionOrder])
+        // so this frame's incoming ClientTickInput messages are already queued/consumed
+        // before TryRunServerTick checks for them.
         if (isServer)
         {
             TryRunServerTick();
@@ -642,6 +668,10 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<StatAuraSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceDropBoostComponent>());
         ecs.AddComponentStore(new ComponentStore<TornadoProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<CleaveComponent>());
+        ecs.AddComponentStore(new ComponentStore<CorrosionSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<CorrosionComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceGainDebuffComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -692,6 +722,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(TargetEntityCardPlaySystem.Instance);
         ecs.RegisterSystem(MultiPointCardPlaySystem.Instance);
+        ecs.RegisterSystem(DiscardCardSystem.Instance);
         ecs.RegisterSystem(BuyCardSystem.Instance);
         ecs.RegisterSystem(BuyUpgradeSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
@@ -732,6 +763,8 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(OnKillScheduleSystem.Instance);
         ecs.RegisterSystem(OnHitScheduleSystem.Instance);
         ecs.RegisterSystem(GiantsbaneSystem.Instance);
+        ecs.RegisterSystem(CleaveSystem.Instance);
+        ecs.RegisterSystem(CorrosionSystem.Instance);
         ecs.RegisterSystem(FocusFireSystem.Instance);
         ecs.RegisterSystem(LifestealSystem.Instance);
         ecs.RegisterSystem(RemoveModifierOnDamageSystem.Instance);
@@ -752,6 +785,10 @@ public class TickManager : Singleton<TickManager>
         // ResourceDropBoostSystem right above — order between the two doesn't matter, since
         // both just multiply the same float.
         ecs.RegisterSystem(ComebackResourceBoostSystem.Instance);
+        // Subscribe-only (mutates ResourcesAdded.Multiplier before Execute), same shape as
+        // ResourceDropBoostSystem/ComebackResourceBoostSystem above — order between all three
+        // doesn't matter, since each just multiplies the same float.
+        ecs.RegisterSystem(ResourceGainDebuffSystem.Instance);
         // Pure read-and-report step over whatever ResourceValueComponents exist at the end
         // of the tick — no ordering dependency on anything above, so it's registered last.
         ecs.RegisterSystem(ResourceValueTotalSystem.Instance);
@@ -832,6 +869,10 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<StatAuraSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceDropBoostComponent>());
         ecs.AddComponentStore(new ComponentStore<TornadoProjectileComponent>());
+        ecs.AddComponentStore(new ComponentStore<CleaveComponent>());
+        ecs.AddComponentStore(new ComponentStore<CorrosionSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<CorrosionComponent>());
+        ecs.AddComponentStore(new ComponentStore<ResourceGainDebuffComponent>());
 
         return ecs;
     }

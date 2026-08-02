@@ -5,6 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 
+// Must run before MessageConsumer/TickManager (see their own [DefaultExecutionOrder]) so an
+// inbound message read off the socket this frame is already sitting in InboundQueue by the
+// time MessageConsumer.Update dequeues it, same frame.
+[DefaultExecutionOrder(-300)]
 public class NetworkManager : Singleton<NetworkManager>
 {
     public Queue<InboundMessage> InboundQueue { get; } = new Queue<InboundMessage>();

@@ -26,4 +26,7 @@ public enum ModifierID
     Silence = 18,
     StrategyAura = 19,
     AttackSpeedAura = 20,
+    Cleave = 21,
+    BuildingDamage = 22,
+    Corrosion = 23,
 }

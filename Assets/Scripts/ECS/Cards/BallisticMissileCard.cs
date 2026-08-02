@@ -20,7 +20,7 @@ using UnityEngine;
 // missile.
 public class BallisticMissileCard : SpawnAtPointCard
 {
-    private const float ActivationDelaySeconds = 2f;
+    private const float ActivationDelaySeconds = 1f;
     private const int Damage = 120;
     private const float ImpactRadius = 15f;
     // Matches MissileSiloCard's own BallisticSpeedTilesPerSecond convention.

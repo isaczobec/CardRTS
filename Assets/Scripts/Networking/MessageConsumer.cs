@@ -1,6 +1,11 @@
 using System.Text;
 using UnityEngine;
 
+// Runs after NetworkManager (drains this frame's inbound messages, e.g. ClientTickInput/
+// SimulationDelta) but before TickManager (see its own [DefaultExecutionOrder]) — so
+// TryRunServerTick/reconciliation this frame always sees whatever arrived this frame,
+// instead of picking it up a frame late depending on unspecified default script order.
+[DefaultExecutionOrder(-200)]
 public class MessageConsumer : MonoBehaviour
 {
     void Update()

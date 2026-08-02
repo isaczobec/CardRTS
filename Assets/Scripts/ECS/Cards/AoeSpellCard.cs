@@ -22,14 +22,13 @@ public class AoeSpellCard : SpawnAtPointCard
     // the exact same radius (CursorCircleRadius) without duplicating/drifting from it.
     public const int Range = 10;
 
-    // 2.8x the old 20 — see BasicMeleeTroopCard for the rebalance baseline this is scaled from.
-    private const int Damage = 56;
+    private const int Damage = 20;
     // Pulse interval, once active — same units as every other card's AttackSpeed
     // (milliseconds authored here, converted to ticks below).
     private const float AttackSpeedMilliseconds = 1000f;
 
     // How long the aura keeps pulsing after it activates, before LifetimeSystem expires it.
-    private const float DurationSeconds = 5f;
+    private const float DurationSeconds = 8f;
 
     public override int ShopGoldCost => 100; 
 

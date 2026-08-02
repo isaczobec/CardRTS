@@ -54,6 +54,17 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     // _selectedAnchor instead of following the cursor directly.
     [SerializeField] private float _dragLiftThreshold = 250f;
 
+    [Header("Discard")]
+    // Right-click never selects a card (see CardGameObject.RightClicked vs. Clicked) — two
+    // right-clicks on the SAME UNAFFORDABLE card within this window discard it instead (see
+    // OnCardRightClicked). A right-click on a different card, a second right-click after this
+    // window has elapsed, or any right-click on a card the player can currently afford, just
+    // does nothing (or starts a fresh pair) instead of discarding anything.
+    [SerializeField] private float _discardDoubleClickWindow = 0.4f;
+
+    private ulong _lastRightClickCardId;
+    private float _lastRightClickTime;
+
     private ECS _ecs;
     private readonly Dictionary<ulong, CardGameObject> _handCards = new();
     private readonly List<ulong> _handOrder = new();
@@ -127,6 +138,7 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     {
         TickManager.instance.ServerFlagEvents.Subscribe<CardDrawnEvent>(OnCardDrawn);
         TickManager.instance.ServerFlagEvents.Subscribe<CardPlayedEvent>(OnCardPlayed);
+        TickManager.instance.ServerFlagEvents.Subscribe<CardDiscardedEvent>(OnCardDiscarded);
         TickManager.instance.ServerFlagEvents.Subscribe<ResourcesChangedEvent>(OnResourcesChanged);
         TickManager.instance.ServerFlagEvents.Subscribe<ComponentAddedEvent<UpgradeComponent>>(OnUpgradeAdded);
 
@@ -217,6 +229,7 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         BuildCardVisual(e.EntityId, go);
 
         go.Clicked      += OnCardClicked;
+        go.RightClicked += OnCardRightClicked;
         go.DragStarted  += OnCardDragStarted;
         go.DragEnded    += OnCardDragEnded;
 
@@ -265,20 +278,27 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
         BuildCardVisual(targetCardEntityId, go);
     }
 
-    private void OnCardPlayed(CardPlayedEvent e)
+    private void OnCardPlayed(CardPlayedEvent e) => RemoveHandCardVisual(e.EntityId, "CardPlay");
+
+    // A discard isn't predicted (see DiscardCardSystem's own doc comment) — the hand-card
+    // visual only disappears once the server confirms it via this ServerFlagEvents-only
+    // event, exactly like a normal play.
+    private void OnCardDiscarded(CardDiscardedEvent e) => RemoveHandCardVisual(e.EntityId, "CardDiscard");
+
+    private void RemoveHandCardVisual(ulong entityId, string soundName)
     {
-        if (!_handCards.TryGetValue(e.EntityId, out CardGameObject go)) return;
+        if (!_handCards.TryGetValue(entityId, out CardGameObject go)) return;
 
-        _handCards.Remove(e.EntityId);
-        _handOrder.Remove(e.EntityId);
+        _handCards.Remove(entityId);
+        _handOrder.Remove(entityId);
 
-        if (_selectedCardId == e.EntityId) _selectedCardId = 0;
-        if (_hoveredCardId == e.EntityId) _hoveredCardId = 0;
-        if (_draggingCardId == e.EntityId) _draggingCardId = 0;
+        if (_selectedCardId == entityId) _selectedCardId = 0;
+        if (_hoveredCardId == entityId) _hoveredCardId = 0;
+        if (_draggingCardId == entityId) _draggingCardId = 0;
 
         Destroy(go.gameObject);
 
-        PlayCardSound("CardPlay");
+        PlayCardSound(soundName);
     }
 
     // ── Input ────────────────────────────────────────────────────────────────
@@ -357,6 +377,40 @@ public class CardHandRenderer : Singleton<CardHandRenderer>
     }
 
     private void OnCardClicked(CardGameObject go) => SelectCard(go.CardEntityId);
+
+    // Right-click never selects/plays a card — two right-clicks on the SAME card within
+    // _discardDoubleClickWindow enqueues a discard instead; anything else (a single
+    // right-click, or one that lands on a different card than the last) just (re)arms the
+    // pending pair and does nothing further. Only a card the player currently CAN'T afford
+    // is eligible — explicit design ask, discarding is a way to get rid of a dead card in
+    // hand, not a free way to cycle an affordable one (DiscardCardSystem enforces this
+    // server-side too; this is just so an affordable card doesn't visibly arm/discard at all).
+    private void OnCardRightClicked(CardGameObject go)
+    {
+        if (_draggingCardId != 0) return; // don't fight an active drag
+        if (CanAfford(go.CardEntityId)) return;
+
+        ulong cardId = go.CardEntityId;
+        float now = Time.unscaledTime;
+
+        bool isDoubleClick = cardId == _lastRightClickCardId && (now - _lastRightClickTime) <= _discardDoubleClickWindow;
+
+        if (!isDoubleClick)
+        {
+            _lastRightClickCardId = cardId;
+            _lastRightClickTime = now;
+            return;
+        }
+
+        // Consumed — a third rapid right-click starts a fresh pair rather than instantly
+        // discarding whatever card happens to be clicked next.
+        _lastRightClickCardId = 0;
+
+        if (_selectedCardId == cardId) _selectedCardId = 0;
+        if (_multiPointCardId == cardId) ClearMultiPointSequence();
+
+        InputBuffer.EnqueueInput(new DiscardCardInput { CardEntityId = cardId });
+    }
 
     private void OnCardDragStarted(CardGameObject go)
     {

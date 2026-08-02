@@ -18,6 +18,9 @@ public static class UpgradeRegistry
         { UpgradeType.Lifesteal, new LifestealUpgrade() },
         { UpgradeType.Deflection, new DeflectionUpgrade() },
         { UpgradeType.Bruiser, new BruiserUpgrade() },
+        { UpgradeType.Cleave, new CleaveUpgrade() },
+        { UpgradeType.Siegebreaker, new SiegebreakerUpgrade() },
+        { UpgradeType.Corrosion, new CorrosionUpgrade() },
     };
 
     public static bool TryGet(UpgradeType type, out CardUpgrade upgrade) => _upgrades.TryGetValue(type, out upgrade);

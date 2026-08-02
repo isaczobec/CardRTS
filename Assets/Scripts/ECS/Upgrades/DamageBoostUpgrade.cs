@@ -13,13 +13,16 @@ using System;
 // applied there.
 public class DamageBoostUpgrade : CardUpgrade
 {
-    private const float DamageRatioBonus = 0.2f;
+    private const float DamageRatioBonus = 0.15f;
 
     public override UpgradeType Type => UpgradeType.DamageBoost;
     public override string Title => "Damage Boost";
     public override string Description => $"+{DamageRatioBonus * 100f:0}% damage.";
     public override string ImageName => "DamageBoost";
     public override int ShopGoldCost => 70;
+    // Explicit design ask — up to 3 copies of any basic stat upgrade may be equipped on the
+    // same card.
+    public override int MaxStackCount => 3;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>
     {

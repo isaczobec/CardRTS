@@ -8,7 +8,7 @@ using System;
 // on this).
 public class AttackSpeedBoostUpgrade : CardUpgrade
 {
-    private const float DisplayedAttackSpeedBonus = 0.20f;
+    private const float DisplayedAttackSpeedBonus = 0.15f;
 
     public override UpgradeType Type => UpgradeType.AttackSpeedBoost;
     public override string Title => "Attack Speed Boost";
@@ -18,6 +18,9 @@ public class AttackSpeedBoostUpgrade : CardUpgrade
     // in-combat buff icon.
     public override string ImageName => "AttackSpeedBoost";
     public override int ShopGoldCost => 70;
+    // Explicit design ask — up to 3 copies of any basic stat upgrade may be equipped on the
+    // same card.
+    public override int MaxStackCount => 3;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>
     {

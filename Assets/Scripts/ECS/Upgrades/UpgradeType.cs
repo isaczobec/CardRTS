@@ -16,4 +16,7 @@ public enum UpgradeType : byte
     Lifesteal = 9,
     Deflection = 10,
     Bruiser = 11,
+    Cleave = 12,
+    Siegebreaker = 13,
+    Corrosion = 14,
 }

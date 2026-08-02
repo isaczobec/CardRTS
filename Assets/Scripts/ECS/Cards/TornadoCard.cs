@@ -15,7 +15,7 @@ public class TornadoCard : MultiPointCard
     // How long after being played the tornado takes to actually start forming/moving —
     // slightly longer than the standard 1s (SpeedBoostCard/BarrierCard/HealCard/...) since
     // this is a strong area-control effect, mirrors BallisticMissileCard's own longer windup.
-    private const float ActivationDelaySeconds = 2f;
+    private const float ActivationDelaySeconds = 1f;
 
     // Deliberately slow — the tornado needs to linger long enough over troops caught in it
     // to actually drag them along, not just clip past them.

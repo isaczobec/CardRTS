@@ -138,7 +138,11 @@ public class CardGameObject : MonoBehaviour,
         }
     }
 
+    // Left/middle click only — see OnPointerClick. Right-click never selects a card; it's
+    // routed to RightClicked instead so CardHandRenderer can implement its own
+    // double-right-click-to-discard gesture.
     public event Action<CardGameObject> Clicked;
+    public event Action<CardGameObject> RightClicked;
     public event Action<CardGameObject> DragStarted;
     public event Action<CardGameObject, PointerEventData> DragEnded;
     public event Action<CardGameObject> HoverEntered;
@@ -327,7 +331,14 @@ public class CardGameObject : MonoBehaviour,
         row.Text.color = canAfford ? row.DefaultColor : _insufficientResourceColor;
     }
 
-    public void OnPointerClick(PointerEventData eventData) => Clicked?.Invoke(this);
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
+            RightClicked?.Invoke(this);
+        else
+            Clicked?.Invoke(this);
+    }
+
     public void OnBeginDrag(PointerEventData eventData) => DragStarted?.Invoke(this);
     // Per-frame drag position is driven by CardHandRenderer reading Input.mousePosition
     // directly (needs the same lift-threshold logic every frame regardless of whether the

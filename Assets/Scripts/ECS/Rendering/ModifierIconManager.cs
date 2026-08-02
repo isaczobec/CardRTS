@@ -47,6 +47,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.Silence, ResolveSilence },
         { ModifierID.StrategyAura, ResolveStrategyAura },
         { ModifierID.AttackSpeedAura, ResolveAttackSpeedAura },
+        { ModifierID.Cleave, ResolveCleave },
+        { ModifierID.BuildingDamage, ResolveBuildingDamage },
     };
 
     private ECS _ecs;
@@ -527,6 +529,37 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
 
         int percent = Mathf.RoundToInt(-ratioBonus * 100f);
         return ("Attack Speed Aura", "AttackSpeedAura", $"Attack speed increased by {percent}% from a nearby Strategy Consultant.");
+    }
+
+    // CleaveComponent lives directly on this modifier entity (see that class's own doc
+    // comment) — states the current splash ratio/radius directly, mirroring
+    // ResolveGiantsbane/ResolveDeflection's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveCleave(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Every hit also deals a portion of the damage dealt to enemies near the target.";
+
+        ComponentStore<CleaveComponent> cleaveStore = ecs.GetComponentStore<CleaveComponent>();
+        if (cleaveStore == null || !cleaveStore.HasComponent(modifierEntityId))
+            return ("Cleave", "Cleave", fallback);
+
+        CleaveComponent cleave = cleaveStore.GetComponent(modifierEntityId);
+        int percent = Mathf.RoundToInt(cleave.SplashRatio * 100f);
+        return ("Cleave", "Cleave", $"Every hit also deals {percent}% of the damage dealt to enemies within {cleave.Radius:0} range of the target.");
+    }
+
+    // BuildingDamageBonusComponent lives directly on this modifier entity (see
+    // SiegebreakerUpgrade) — states the current bonus directly, mirroring ResolveGiantsbane/
+    // ResolveDeflection's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveBuildingDamage(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Deals bonus damage against buildings.";
+
+        ComponentStore<BuildingDamageBonusComponent> bonusStore = ecs.GetComponentStore<BuildingDamageBonusComponent>();
+        if (bonusStore == null || !bonusStore.HasComponent(modifierEntityId))
+            return ("Siegebreaker", "Siegebreaker", fallback);
+
+        int percent = Mathf.RoundToInt(bonusStore.GetComponent(modifierEntityId).BonusRatio * 100f);
+        return ("Siegebreaker", "Siegebreaker", $"Deals {percent}% more damage against buildings.");
     }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)

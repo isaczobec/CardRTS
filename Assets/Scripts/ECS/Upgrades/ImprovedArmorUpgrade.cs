@@ -13,7 +13,10 @@ public class ImprovedArmorUpgrade : CardUpgrade
     // ("Armor" + "Boost") so this one image asset serves both the shop icon and the in-combat
     // buff icon.
     public override string ImageName => "ArmorBoost";
-    public override int ShopGoldCost => 70;
+    public override int ShopGoldCost => 90;
+    // Explicit design ask — up to 3 copies of any basic stat upgrade may be equipped on the
+    // same card.
+    public override int MaxStackCount => 3;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>
     {
