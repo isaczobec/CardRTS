@@ -8,6 +8,11 @@ using System.Collections.Generic;
 // via the normal delta stream like any other server-created/mutated state).
 public static class BuyUpgradeSystem
 {
+    // Total upgrades (of any type/mix) a single card may carry at once — explicit design
+    // ask, checked in addition to (not instead of) each individual upgrade's own
+    // CardUpgrade.MaxStackCount.
+    private const int MaxUpgradesPerCard = 4;
+
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
@@ -45,6 +50,13 @@ public static class BuyUpgradeSystem
         if (currentStackCount >= definition.MaxStackCount)
         {
             DebugLogger.LogWarning($"[BuyUpgradeSystem] Rejected: card {input.TargetCardEntityId} already has {currentStackCount}/{definition.MaxStackCount} of upgrade {input.UpgradeType} (client {input.ClientId}).", "cards");
+            return;
+        }
+
+        int totalUpgradeCount = UpgradeQuery.CountUpgradesOnCard(ecs, input.TargetCardEntityId);
+        if (totalUpgradeCount >= MaxUpgradesPerCard)
+        {
+            DebugLogger.LogWarning($"[BuyUpgradeSystem] Rejected: card {input.TargetCardEntityId} already has {totalUpgradeCount}/{MaxUpgradesPerCard} total upgrades (client {input.ClientId}).", "cards");
             return;
         }
 

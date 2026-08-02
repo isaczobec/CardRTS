@@ -21,11 +21,13 @@ using UnityEngine;
 // itself.
 public class MissileSiloCard : SpawnAtPointCard
 {
-    private const int MaxHealth = 270;
+    // Cut by 30% (explicit design ask) from the original 270.
+    private const int MaxHealth = 189;
     // Much higher than CannonCard's own Range (14) — explicit design ask. Was 300; cut by
-    // 55% (explicit design ask) since with MinRange below now also gating the near edge,
-    // the old value made for an enormous engagement band.
-    private const int Range = 135;
+    // 55% to 135, then cut a further 45% (explicit design ask, both cuts compounding) to
+    // the current value — since with MinRange below now also gating the near edge, the old
+    // value made for an enormous engagement band.
+    private const int Range = 61;
     // Hard floor on engagement distance (world units, not a multiple of Range — see
     // TurretAIComponent.MinRange) — a long-range siege piece shouldn't be able to blast
     // something standing right next to it; a target has to close inside this to be safe.
@@ -45,8 +47,10 @@ public class MissileSiloCard : SpawnAtPointCard
     private const float MissileSpeedTilesPerSecond = 50f;
 
     // Multiple of this card's own Range stat — the AOE damage radius when a missile's flight
-    // ends (see BallisticProjectileComponent.ImpactRadius/ResolveMissileImpact).
-    private const float ImpactRadiusMultiplier = 0.035f;
+    // ends (see BallisticProjectileComponent.ImpactRadius/ResolveMissileImpact). Bumped up
+    // (explicit design ask, "slightly bigger blast radius") to compensate for Range's own
+    // cut above — old 135 * 0.035 = 4.73 effective radius, new 61 * 0.085 = 5.19.
+    private const float ImpactRadiusMultiplier = 0.085f;
 
     // Small leeway (as a multiple of Range) allowed when re-checking the target is still in
     // range once the windup finishes — mirrors CannonCard's own AttackRangeMultiplier.

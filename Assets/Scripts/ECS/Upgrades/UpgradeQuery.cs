@@ -39,4 +39,23 @@ public static class UpgradeQuery
         });
         return count;
     }
+
+    // How many UpgradeComponent entities of ANY type currently target a card — see
+    // BuyUpgradeSystem, which rejects a purchase that would exceed its own
+    // MaxUpgradesPerCard, separate from (and checked in addition to) each individual
+    // upgrade's own CardUpgrade.MaxStackCount above.
+    public static int CountUpgradesOnCard(ECS ecs, ulong cardEntityId)
+    {
+        ComponentStore<UpgradeComponent> upgradeStore = ecs.GetComponentStore<UpgradeComponent>();
+        if (upgradeStore == null) return 0;
+
+        int count = 0;
+        upgradeStore.ForEach((ulong id) =>
+        {
+            UpgradeComponent upgrade = upgradeStore.GetComponent(id);
+            if (upgrade.TargetCardEntityId != cardEntityId) return;
+            count++;
+        });
+        return count;
+    }
 }

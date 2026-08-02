@@ -8,7 +8,8 @@
 public class CannonCard : SpawnAtPointCard
 {
     // Tankier than a plain Building (350) — this is meant to be worth defending/attacking.
-    private const int MaxHealth = 500;
+    // Cut by 30% (explicit design ask) from the original 500.
+    private const int MaxHealth = 350;
     private const int Range = 14;
     private const int Damage = 55;
     // Slow, heavy shots — a defensive structure, not a DPS race.

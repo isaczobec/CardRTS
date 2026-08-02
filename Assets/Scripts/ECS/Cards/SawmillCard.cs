@@ -1,7 +1,7 @@
 // Passive Wood-generation building — same "stationary, non-AI" shape as BuildingCard (see
 // its own doc comment), plus a ResourceGeneratorComponent (see
-// ResourceGeneratorCardHelper.AddResourceGenerator) whose rate scales from 30/minute right
-// at this player's own base up to 100/minute at the world's center, linearly in between,
+// ResourceGeneratorCardHelper.AddResourceGenerator) whose rate scales from 16.5/minute right
+// at this player's own base up to 55/minute at the world's center, linearly in between,
 // based on how far from that base this Sawmill is actually placed.
 public class SawmillCard : SpawnAtPointCard
 {
@@ -12,7 +12,7 @@ public class SawmillCard : SpawnAtPointCard
 
     private const float MaxDistanceFromBuilding = 45f;
 
-    public override int ShopGoldCost => 120;
+    public override int ShopGoldCost => 168; // 40% more expensive (explicit design ask), from 120
 
     public override CardType Type => CardType.Sawmill;
     public override CardCategory Category => CardCategory.Building;
@@ -36,11 +36,11 @@ public class SawmillCard : SpawnAtPointCard
         SpellResist = BuildingSpawnHelper.SpellResist,
     };
 
-    // 80 of each of the other two resources — explicit design ask.
+    // 40% more expensive (explicit design ask), from 80 of each of the other two resources.
     public override ResourceCost Cost => new ResourceCost
         {
-            Stone = 80,
-            Metal = 80
+            Stone = 112,
+            Metal = 112
         };
 
     public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)

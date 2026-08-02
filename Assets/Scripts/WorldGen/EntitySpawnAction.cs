@@ -25,13 +25,15 @@ public class EntitySpawnAction : IWorldGenAction
     private const float OreRespawnSeconds  = 300f;
     private const float OreSelectionScale  = 2f;
 
-    private const int DefaultResourceGoldDrop = 4;
+    // Cut by 45% (explicit design ask) from the original flat 4.
+    private const int DefaultResourceGoldDrop = 2;
 
     // Passive-production boost granted on every kill (see ResourceProductionOnDeathComponent/
     // ResourceProductionOnDeathSystem) — the resource each node "represents" gets the larger
     // amount, the other two of Wood/Stone/Metal each get the smaller one.
-    private const float MainResourceProductionPerMinute = 2.4f;
-    private const float SecondaryResourceProductionPerMinute = 0.7f;
+    // Both cut by 45% (explicit design ask) from the original 2.4/0.7.
+    private const float MainResourceProductionPerMinute = 1.32f;
+    private const float SecondaryResourceProductionPerMinute = 0.385f;
 
     // Neutral soulstone resource nodes (see SoulstoneClusterFeature) — dead from the moment
     // they're spawned, each with its own long "grace period" respawn timer, ramping down to
@@ -55,7 +57,7 @@ public class EntitySpawnAction : IWorldGenAction
     private const float GemBlockRadius    = 1f;
     private const float GemRespawnSeconds = 3f * 60f + 30f; // 3:30
     private const float GemSelectionScale = 2f;
-    private const int   GemDropAmount     = 10;
+    private const int   GemDropAmount     = 6; // explicit design ask
 
     public float X;
     public float Y;
@@ -83,7 +85,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Wood = 12,
+            Wood = 7, // cut by 45% (explicit design ask) from 12
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -119,7 +121,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = RockBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Stone = 12,
+            Stone = 7, // cut by 45% (explicit design ask) from 12
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -155,7 +157,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = OreBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Metal = 12,
+            Metal = 7, // cut by 45% (explicit design ask) from 12
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent

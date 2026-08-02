@@ -1,6 +1,6 @@
 // Passive Metal-generation building — see SawmillCard for the full shape this mirrors (same
 // BuildingCard-style stationary setup, plus ResourceGeneratorCardHelper's distance-based
-// 30-100/minute rate).
+// 16.5-55/minute rate).
 public class MineCard : SpawnAtPointCard
 {
     // Matches BuildingCard's own MaxHealth/ActivationDelaySeconds/GoldDropOnDeath.
@@ -10,7 +10,7 @@ public class MineCard : SpawnAtPointCard
 
     private const float MaxDistanceFromBuilding = 45f;
 
-    public override int ShopGoldCost => 120;
+    public override int ShopGoldCost => 168; // 40% more expensive (explicit design ask), from 120
 
     public override CardType Type => CardType.Mine;
     public override CardCategory Category => CardCategory.Building;
@@ -32,11 +32,11 @@ public class MineCard : SpawnAtPointCard
         SpellResist = BuildingSpawnHelper.SpellResist,
     };
 
-    // 80 of each of the other two resources — explicit design ask.
+    // 40% more expensive (explicit design ask), from 80 of each of the other two resources.
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood = 80,
-            Stone = 80
+            Wood = 112,
+            Stone = 112
         };
 
     public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)
