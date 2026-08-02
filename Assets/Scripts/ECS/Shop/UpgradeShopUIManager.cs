@@ -21,6 +21,9 @@ public class UpgradeShopUIManager : ShopWindowBase<UpgradeShopUIManager>
 {
     [SerializeField] private UpgradeGameObject _upgradePrefab;
     [SerializeField] private Transform _gridContainer;
+    // Optional — assign the grid's ScrollPanel (see that class) so a filter/search change
+    // scrolls back to the top instead of leaving the view wherever it happened to be.
+    [SerializeField] private ScrollPanel _scrollPanel;
 
     [Header("Preview")]
     // Persistent, toggled on/off with hover — mirrors ShopUIManager._hoverPreviewCard.
@@ -111,6 +114,14 @@ public class UpgradeShopUIManager : ShopWindowBase<UpgradeShopUIManager>
 
             go.gameObject.SetActive(categoryMatches && searchMatches);
         }
+
+        // See ShopUIManager.ApplyFilters's own comment — forces the grid's layout to
+        // reflow around the newly hidden/shown upgrades immediately, so ScrollToTop below
+        // isn't computed/applied against a stale (pre-filter) layout.
+        if (_gridContainer is RectTransform gridRect)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(gridRect);
+
+        _scrollPanel?.ScrollToTop();
     }
 
     protected override void Update()

@@ -23,6 +23,9 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
 {
     [SerializeField] private CardGameObject _shopCardPrefab;
     [SerializeField] private Transform _gridContainer;
+    // Optional — assign the grid's ScrollPanel (see that class) so a filter/search change
+    // scrolls back to the top instead of leaving the view wherever it happened to be.
+    [SerializeField] private ScrollPanel _scrollPanel;
 
     [Header("Hover Preview")]
     // A separate, persistent CardGameObject (full stats/cost panels wired, unlike
@@ -103,6 +106,16 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
 
             go.gameObject.SetActive(categoryMatches && searchMatches);
         }
+
+        // A GridLayoutGroup on _gridContainer only reflows around the newly hidden/shown
+        // cards on Unity's own next Canvas update pass, not synchronously here — without
+        // forcing it immediately, ScrollToTop below computes/applies against the OLD
+        // (pre-filter) layout, which is why the grid previously looked wrong (gaps, cards
+        // still in stale positions) until something else (a manual scroll) forced a rebuild.
+        if (_gridContainer is RectTransform gridRect)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(gridRect);
+
+        _scrollPanel?.ScrollToTop();
     }
 
     private void PopulateGrid()

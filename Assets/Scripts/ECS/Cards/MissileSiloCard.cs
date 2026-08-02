@@ -22,8 +22,17 @@ using UnityEngine;
 public class MissileSiloCard : SpawnAtPointCard
 {
     private const int MaxHealth = 270;
-    // Much higher than CannonCard's own Range (14) — explicit design ask.
-    private const int Range = 300;
+    // Much higher than CannonCard's own Range (14) — explicit design ask. Was 300; cut by
+    // 55% (explicit design ask) since with MinRange below now also gating the near edge,
+    // the old value made for an enormous engagement band.
+    private const int Range = 135;
+    // Hard floor on engagement distance (world units, not a multiple of Range — see
+    // TurretAIComponent.MinRange) — a long-range siege piece shouldn't be able to blast
+    // something standing right next to it; a target has to close inside this to be safe.
+    // Not scaled by AttackRangeMultiplier (that's leeway on the FAR edge only) — this is a
+    // flat near-edge cutoff. Roughly Cannon's own whole Range (14), so anything within a
+    // Cannon's typical engagement distance is also safe from the Silo.
+    private const float MinRange = 20f;
     private const int Damage = 32;
     // Slow reload — a long-range siege piece, not a rapid-fire defense.
     private const float AttackSpeedMilliseconds = 3000f;
@@ -113,6 +122,7 @@ public class MissileSiloCard : SpawnAtPointCard
         {
             WindDownMultiplier              = WindDownMultiplier,
             AttackRangeMultiplier           = AttackRangeMultiplier,
+            MinRange                        = MinRange,
             CanTargetEnemyBuildings         = true,
             CanTargetNeutralBuildings       = true,
             ProjectileMode                  = TurretProjectileMode.Ballistic,

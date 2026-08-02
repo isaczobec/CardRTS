@@ -39,6 +39,14 @@ public struct TurretAIComponent : IComponent
     // BasicRangedAIComponent.AttackRangeMultiplier.
     public float AttackRangeMultiplier;
 
+    // A target closer than this (world units, NOT a multiple of Range) is never engageable —
+    // a hard floor, unlike AttackRangeMultiplier's leeway on the far edge of Range. 0 (the
+    // struct default) means no minimum, i.e. every existing turret keeps engaging anything
+    // out to Range with no dead zone. See MissileSiloCard for the one turret that sets this
+    // — a long-range siege piece that shouldn't be able to blast something standing right
+    // next to it.
+    public float MinRange;
+
     // Whether this turret may also engage an enemy-owned building — see TurretAISystem's own
     // targeting-priority comment. Outranks a neutral building (see CanTargetNeutralBuildings
     // below) but NOT an enemy troop: an enemy troop always takes over a currently-locked

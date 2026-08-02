@@ -29,6 +29,19 @@ public class ScrollPanel : MonoBehaviour, IScrollHandler
         _content.anchoredPosition = pos;
     }
 
+    // Snaps back to the top of the list (anchoredPosition.y == 0 — see this class's own doc
+    // comment on why increasing Y scrolls down through the content). Called whenever a
+    // filter/search change re-shows/hides rows, so a result further down the (now
+    // shorter/reordered) list doesn't stay scrolled past the visible window.
+    public void ScrollToTop()
+    {
+        if (_content == null) return;
+
+        Vector2 pos = _content.anchoredPosition;
+        pos.y = 0f;
+        _content.anchoredPosition = pos;
+    }
+
     private float MaxScrollY()
     {
         if (_viewport == null) return 0f;

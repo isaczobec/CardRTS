@@ -64,6 +64,22 @@ public class TickManager : Singleton<TickManager>
     // therefore how many ServerFlagEvents get raised-then-flushed, per call).
     private const int MaxReconciliationDeltasPerCall = 6;
 
+    // How long (real seconds) TryRunServerTick waits for every connected client's input
+    // before giving up on stragglers and advancing _serverTick without them anyway — see
+    // TryRunServerTick's own doc comment. 0.4s (~8 ticks at the 20Hz TickInterval)
+    // comfortably absorbs ordinary latency/jitter spikes without ever firing on a normal
+    // connection, while still bounding the worst-case group-wide stall (previously
+    // unbounded — a single stuck client could block the server tick, and therefore every
+    // connected peer including the host, indefinitely) to something short enough to read as
+    // a brief hitch rather than a freeze.
+    private const float ServerTickWaitTimeoutSeconds = 0.4f;
+
+    // Wall-clock time TryRunServerTick started waiting on the current _serverTick — reset
+    // every time a tick actually runs (including at game start), so the timeout above
+    // measures how long THIS tick has been stuck, not accumulated backlog from earlier
+    // ticks that already ran fine.
+    private float _serverTickWaitStartTime;
+
     // ── Seconds ⇄ ticks conversions ─────────────────────────────────────────
     // Durations/rates should be authored as seconds constants at the call site and
     // converted here, rather than hard-coding raw tick counts throughout the codebase.
@@ -472,6 +488,7 @@ public class TickManager : Singleton<TickManager>
         if (_gameStarted) return;
 
         _gameStarted = true;
+        _serverTickWaitStartTime = Time.unscaledTime;
         RenderingSetup.instance.SetupRendering();
         GameEvents.FireGameStarting();
     }
@@ -570,13 +587,28 @@ public class TickManager : Singleton<TickManager>
         _tick++;
     }
 
-    // Called every frame for the server. Runs as many authoritative ticks as
-    // possible given what all clients have sent (lockstep).
+    // Called every frame for the server. Runs as many authoritative ticks as possible given
+    // what all clients have sent (lockstep), but no longer waits on a straggler forever:
+    // once ServerTickWaitTimeoutSeconds elapses without every connected client's input for
+    // _serverTick, this proceeds anyway using whatever inputs HAVE arrived (a tick with a
+    // missing client's input just runs that client with none this tick — ApplyClientInputsForTick
+    // already tolerates a partially/fully-missing entry). The straggler's input isn't lost:
+    // once it actually arrives, NetworkManager.OnClientTickInput notices its original tick
+    // is already behind _serverTick and redirects it to whichever tick is current then.
+    // Without this timeout, one stalled connection (e.g. a dropped packet on the
+    // reliable-sequenced pipeline head-of-line-blocking every subsequent ClientTickInput
+    // behind it — worse the higher that client's latency) blocks _serverTick indefinitely
+    // for every connected peer, including the host — TryRunServerTick runs on the host too,
+    // gated by this exact same IsAllClientsReadyForTick check.
     void TryRunServerTick()
     {
         int ran = 0;
-        while (ran++ < MaxTickCatchupPerFrame && NetworkManager.instance.IsAllClientsReadyForTick(_serverTick))
+        while (ran++ < MaxTickCatchupPerFrame)
         {
+            bool allClientsReady = NetworkManager.instance.IsAllClientsReadyForTick(_serverTick);
+            if (!allClientsReady && Time.unscaledTime - _serverTickWaitStartTime < ServerTickWaitTimeoutSeconds)
+                break;
+
             NetworkManager.instance.ApplyClientInputsForTick(_serverTick);
 
             ECS.CurrentSimulationTick = _serverTick;
@@ -586,6 +618,7 @@ public class TickManager : Singleton<TickManager>
             ECS.Delta.DispatchComponentChangedEvents();
 
             _serverTick++;
+            _serverTickWaitStartTime = Time.unscaledTime;
             AfterServerTick?.Invoke();
 
             // Queue reconciliation for the host's prediction ECS.

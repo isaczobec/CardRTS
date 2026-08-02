@@ -32,6 +32,10 @@ public class CameraController : MonoBehaviour
 
     [Header("Rotation")]
     [SerializeField] float _rotateSensitivity = 0.3f;
+    // Max gap (seconds) between two Left Alt key-downs for the second one to count as a
+    // double-tap and reset the camera's yaw back to _initialYaw — same "quick succession"
+    // feel as a double-click.
+    [SerializeField] float _doubleTapAltResetWindow = 0.3f;
 
     [Header("Zoom")]
     [SerializeField] float _zoomSensitivity = 15f;
@@ -40,6 +44,8 @@ public class CameraController : MonoBehaviour
 
     Vector3 _pivot;
     float _yaw;
+    float _initialYaw;
+    float _lastAltPressTime = -1f;
 
     // Read-only access for MinimapManager's viewport indicator (position + rotation).
     public Vector3 Pivot => _pivot;
@@ -48,6 +54,7 @@ public class CameraController : MonoBehaviour
     void Start()
     {
         _yaw = transform.eulerAngles.y;
+        _initialYaw = _yaw;
         // Back-compute the pivot from the initial camera transform so the
         // scene-view placement is respected when entering play mode.
         _pivot = transform.position + transform.forward * _distance;
@@ -106,8 +113,33 @@ public class CameraController : MonoBehaviour
 
         HandleTabHotkey();
         HandleZoom();
+        HandleAltDoubleTapReset();
 
         ApplyTransform();
+    }
+
+    // Double-tapping Left Alt (two key-downs within _doubleTapAltResetWindow) snaps yaw
+    // back to whatever the camera started at, regardless of how far HandleRotation has
+    // rotated it since — a quick "undo my rotation" shortcut. GetKeyDown (not GetKey) so
+    // this only evaluates on the actual press edge, not every frame Alt is held (which
+    // would keep resetting _lastAltPressTime and make a double-tap impossible to land).
+    void HandleAltDoubleTapReset()
+    {
+        if (DevConsole.IsOpen) return;
+        if (!Input.GetKeyDown(KeyCode.LeftAlt)) return;
+
+        float now = Time.unscaledTime;
+        bool isDoubleTap = _lastAltPressTime >= 0f && now - _lastAltPressTime <= _doubleTapAltResetWindow;
+
+        if (isDoubleTap)
+        {
+            _yaw = _initialYaw;
+            _lastAltPressTime = -1f; // consumed — a third tap starts a fresh pair, not another reset
+        }
+        else
+        {
+            _lastAltPressTime = now;
+        }
     }
 
     // Held Space: re-centers the camera on the current selection every frame it's held,

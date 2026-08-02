@@ -74,6 +74,7 @@ public class TurretAISystem : ISystem
         }
 
         float range = StatsQuery.GetRange(_ecs, id, DefaultRange);
+        float minRange = ai.MinRange;
 
         // Committed to a windup — ignore everything else until it resolves. Nothing can
         // cancel a turret's windup early (unlike a troop's move-order cancel) since it never
@@ -85,14 +86,14 @@ public class TurretAISystem : ISystem
         }
 
         // (Re)validate the current lock.
-        if (ai.TargetEntityId != 0 && !IsValidTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, ai.CanTargetEnemyBuildings, ai.CanTargetNeutralBuildings))
+        if (ai.TargetEntityId != 0 && !IsValidTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, minRange, ai.CanTargetEnemyBuildings, ai.CanTargetNeutralBuildings))
             ai.TargetEntityId = 0;
 
         // Enemy troops always outrank everything else — take one over even while still
         // validly locked onto a lower-priority building.
-        if (!IsEnemyTroopTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range))
+        if (!IsEnemyTroopTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, minRange))
         {
-            ulong closestTroop = FindClosestEnemyTroopInRange(id, troop.OwnerPlayerId, myPos, range);
+            ulong closestTroop = FindClosestEnemyTroopInRange(id, troop.OwnerPlayerId, myPos, range, minRange);
             if (closestTroop != 0)
                 ai.TargetEntityId = closestTroop;
         }
@@ -100,17 +101,17 @@ public class TurretAISystem : ISystem
         // Enemy buildings outrank neutral ones (but never an enemy troop) — take one over if
         // we're not already locked onto an enemy troop OR enemy building.
         if (ai.CanTargetEnemyBuildings
-            && !IsEnemyTroopTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range)
-            && !IsEnemyBuildingTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range))
+            && !IsEnemyTroopTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, minRange)
+            && !IsEnemyBuildingTarget(ai.TargetEntityId, troop.OwnerPlayerId, myPos, range, minRange))
         {
-            ulong closestEnemyBuilding = FindClosestEnemyBuildingInRange(id, troop.OwnerPlayerId, myPos, range);
+            ulong closestEnemyBuilding = FindClosestEnemyBuildingInRange(id, troop.OwnerPlayerId, myPos, range, minRange);
             if (closestEnemyBuilding != 0)
                 ai.TargetEntityId = closestEnemyBuilding;
         }
 
         // Neutral building — absolute last resort, only when nothing else qualified at all.
         if (ai.TargetEntityId == 0 && ai.CanTargetNeutralBuildings)
-            ai.TargetEntityId = FindClosestNeutralBuildingInRange(id, myPos, range);
+            ai.TargetEntityId = FindClosestNeutralBuildingInRange(id, myPos, range, minRange);
 
         if (ai.TargetEntityId == 0)
         {
@@ -140,7 +141,7 @@ public class TurretAISystem : ISystem
         // Finishing the attack (firing the shot) needs its own validity + CanPerform check —
         // a silence landing mid-windup should waste the shot, same as the target having
         // left range/died, rather than still firing because the windup already started.
-        if (targetId != 0 && IsValidTarget(targetId, ownerPlayerId, myPos, range * ai.AttackRangeMultiplier, ai.CanTargetEnemyBuildings, ai.CanTargetNeutralBuildings)
+        if (targetId != 0 && IsValidTarget(targetId, ownerPlayerId, myPos, range * ai.AttackRangeMultiplier, ai.MinRange, ai.CanTargetEnemyBuildings, ai.CanTargetNeutralBuildings)
             && ActivationQuery.CanPerform(_ecs, id))
         {
             bool fired = ai.ProjectileMode == TurretProjectileMode.Ballistic
@@ -203,7 +204,9 @@ public class TurretAISystem : ISystem
         return true;
     }
 
-    private bool PassesCommonChecks(ulong targetId, Vector2 myPos, float range)
+    // minRange 0 (every existing turret except MissileSiloCard) means no dead zone at all —
+    // only the >= check below is skipped, range still behaves exactly as before.
+    private bool PassesCommonChecks(ulong targetId, Vector2 myPos, float range, float minRange)
     {
         if (!_ecs.HasEntity(targetId)) return false;
         if (!_posStore.HasComponent(targetId) || !_troopStore.HasComponent(targetId)) return false;
@@ -213,13 +216,15 @@ public class TurretAISystem : ISystem
 
         PositionComponent targetPos = _posStore.GetComponent(targetId);
         float dx = targetPos.X - myPos.x, dy = targetPos.Y - myPos.y;
-        return dx * dx + dy * dy <= range * range;
+        float distSq = dx * dx + dy * dy;
+        if (minRange > 0f && distSq < minRange * minRange) return false;
+        return distSq <= range * range;
     }
 
-    private bool IsEnemyTroopTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range)
+    private bool IsEnemyTroopTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range, float minRange)
     {
         if (targetId == 0) return false;
-        if (!PassesCommonChecks(targetId, myPos, range)) return false;
+        if (!PassesCommonChecks(targetId, myPos, range, minRange)) return false;
 
         TroopComponent target = _troopStore.GetComponent(targetId);
         if (!target.IsPhysicalTroop) return false;
@@ -227,10 +232,10 @@ public class TurretAISystem : ISystem
         return !ShadowCloakSystem.IsCloaked(_ecs, targetId, out _);
     }
 
-    private bool IsEnemyBuildingTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range)
+    private bool IsEnemyBuildingTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range, float minRange)
     {
         if (targetId == 0) return false;
-        if (!PassesCommonChecks(targetId, myPos, range)) return false;
+        if (!PassesCommonChecks(targetId, myPos, range, minRange)) return false;
 
         TroopComponent target = _troopStore.GetComponent(targetId);
         if (target.IsPhysicalTroop) return false;
@@ -238,10 +243,10 @@ public class TurretAISystem : ISystem
         return _buildingStore != null && _buildingStore.HasComponent(targetId);
     }
 
-    private bool IsNeutralBuildingTarget(ulong targetId, Vector2 myPos, float range)
+    private bool IsNeutralBuildingTarget(ulong targetId, Vector2 myPos, float range, float minRange)
     {
         if (targetId == 0) return false;
-        if (!PassesCommonChecks(targetId, myPos, range)) return false;
+        if (!PassesCommonChecks(targetId, myPos, range, minRange)) return false;
 
         TroopComponent target = _troopStore.GetComponent(targetId);
         if (target.IsPhysicalTroop) return false;
@@ -249,12 +254,12 @@ public class TurretAISystem : ISystem
         return _buildingStore != null && _buildingStore.HasComponent(targetId);
     }
 
-    private bool IsValidTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range, bool canTargetEnemyBuildings, bool canTargetNeutralBuildings)
-        => IsEnemyTroopTarget(targetId, myOwnerId, myPos, range)
-        || (canTargetEnemyBuildings && IsEnemyBuildingTarget(targetId, myOwnerId, myPos, range))
-        || (canTargetNeutralBuildings && IsNeutralBuildingTarget(targetId, myPos, range));
+    private bool IsValidTarget(ulong targetId, ushort myOwnerId, Vector2 myPos, float range, float minRange, bool canTargetEnemyBuildings, bool canTargetNeutralBuildings)
+        => IsEnemyTroopTarget(targetId, myOwnerId, myPos, range, minRange)
+        || (canTargetEnemyBuildings && IsEnemyBuildingTarget(targetId, myOwnerId, myPos, range, minRange))
+        || (canTargetNeutralBuildings && IsNeutralBuildingTarget(targetId, myPos, range, minRange));
 
-    private ulong FindClosestEnemyTroopInRange(ulong turretId, ushort myOwnerId, Vector2 myPos, float range)
+    private ulong FindClosestEnemyTroopInRange(ulong turretId, ushort myOwnerId, Vector2 myPos, float range, float minRange)
     {
         _queryBuffer.Clear();
         _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, range, _queryBuffer);
@@ -265,7 +270,7 @@ public class TurretAISystem : ISystem
         foreach (ulong candidateId in _queryBuffer)
         {
             if (candidateId == turretId) continue;
-            if (!IsEnemyTroopTarget(candidateId, myOwnerId, myPos, range)) continue;
+            if (!IsEnemyTroopTarget(candidateId, myOwnerId, myPos, range, minRange)) continue;
 
             PositionComponent p = _posStore.GetComponent(candidateId);
             float dx = p.X - myPos.x, dy = p.Y - myPos.y;
@@ -280,7 +285,7 @@ public class TurretAISystem : ISystem
         return bestId;
     }
 
-    private ulong FindClosestEnemyBuildingInRange(ulong turretId, ushort myOwnerId, Vector2 myPos, float range)
+    private ulong FindClosestEnemyBuildingInRange(ulong turretId, ushort myOwnerId, Vector2 myPos, float range, float minRange)
     {
         _queryBuffer.Clear();
         _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, range, _queryBuffer);
@@ -291,7 +296,7 @@ public class TurretAISystem : ISystem
         foreach (ulong candidateId in _queryBuffer)
         {
             if (candidateId == turretId) continue;
-            if (!IsEnemyBuildingTarget(candidateId, myOwnerId, myPos, range)) continue;
+            if (!IsEnemyBuildingTarget(candidateId, myOwnerId, myPos, range, minRange)) continue;
 
             PositionComponent p = _posStore.GetComponent(candidateId);
             float dx = p.X - myPos.x, dy = p.Y - myPos.y;
@@ -306,7 +311,7 @@ public class TurretAISystem : ISystem
         return bestId;
     }
 
-    private ulong FindClosestNeutralBuildingInRange(ulong turretId, Vector2 myPos, float range)
+    private ulong FindClosestNeutralBuildingInRange(ulong turretId, Vector2 myPos, float range, float minRange)
     {
         _queryBuffer.Clear();
         _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, range, _queryBuffer);
@@ -317,7 +322,7 @@ public class TurretAISystem : ISystem
         foreach (ulong candidateId in _queryBuffer)
         {
             if (candidateId == turretId) continue;
-            if (!IsNeutralBuildingTarget(candidateId, myPos, range)) continue;
+            if (!IsNeutralBuildingTarget(candidateId, myPos, range, minRange)) continue;
 
             PositionComponent p = _posStore.GetComponent(candidateId);
             float dx = p.X - myPos.x, dy = p.Y - myPos.y;

@@ -278,9 +278,26 @@ public class NetworkManager : Singleton<NetworkManager>
 
         var inputs = DeserializeInputs(inputBytes, msg.SenderId);
 
-        if (!_pendingClientInputs.TryGetValue(tick, out var byClient))
-            _pendingClientInputs[tick] = byClient = new Dictionary<ushort, List<InputBase>>();
-        byClient[msg.SenderId] = inputs;
+        // TickManager.TryRunServerTick gives up waiting on a straggler after
+        // ServerTickWaitTimeoutSeconds and advances _serverTick without it (see that
+        // method's own doc comment). If this input's original tick is already behind
+        // _serverTick, nothing will ever revisit that old tick's bucket again
+        // (ApplyClientInputsForTick/_serverTick only ever move forward) — redirect it to
+        // whichever tick is current now instead of silently losing it.
+        ulong targetTick = tick;
+        if (TickManager.instance != null && tick < TickManager.instance.ServerTick)
+            targetTick = TickManager.instance.ServerTick;
+
+        if (!_pendingClientInputs.TryGetValue(targetTick, out var byClient))
+            _pendingClientInputs[targetTick] = byClient = new Dictionary<ushort, List<InputBase>>();
+
+        // A redirected late input can land on a tick where this same client already has
+        // on-time input queued (its regular submission for targetTick) — append rather
+        // than overwrite so neither is lost.
+        if (byClient.TryGetValue(msg.SenderId, out var existingInputs))
+            existingInputs.AddRange(inputs);
+        else
+            byClient[msg.SenderId] = inputs;
     }
 
     private List<InputBase> DeserializeInputs(byte[] data, ushort senderId)
