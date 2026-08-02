@@ -47,6 +47,23 @@ public class TickManager : Singleton<TickManager>
     // frames instead of spending unbounded time in one Update() call.
     private const int MaxTickCatchupPerFrame = 20;
 
+    // Bounds how many buffered server deltas RunReconciliation applies/dispatches in a
+    // single call. Without this, a backlog built up during a network stall (a dropped
+    // packet on the reliable-sequenced pipeline head-of-line-blocks every SimulationDelta
+    // behind it until it's retransmitted — worse the higher the latency, e.g. a
+    // higher-ping region) gets drained all at once: every backlogged tick's
+    // TroopBeginAttackEvent/AttackWindupBeganEvent/DamageDealtEvent (ServerFlagEvents-only —
+    // see BasicTroopRenderer/VariedAttackTroopRenderer/FloatingTextManager/etc., none of
+    // which predict locally the way HealthBarManager's DamageRequest.SubscribeExecuted hook
+    // or SeekingProjectileRenderer's dual local+server subscription do) fires in the exact
+    // same ServerFlagEvents.Flush() call, i.e. the same rendered frame — a wall of attack
+    // animations/damage numbers popping at once, right after a stretch of silence. Capping
+    // this spreads that backlog's dispatch over several frames instead, without changing
+    // ClientLocalECS's actual predicted/settled state (CopyStateFrom + replay below still run
+    // every call — this only paces how many deltas' worth of state gets applied, and
+    // therefore how many ServerFlagEvents get raised-then-flushed, per call).
+    private const int MaxReconciliationDeltasPerCall = 6;
+
     // ── Seconds ⇄ ticks conversions ─────────────────────────────────────────
     // Durations/rates should be authored as seconds constants at the call site and
     // converted here, rather than hard-coding raw tick counts throughout the codebase.
@@ -581,7 +598,8 @@ public class TickManager : Singleton<TickManager>
     {
         ulong newestServerTick = 0;
 
-        while (_pendingDeltas.TryDequeue(out PendingDelta delta))
+        int processed = 0;
+        while (processed < MaxReconciliationDeltasPerCall && _pendingDeltas.TryDequeue(out PendingDelta delta))
         {
             if (!delta.IsDirect)
                 _clientDeltaManager.ApplyDelta(ClientServerMirrorECS,
@@ -590,6 +608,7 @@ public class TickManager : Singleton<TickManager>
             ServerFlagEvents.AddFromBytes(delta.FlagEvents, _flagEventTypeRegistry);
             if (delta.ServerTick > newestServerTick)
                 newestServerTick = delta.ServerTick;
+            processed++;
         }
 
         // Same reasoning as ClearPendingState in DoPredictionTick — ApplyDelta's
