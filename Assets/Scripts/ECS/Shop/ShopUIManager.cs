@@ -78,12 +78,30 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
     private void SetCategoryFilter(CardCategory? category)
     {
         _activeCategoryFilter = category;
+        ApplyFilters();
+    }
+
+    // Called by ShopWindowBase whenever the (optional) search bar's text changes.
+    protected override void OnSearchTextChanged() => ApplyFilters();
+
+    // Re-evaluates both the category filter and the search text together (a card must pass
+    // BOTH to show) — shared by SetCategoryFilter and OnSearchTextChanged since either one
+    // changing requires re-checking every card against the other's current state too.
+    private void ApplyFilters()
+    {
+        string search = SearchText?.Trim();
+        bool hasSearch = !string.IsNullOrEmpty(search);
 
         foreach (CardGameObject go in _shopCards)
         {
             if (!_shopCardDefinitions.TryGetValue(go, out Card card)) continue;
-            bool visible = _activeCategoryFilter == null || card.Category == _activeCategoryFilter.Value;
-            go.gameObject.SetActive(visible);
+
+            bool categoryMatches = _activeCategoryFilter == null || card.Category == _activeCategoryFilter.Value;
+            bool searchMatches = !hasSearch
+                || card.Title.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                || card.Description.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            go.gameObject.SetActive(categoryMatches && searchMatches);
         }
     }
 

@@ -41,6 +41,51 @@ public static class ShadowCloakSystem
 
             req.IsSelectable = false;
         });
+
+        ecs.Requests.SubscribeExecuted<DamageRequest>(OnDamageExecuted);
+    }
+
+    // Breaks a cloak early once its target has taken MaxDamageInstancesBeforeBreak separate
+    // damage instances while cloaked — see ShadowCloakComponent's own doc comment for why
+    // this counts qualifying HITS, not cumulative Amount (a shot fired before the cloak went
+    // up, but landing after — see this class's own doc comment on why those still land —
+    // counts as one instance the same as any other). 0 (the default for any grant that
+    // doesn't set it) never breaks from damage at all, preserving the original behavior.
+    private static void OnDamageExecuted(DamageRequest request, ECS ecs)
+    {
+        if (request.Amount <= 0) return;
+
+        ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
+        ComponentStore<ShadowCloakComponent> cloakStore = ecs.GetComponentStore<ShadowCloakComponent>();
+        if (modifierStore == null || cloakStore == null) return;
+
+        _brokenScratch.Clear();
+        cloakStore.ForEach((ulong modifierId) =>
+        {
+            if (!modifierStore.HasComponent(modifierId)) return;
+            if (modifierStore.GetComponent(modifierId).TargetEntityId != request.EntityId) return;
+            if (!ModifierQuery.IsActive(ecs, modifierId)) return;
+
+            ref ShadowCloakComponent cloak = ref cloakStore.GetComponent(modifierId);
+            if (cloak.MaxDamageInstancesBeforeBreak <= 0) return;
+
+            cloak.DamageInstancesTaken++;
+            ecs.Delta.MarkComponentDirty(modifierId, typeof(ShadowCloakComponent));
+
+            if (cloak.DamageInstancesTaken >= cloak.MaxDamageInstancesBeforeBreak)
+                _brokenScratch.Add(modifierId);
+        });
+
+        if (_brokenScratch.Count == 0) return;
+
+        // Server-only deletion — same reasoning as RemoveActiveShadowCloakModifiers, which
+        // this deliberately doesn't call (it would just re-scan for the same modifiers by
+        // target instead of reusing the ones already found above).
+        bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
+        if (!isServer) return;
+
+        foreach (ulong modifierId in _brokenScratch)
+            ecs.DeleteEntity(modifierId);
     }
 
     // True (with the cloaked troop's own OwnerPlayerId out) if an active
@@ -105,4 +150,5 @@ public static class ShadowCloakSystem
     }
 
     private static readonly List<ulong> _removalScratch = new();
+    private static readonly List<ulong> _brokenScratch = new();
 }

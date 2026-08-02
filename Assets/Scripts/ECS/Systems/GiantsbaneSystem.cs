@@ -55,6 +55,10 @@ public static class GiantsbaneSystem
         int bonusDamage = Mathf.RoundToInt(maxHealth * giantsbane.BonusDamageMaxHealthRatio);
         if (bonusDamage <= 0) return;
 
-        ecs.Requests.CreateRequest(new DamageRequest(targetId, bonusDamage) { DealerEntityId = dealerId });
+        ecs.Requests.CreateRequest(new DamageRequest(targetId, bonusDamage)
+        {
+            DealerEntityId = dealerId,
+            ProcType       = DamageProcType.Secondary,
+        });
     }
 }

@@ -15,7 +15,7 @@ public class SiegebreakerUpgrade : CardUpgrade
     public override string Title => "Siegebreaker";
     public override string Description => $"Deals {BonusRatio * 100f:0}% more damage against buildings.";
     public override string ImageName => "Siegebreaker";
-    public override int ShopGoldCost => 130;
+    public override int ShopGoldCost => 80  ;
     // Explicit design ask — up to 2 copies of this upgrade may be equipped on the same card.
     public override int MaxStackCount => 2;
 

@@ -19,4 +19,6 @@ public enum UpgradeType : byte
     Cleave = 12,
     Siegebreaker = 13,
     Corrosion = 14,
+    VengefulSpirits = 15,
+    CripplingStrikes = 16,
 }

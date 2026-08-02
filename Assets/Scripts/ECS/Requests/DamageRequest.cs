@@ -27,15 +27,16 @@ public class DamageRequest : Request
     // BruiserSystem's own PreMitigated drain request uses.
     public bool PreMitigated;
 
-    // True for a damage instance created BY another on-damage-dealt proc system reacting to
-    // an earlier DamageRequest from the same dealer (e.g. CleaveUpgrade's splash hits) —
-    // lets a proc system that reacts to DamageRequest.SubscribeExecuted (see CleaveSystem)
-    // recognize and skip its own follow-up damage, so it doesn't recursively re-trigger
-    // itself off splash it just created (which, for an effect with no per-hit cooldown like
-    // Cleave, would otherwise cascade across every enemy caught in range instead of firing
-    // once per original hit). A proc system that creates its own follow-up DamageRequest and
-    // wants to prevent this cascade should set this true on it.
-    public bool FromSecondaryProc;
+    // What KIND of damage instance this is (direct hit / damage-over-time tick / secondary
+    // proc off another hit) — see DamageProcType's own doc comment. Lets a proc system that
+    // reacts to DamageRequest.SubscribeExecuted (see CleaveSystem) recognize and skip a
+    // damage instance created by another (or its own) on-damage-dealt proc, so it doesn't
+    // recursively re-trigger itself off splash it just created (which, for an effect with no
+    // per-hit cooldown like Cleave, would otherwise cascade across every enemy caught in
+    // range instead of firing once per original hit). A proc system that creates its own
+    // follow-up DamageRequest should set this to Secondary (or DamageOverTime, if that's what
+    // it is) on it.
+    public DamageProcType ProcType = DamageProcType.Direct;
 
     public DamageRequest(ulong entityId, int amount)
     {

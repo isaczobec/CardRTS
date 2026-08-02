@@ -21,6 +21,8 @@ public static class UpgradeRegistry
         { UpgradeType.Cleave, new CleaveUpgrade() },
         { UpgradeType.Siegebreaker, new SiegebreakerUpgrade() },
         { UpgradeType.Corrosion, new CorrosionUpgrade() },
+        { UpgradeType.VengefulSpirits, new VengefulSpiritsUpgrade() },
+        { UpgradeType.CripplingStrikes, new CripplingStrikesUpgrade() },
     };
 
     public static bool TryGet(UpgradeType type, out CardUpgrade upgrade) => _upgrades.TryGetValue(type, out upgrade);

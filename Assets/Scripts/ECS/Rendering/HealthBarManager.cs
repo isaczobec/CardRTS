@@ -19,6 +19,15 @@ public class HealthBarManager : Singleton<HealthBarManager>
 {
     [SerializeField] private GameObject _healthBarPrefab;
 
+    [Header("Owner Colors")]
+    // Tints HealthBarPrefab's own _MiddleColor shader property — mirrors SelectionManager's
+    // own friendly/neutral/enemy coloring, just with distinct defaults here since a health
+    // bar isn't already carrying a colored ring around the troop the way a selection
+    // indicator is.
+    [SerializeField] private Color _friendlyColor = Color.green;
+    [SerializeField] private Color _neutralColor = Color.yellow;
+    [SerializeField] private Color _enemyColor = Color.red;
+
     // Fallback for StatsQuery.GetSpeed below, mirrors BasicTroopRenderer's own DefaultSpeed.
     private const int DefaultSpeed = 100;
 
@@ -75,6 +84,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
 
         ApplyPosition(e.EntityId, _positionStore.GetComponent(e.EntityId), bar);
         ApplyHealth(e.EntityId, bar);
+        ApplyOwnerColor(e.EntityId, bar);
 
         // An entity can already be dead the moment it activates (e.g. a world-gen resource
         // node spawned dead-on-spawn — see EntitySpawnAction.SpawnSoulstoneNode) — that never
@@ -109,6 +119,25 @@ public class HealthBarManager : Singleton<HealthBarManager>
         int maxHealth = StatsQuery.GetMaxHealth(_ecs, entityId, currentHealth);
         bar.SetHealth(currentHealth, maxHealth);
     }
+
+    // Called once, right when the bar is created — ownership never changes after a troop
+    // spawns, so this never needs revisiting the way ApplyHealth/ApplyPosition do every tick/
+    // frame. Mirrors SelectionManager.GetUnselectedColor's own friendly/neutral/enemy split.
+    private void ApplyOwnerColor(ulong entityId, HealthBarPrefab bar)
+    {
+        if (_troopStore == null || !_troopStore.HasComponent(entityId)) return;
+
+        ushort owner = _troopStore.GetComponent(entityId).OwnerPlayerId;
+        Color color;
+        if (owner == LocalPlayerId()) color = _friendlyColor;
+        else if (owner == TroopComponent.NEUTRAL_OWNER_PLAYER_ID) color = _neutralColor;
+        else color = _enemyColor;
+
+        bar.SetOwnerColor(color);
+    }
+
+    private ushort LocalPlayerId()
+        => NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
 
     // Same closed-loop "chase the true tick position at the entity's own Speed stat" style
     // BasicTroopRenderer/VariedAttackTroopRenderer use for the 3D model itself (see

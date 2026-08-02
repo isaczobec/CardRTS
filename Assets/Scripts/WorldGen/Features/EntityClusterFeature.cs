@@ -53,6 +53,11 @@ public class EntityClusterFeature : WorldGenFeature
     // skipped instead (see TryPickClusterCenter/TryPickEntityPosition).
     private const int MaxPlacementAttempts = 30;
 
+    // How far (tile units, beyond ClusterRadius itself) TryFindNearbyFreeTile's expanding-
+    // ring fallback search will look for a walkable tile once every random candidate within
+    // the cluster has failed — see that method's own doc comment.
+    private const float NearbyFreeTileSearchRadius = 10f;
+
     public override void Generate(WorldGenHandler handler)
     {
         var rng = handler.Random;
@@ -116,6 +121,7 @@ public class EntityClusterFeature : WorldGenFeature
             float candidateX = Mathf.Clamp(centerX + Mathf.Cos(angle) * dist, 0f, maxCoord);
             float candidateY = Mathf.Clamp(centerY + Mathf.Sin(angle) * dist, 0f, maxCoord);
 
+            if (!IsWalkable(candidateX, candidateY)) continue;
             if (MinEntitySpacing <= 0f || IsFarEnoughFromAll(candidateX, candidateY, placed))
             {
                 x = candidateX;
@@ -123,8 +129,73 @@ public class EntityClusterFeature : WorldGenFeature
                 return true;
             }
         }
+
+        // Every random candidate within the cluster radius either landed on an unwalkable
+        // tile (e.g. drifted onto a Mountain/Water patch painted by an earlier feature in
+        // this same biome — AllowedTileTypes only constrains where the CLUSTER CENTER gets
+        // picked from, not where individual entities scatter to around it) or failed the
+        // spacing check — fall back to an expanding-ring search outward from the cluster
+        // center for the nearest free tile, rather than just dropping this entity slot.
+        return TryFindNearbyFreeTile(centerX, centerY, maxCoord, placed, out x, out y);
+    }
+
+    // Spirals outward tile-by-tile from the cluster center (up to ClusterRadius +
+    // NearbyFreeTileSearchRadius) looking for the first walkable tile that also satisfies
+    // MinEntitySpacing, so a cluster rolled onto mostly-blocked terrain still places as many
+    // entities as it reasonably can instead of silently dropping them once
+    // TryPickEntityPosition's own random attempts are exhausted.
+    private bool TryFindNearbyFreeTile(float centerX, float centerY, float maxCoord, List<(float x, float y)> placed, out float x, out float y)
+    {
+        int searchRadius = Mathf.CeilToInt(ClusterRadius + NearbyFreeTileSearchRadius);
+        int centerTileX = Mathf.RoundToInt(centerX);
+        int centerTileY = Mathf.RoundToInt(centerY);
+
+        for (int radius = 1; radius <= searchRadius; radius++)
+        {
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                for (int dx = -radius; dx <= radius; dx++)
+                {
+                    // Only test the current ring's perimeter — interior cells were already
+                    // covered by a smaller radius.
+                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != radius) continue;
+
+                    int tileX = centerTileX + dx;
+                    int tileY = centerTileY + dy;
+                    if (tileX < 0 || tileY < 0 || tileX > maxCoord || tileY > maxCoord) continue;
+
+                    float candidateX = tileX;
+                    float candidateY = tileY;
+
+                    if (!IsWalkable(candidateX, candidateY)) continue;
+                    if (MinEntitySpacing > 0f && !IsFarEnoughFromAll(candidateX, candidateY, placed)) continue;
+
+                    x = candidateX;
+                    y = candidateY;
+                    return true;
+                }
+            }
+        }
+
         x = y = 0f;
         return false;
+    }
+
+    // Same "collision" concept NavMeshHandler builds its walkability graph from at runtime
+    // (WorldManager.HasCollision) — safe to call mid-world-gen despite NavMeshHandler itself
+    // not existing yet at this point in the pipeline (see WorldManager.GenerateAndRender,
+    // which only creates it AFTER Handler.Generate() — i.e. after every feature including
+    // this one has already run): HasCollision reads straight off WorldManager's own
+    // TileSettings lookup (built before Handler.Generate() starts — see
+    // BuildTileSettingsLookup) plus whatever this exact Handler currently has painted for
+    // that tile, both already valid and final by the time any feature's own Generate() runs.
+    private static bool IsWalkable(float x, float y)
+    {
+        if (WorldManager.instance == null) return true;
+
+        ushort tileX = (ushort)Mathf.Max(0, Mathf.RoundToInt(x));
+        ushort tileY = (ushort)Mathf.Max(0, Mathf.RoundToInt(y));
+        return !WorldManager.instance.HasCollision(tileX, tileY);
     }
 
     // Centroid of every successfully-placed entity in the cluster, used to position the

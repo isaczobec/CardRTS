@@ -15,6 +15,11 @@ public class ProjectileHitRequest : Request
     public readonly ulong TargetId;
     public readonly int Damage;
 
+    // What kind of damage instance the resulting DamageRequest should be tagged as (see
+    // DamageProcType) — Direct by default, so every existing call site that doesn't set this
+    // keeps behaving exactly as before ProcType existed.
+    public DamageProcType ProcType = DamageProcType.Direct;
+
     public ProjectileHitRequest(ulong projectileId, ulong ownerId, ulong targetId, int damage)
     {
         ProjectileId = projectileId;
@@ -25,6 +30,6 @@ public class ProjectileHitRequest : Request
 
     public override void Execute(ECS ecs)
     {
-        ecs.Requests.CreateRequest(new DamageRequest(TargetId, Damage) { DealerEntityId = OwnerId });
+        ecs.Requests.CreateRequest(new DamageRequest(TargetId, Damage) { DealerEntityId = OwnerId, ProcType = ProcType });
     }
 }

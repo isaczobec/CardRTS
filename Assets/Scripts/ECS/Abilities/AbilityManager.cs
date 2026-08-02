@@ -135,6 +135,12 @@ public static class AbilityManager
     // How long Shadow Cloak's untargetability lasts — explicit design ask (StalkerCard).
     private const float ShadowCloakDurationSeconds = 8f;
 
+    // The cloak breaks early (ending it immediately, instead of running out
+    // ShadowCloakDurationSeconds) once its target has taken this many separate damage
+    // instances while cloaked — see ShadowCloakSystem's own DamageRequest.SubscribeExecuted
+    // handler. Explicit design ask (StalkerCard).
+    private const int ShadowCloakMaxDamageInstancesBeforeBreak = 2;
+
     // Not used for any cast validation (the shot always travels its own pool's Range — see
     // ProjectilePool.AimSkillshot), only so AbilityIndicatorManager can preview roughly how
     // far it reaches; kept in step with PirateCard.Range, the only troop that currently
@@ -656,7 +662,10 @@ public static class AbilityManager
                 TicksRemaining = TickManager.SecondsToTicks(ShadowCloakDurationSeconds),
                 ModifierID     = ModifierID.ShadowCloak,
             });
-            ecs.AddComponent(modifier.Id, new ShadowCloakComponent());
+            ecs.AddComponent(modifier.Id, new ShadowCloakComponent
+            {
+                MaxDamageInstancesBeforeBreak = ShadowCloakMaxDamageInstancesBeforeBreak,
+            });
             ecs.AddComponent(modifier.Id, new RenderableModifierComponent
             {
                 Type = RenderableModifierType.ShadowCloak,

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -53,6 +54,17 @@ public class SelectionManager : Singleton<SelectionManager>
     private readonly TickPositionInterpolator _targetingInterpolator = new();
     private readonly HashSet<ulong> _selectedEntityIds = new();
     public IReadOnlyCollection<ulong> SelectedEntityIds => _selectedEntityIds;
+
+    // Raised once per explicit move order the LOCAL player issues for their own selection
+    // (right-click/minimap-click on empty ground — see SendMoveCommand, its only raise site),
+    // with the world/tile-space point actually clicked (not each individual troop's own
+    // formation-offset destination) and a snapshot (safe to hold onto — NOT a live reference
+    // to _selectedEntityIds, which keeps changing) of every entity the order was issued to —
+    // MoveMarkerManager subscribes to this to spawn a marker there and keep it alive until
+    // that move order is actually completed/cancelled. Never raised for a target command
+    // (right-clicking an entity) or for another player's moves, which this client has no
+    // direct visibility into anyway.
+    public event Action<Vector2, List<ulong>> MoveCommandIssued;
 
     // Most recently added-to-selection entity still actually in _selectedEntityIds — see
     // TryGetFocusPositionForSelection (CameraController's Space hotkey).
@@ -618,6 +630,7 @@ public class SelectionManager : Singleton<SelectionManager>
         }
 
         InputBuffer.EnqueueInput(new MoveTroopInput { Moves = moves });
+        MoveCommandIssued?.Invoke(clickPoint, new List<ulong>(_selectedEntityIds));
     }
 
     private Vector2 ComputeSelectionCentroid()

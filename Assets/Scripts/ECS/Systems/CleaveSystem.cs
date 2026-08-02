@@ -15,9 +15,9 @@ using UnityEngine;
 // Unlike GiantsbaneSystem's bonus damage (which is harmless to have recursively re-trigger
 // GiantsbaneSystem itself, since that system is gated by a per-stack hit-count cooldown),
 // Cleave has no such gating — every damage instance splashes — so its own splash hits are
-// tagged DamageRequest.FromSecondaryProc = true, and OnDamageExecuted skips any request
-// already tagged that way, to guarantee each ORIGINAL hit splashes exactly once instead of
-// cascading across every enemy in a cluster.
+// tagged DamageRequest.ProcType = DamageProcType.Secondary, and OnDamageExecuted skips any
+// request already tagged that way, to guarantee each ORIGINAL hit splashes exactly once
+// instead of cascading across every enemy in a cluster.
 public static class CleaveSystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute, Setup);
@@ -31,7 +31,7 @@ public static class CleaveSystem
 
     private static void OnDamageExecuted(DamageRequest request, ECS ecs)
     {
-        if (request.FromSecondaryProc) return; // see this class's own doc comment
+        if (request.ProcType == DamageProcType.Secondary) return; // see this class's own doc comment
         if (request.Amount <= 0) return;
 
         ulong dealerId = request.DealerEntityId;
@@ -76,8 +76,8 @@ public static class CleaveSystem
 
             ecs.Requests.CreateRequest(new DamageRequest(targetId, splashDamage)
             {
-                DealerEntityId    = dealerId,
-                FromSecondaryProc = true,
+                DealerEntityId = dealerId,
+                ProcType       = DamageProcType.Secondary,
             });
         }
     }

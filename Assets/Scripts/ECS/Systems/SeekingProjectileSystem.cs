@@ -51,8 +51,10 @@ public static class SeekingProjectileSystem
 
         if (Vector2.Distance(current, target) <= ImpactRadius)
         {
-            int damage = StatsQuery.GetDamage(ecs, projectile.OwnerEntityId, DefaultDamage);
-            ecs.Requests.CreateRequest(new ProjectileHitRequest(id, projectile.OwnerEntityId, targetId, damage));
+            int damage = seeking.FixedDamageOverride > 0
+                ? seeking.FixedDamageOverride
+                : StatsQuery.GetDamage(ecs, projectile.OwnerEntityId, DefaultDamage);
+            ecs.Requests.CreateRequest(new ProjectileHitRequest(id, projectile.OwnerEntityId, targetId, damage) { ProcType = seeking.ProcType });
             Deactivate(ecs, id, ref projectile);
             return;
         }

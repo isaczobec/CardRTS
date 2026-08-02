@@ -11,7 +11,7 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     private const int Range = 11;
     private const int Armor = 20;
     private const int Damage = 29;
-    private const float AttackSpeedMilliseconds = 360f;
+    private const float AttackSpeedMilliseconds = 525f;
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 

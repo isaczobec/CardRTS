@@ -21,6 +21,10 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
     [SerializeField] private ModifierIconPrefab _iconPrefab;
     [SerializeField] private Vector3 _worldOffset = new Vector3(0f, 3f, 0f);
 
+    // Fallback for StatsQuery.GetSpeed below, mirrors BasicTroopRenderer/SelectionManager/
+    // HealthBarManager's own DefaultSpeed.
+    private const int DefaultSpeed = 100;
+
     // ModifierID -> (name, imageName, description) resolver, given the ECS and the
     // MODIFIER entity's own id (not the target) — e.g. ResolveStatChange reads
     // StatModifierComponent off it to know which stat(s) it changes.
@@ -49,6 +53,8 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         { ModifierID.AttackSpeedAura, ResolveAttackSpeedAura },
         { ModifierID.Cleave, ResolveCleave },
         { ModifierID.BuildingDamage, ResolveBuildingDamage },
+        { ModifierID.VengefulSpirits, ResolveVengefulSpirits },
+        { ModifierID.CripplingStrikes, ResolveCripplingStrikes },
     };
 
     private ECS _ecs;
@@ -184,9 +190,13 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
         _interpolator.Remove(targetEntityId);
     }
 
-    // Follows the same interpolated position troop renderers/HealthBarManager show, rather
-    // than the raw per-tick PositionComponent, so icons don't visibly snap/lag behind a
-    // moving troop's smoothed-out rendered position.
+    // Same closed-loop "chase the true tick position at the entity's own Speed stat" style
+    // BasicTroopRenderer/SelectionManager/HealthBarManager use for their own followers (see
+    // TickPositionInterpolator's own doc comment on why that's self-correcting where the old
+    // strict-lerp-only approach could drift) — falls back to the plain strict-lerp overload
+    // while not moving, teleported, or displaced (a knockback's velocity isn't bounded by the
+    // Speed stat, so chasing at Speed could lag behind it — same guard every other follower
+    // uses).
     private void PositionContainers()
     {
         foreach (KeyValuePair<ulong, GameObject> kvp in _containers)
@@ -202,8 +212,21 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
                 && _movableStore.GetComponent(entityId).IsMoving;
             bool teleported = _movableStore != null && _movableStore.HasComponent(entityId)
                 && _movableStore.GetComponent(entityId).TeleportedTick == _ecs.CurrentSimulationTick;
+            bool displaced = _movableStore != null && _movableStore.HasComponent(entityId)
+                && _movableStore.GetComponent(entityId).IsDisplaced;
 
-            kvp.Value.transform.position = _interpolator.Update(entityId, worldPos, isMoving, teleported) + _worldOffset;
+            Vector3 interpolated;
+            if (isMoving && !displaced)
+            {
+                float speedWorldUnitsPerSecond = StatsQuery.GetSpeed(_ecs, entityId, DefaultSpeed) / StatsQuery.SpeedScale;
+                interpolated = _interpolator.Update(entityId, worldPos, isMoving, teleported, speedWorldUnitsPerSecond);
+            }
+            else
+            {
+                interpolated = _interpolator.Update(entityId, worldPos, isMoving, teleported);
+            }
+
+            kvp.Value.transform.position = interpolated + _worldOffset;
         }
     }
 
@@ -560,6 +583,29 @@ public class ModifierIconManager : Singleton<ModifierIconManager>
 
         int percent = Mathf.RoundToInt(bonusStore.GetComponent(modifierEntityId).BonusRatio * 100f);
         return ("Siegebreaker", "Siegebreaker", $"Deals {percent}% more damage against buildings.");
+    }
+
+    // VengefulSpiritsSourceComponent lives directly on this modifier entity (see that
+    // class's own doc comment) — no numeric payload worth reading per-instance (the damage
+    // dealt is a fixed constant on the projectile pool itself, not stored here), so the
+    // name/description are fixed, mirroring ResolveFrozen/ResolveRooted.
+    private static (string name, string imageName, string description) ResolveVengefulSpirits(ECS ecs, ulong modifierEntityId)
+        => ("Vengeful Spirits", "VengefulSpirits", "Direct hits also summon a spirit that seeks out the target and deals bonus damage.");
+
+    // CripplingStrikesSourceComponent lives directly on this modifier entity (see that
+    // class's own doc comment) — states the current slow%/duration directly, mirroring
+    // ResolveGiantsbane/ResolveDeflection's "state the current numbers" approach.
+    private static (string name, string imageName, string description) ResolveCripplingStrikes(ECS ecs, ulong modifierEntityId)
+    {
+        const string fallback = "Direct hits slow the target.";
+
+        ComponentStore<CripplingStrikesSourceComponent> sourceStore = ecs.GetComponentStore<CripplingStrikesSourceComponent>();
+        if (sourceStore == null || !sourceStore.HasComponent(modifierEntityId))
+            return ("Crippling Strikes", "CripplingStrikes", fallback);
+
+        CripplingStrikesSourceComponent source = sourceStore.GetComponent(modifierEntityId);
+        int percent = Mathf.RoundToInt(source.SlowRatio * 100f);
+        return ("Crippling Strikes", "CripplingStrikes", $"Direct hits slow the target by {percent}% for {source.DurationSeconds:0.#} seconds.");
     }
 
     private static void AddIfChanged(List<(string, float, float)> changes, string stat, float ratio, float additive)

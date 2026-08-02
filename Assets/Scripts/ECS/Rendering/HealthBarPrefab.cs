@@ -56,6 +56,7 @@ public class HealthBarPrefab : MonoBehaviour
 
     private static readonly int CurrentHealthNormalizedId = Shader.PropertyToID("_CurrentHealthNormalized");
     private static readonly int MaxHealthId = Shader.PropertyToID("_MaxHealth");
+    private static readonly int MiddleColorId = Shader.PropertyToID("_MiddleColor");
 
     // SetHealth is called on every damage tick, but MaxHealth itself only ever changes at
     // spawn (or later, rarely, from a MaxHealth stat modifier) — this skips re-touching
@@ -83,6 +84,12 @@ public class HealthBarPrefab : MonoBehaviour
 
         ApplyWidthForMaxHealth(maxHealth);
     }
+
+    // Called once by HealthBarManager right after this bar is instantiated (ownership never
+    // changes after a troop spawns, so this never needs revisiting) — tints the shader's own
+    // _MiddleColor property to reflect whether this troop is friendly/enemy/neutral relative
+    // to the local player.
+    public void SetOwnerColor(Color color) => _material.SetColor(MiddleColorId, color);
 
     // Width grows with MaxHealth^_widthExponent rather than linearly with it, so a troop
     // with e.g. 10x the health of another reads as noticeably-but-not-10x wider — bars stay

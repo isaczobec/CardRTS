@@ -39,7 +39,11 @@ public static class DamageOverTimeSystem
             ecs.Delta.MarkComponentDirty(id, typeof(DamageOverTimeComponent));
 
             ulong targetId = modifierStore.GetComponent(id).TargetEntityId;
-            ecs.Requests.CreateRequest(new DamageRequest(targetId, dot.DamagePerProc) { DealerEntityId = dot.DealerEntityId });
+            ecs.Requests.CreateRequest(new DamageRequest(targetId, dot.DamagePerProc)
+            {
+                DealerEntityId = dot.DealerEntityId,
+                ProcType       = DamageProcType.DamageOverTime,
+            });
         });
     }
 }

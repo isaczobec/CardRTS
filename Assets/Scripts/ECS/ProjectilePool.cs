@@ -83,13 +83,23 @@ public static class ProjectilePool
     // for a visually distinct pool (e.g. IceManCard's chilling shots). onHit is null by
     // default (no on-hit effect beyond the normal DamageRequest); pass a
     // ProjectileOnHitComponent for a pool whose hits should also apply one (see
-    // ProjectileOnHitSystem).
+    // ProjectileOnHitSystem). fixedDamageOverride/procType default to 0/Direct (every
+    // existing caller's original behavior — see SeekingProjectileComponent's own doc
+    // comment); pass a positive fixedDamageOverride for a pool whose hits should always deal
+    // a flat amount instead of the owner's own Damage stat (e.g. VengefulSpiritsUpgrade), and/
+    // or a non-Direct procType for a pool that only ever fires as a side effect of another hit.
     public static ulong CreatePool(ECS ecs, ulong ownerId, int count, int speedMilliTilesPerSecond,
-        RenderableType renderableType = RenderableType.SeekingProjectile, ProjectileOnHitComponent? onHit = null)
+        RenderableType renderableType = RenderableType.SeekingProjectile, ProjectileOnHitComponent? onHit = null,
+        int fixedDamageOverride = 0, DamageProcType procType = DamageProcType.Direct)
         => CreatePoolRing(ecs, ownerId, count, (e, id) =>
         {
             e.AddComponent(id, new RenderableComponent { Type = renderableType });
-            e.AddComponent(id, new SeekingProjectileComponent { Speed = speedMilliTilesPerSecond });
+            e.AddComponent(id, new SeekingProjectileComponent
+            {
+                Speed                = speedMilliTilesPerSecond,
+                FixedDamageOverride  = fixedDamageOverride,
+                ProcType             = procType,
+            });
             if (onHit.HasValue)
                 e.AddComponent(id, onHit.Value);
         });
@@ -227,6 +237,50 @@ public static class ProjectilePool
         }
 
         return currentId;
+    }
+
+    // Finds (or creates) a slot to attach a brand-new pooled-projectile source onto
+    // entityId, for callers that don't already know whether it has an existing pool (e.g. an
+    // upgrade's OnSpawnAtPointCardPlayed hook, which can run against any SpawnAtPointCard's
+    // result — melee, ranged, or building) — entityId's own ProjectileOwnerComponent if it
+    // doesn't have one yet, or a freshly linked entity appended to the end of its existing
+    // NextProjectileOwnerId chain otherwise (e.g. attaching VengefulSpiritsUpgrade's pool onto
+    // a ranged troop that already has its own auto-attack pool). Returns the id of whichever
+    // entity ends up carrying the NEW ProjectileOwnerComponent — the caller still needs to
+    // populate it (MaxProjectiles/NextProjectileId) after building the pool's own projectile
+    // ring, same as any other pool setup.
+    //
+    // The projectiles themselves should still be created with entityId itself (not whatever
+    // this returns) as CreatePool/CreateSkillshotPool's own ownerId, so kill/damage
+    // attribution always credits the real troop regardless of where the pool bookkeeping
+    // physically lives — mirrors SkillshotRangedTroopCard's own identical convention.
+    public static ulong AttachNewPoolOwner(ECS ecs, ulong entityId)
+    {
+        ComponentStore<ProjectileOwnerComponent> ownerStore = ecs.GetComponentStore<ProjectileOwnerComponent>();
+        if (ownerStore == null || !ecs.HasEntity(entityId)) return 0;
+
+        if (!ownerStore.HasComponent(entityId))
+        {
+            ecs.AddComponent(entityId, new ProjectileOwnerComponent());
+            return entityId;
+        }
+
+        ulong currentId = entityId;
+        while (ownerStore.GetComponent(currentId).NextProjectileOwnerId != 0)
+            currentId = ownerStore.GetComponent(currentId).NextProjectileOwnerId;
+
+        EntityHandle linked = ecs.CreateEntity();
+        ecs.AddComponent(linked.Id, new ProjectileOwnerComponent());
+
+        // Re-fetched AFTER creating the entity/component above, not held across it — adding a
+        // new ProjectileOwnerComponent can grow that store's backing array (see
+        // ComponentStore<T>/CopyBackArray<T>), which would invalidate a ref obtained before
+        // the growth; GetComponent always returns a ref into the CURRENT array.
+        ref ProjectileOwnerComponent current = ref ownerStore.GetComponent(currentId);
+        current.NextProjectileOwnerId = linked.Id;
+        ecs.Delta.MarkComponentDirty(currentId, typeof(ProjectileOwnerComponent));
+
+        return linked.Id;
     }
 
     private static ulong FindAvailable(ComponentStore<ProjectileBaseComponent> projectileStore, ulong startId, int maxProjectiles)

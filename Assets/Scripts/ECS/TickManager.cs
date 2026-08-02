@@ -230,6 +230,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<CorrosionSourceComponent>(71);
         _componentTypeRegistry.Register<CorrosionComponent>(72);
         _componentTypeRegistry.Register<ResourceGainDebuffComponent>(73);
+        _componentTypeRegistry.Register<VengefulSpiritsSourceComponent>(74);
+        _componentTypeRegistry.Register<CripplingStrikesSourceComponent>(75);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -417,6 +419,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceGainDebuffComponent>>(167);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceGainDebuffComponent>>(168);
         _flagEventTypeRegistry.Register<CardDiscardedEvent>(169);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<VengefulSpiritsSourceComponent>>(170);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<VengefulSpiritsSourceComponent>>(171);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<CripplingStrikesSourceComponent>>(172);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<CripplingStrikesSourceComponent>>(173);
 
         ECS = CreateSimulationECS();
     }
@@ -682,6 +688,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CorrosionSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<CorrosionComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceGainDebuffComponent>());
+        ecs.AddComponentStore(new ComponentStore<VengefulSpiritsSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<CripplingStrikesSourceComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -775,6 +783,8 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(GiantsbaneSystem.Instance);
         ecs.RegisterSystem(CleaveSystem.Instance);
         ecs.RegisterSystem(CorrosionSystem.Instance);
+        ecs.RegisterSystem(VengefulSpiritsSystem.Instance);
+        ecs.RegisterSystem(CripplingStrikesSystem.Instance);
         ecs.RegisterSystem(FocusFireSystem.Instance);
         ecs.RegisterSystem(LifestealSystem.Instance);
         ecs.RegisterSystem(RemoveModifierOnDamageSystem.Instance);
@@ -883,6 +893,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CorrosionSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<CorrosionComponent>());
         ecs.AddComponentStore(new ComponentStore<ResourceGainDebuffComponent>());
+        ecs.AddComponentStore(new ComponentStore<VengefulSpiritsSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<CripplingStrikesSourceComponent>());
 
         return ecs;
     }

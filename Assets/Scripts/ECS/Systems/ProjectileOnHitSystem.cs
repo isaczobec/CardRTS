@@ -241,7 +241,11 @@ public static class ProjectileOnHitSystem
             // own DamageRequest: DamageResolutionSystem flushes DamageRequest later this same
             // tick, after every other DamageRequest subscriber (ArmorMitigationSystem, ...)
             // has had a chance to run.
-            ecs.Requests.CreateRequest(new DamageRequest(splashTargetId, aoeDamage) { DealerEntityId = ownerId });
+            ecs.Requests.CreateRequest(new DamageRequest(splashTargetId, aoeDamage)
+            {
+                DealerEntityId = ownerId,
+                ProcType       = DamageProcType.Secondary,
+            });
         }
     }
 

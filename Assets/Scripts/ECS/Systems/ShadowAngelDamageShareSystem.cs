@@ -88,7 +88,13 @@ public static class ShadowAngelDamageShareSystem
             ecs.Requests.CreateRequest(new DamageRequest(_recipients[i], amount)
             {
                 DealerEntityId = request.DealerEntityId,
-                Type = request.Type,
+                Type           = request.Type,
+                // Explicit design ask: a Shadow Angel's redistributed share should carry the
+                // SAME ProcType as the hit it's splitting off of — e.g. so VengefulSpiritsUpgrade/
+                // CripplingStrikesUpgrade proc off a redistributed share exactly when (and
+                // only when) they would have off the original hit landing on the Angel itself,
+                // instead of every redistribution unconditionally reading as a fresh direct hit.
+                ProcType       = request.ProcType,
             });
         }
     }

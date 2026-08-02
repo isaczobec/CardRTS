@@ -25,6 +25,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
 
 
         SelectionManager.instance.Initialize();
+        MoveMarkerManager.instance.Initialize();
         HealthBarManager.instance.Initialize();
         EntityTimerTextRenderer.instance.Initialize();
         ModifierIconManager.instance.Initialize();

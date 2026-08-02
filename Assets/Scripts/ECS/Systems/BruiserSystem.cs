@@ -103,6 +103,7 @@ public static class BruiserSystem
             {
                 DealerEntityId = DamageRequest.NO_DEALER_ENTITYID,
                 PreMitigated = true,
+                ProcType = DamageProcType.DamageOverTime,
             });
         });
     }

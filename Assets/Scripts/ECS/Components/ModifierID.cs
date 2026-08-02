@@ -29,4 +29,6 @@ public enum ModifierID
     Cleave = 21,
     BuildingDamage = 22,
     Corrosion = 23,
+    VengefulSpirits = 24,
+    CripplingStrikes = 25,
 }

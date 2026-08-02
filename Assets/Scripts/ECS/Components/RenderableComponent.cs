@@ -54,6 +54,10 @@ public enum RenderableType : byte
     Tornado = 49,
     Orc = 50,
     KineticKnight = 51,
+    // VengefulSpiritsUpgrade's proc projectile — register a SeekingProjectileRenderer
+    // instance against this in the Inspector, same as every other pooled seeking-projectile
+    // kind (IceProjectile, FireProjectile, ...).
+    VengefulSpirit = 52,
 }
 
 public struct RenderableComponent : IComponent
