@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 
 public class NetworkServer
@@ -22,6 +23,42 @@ public class NetworkServer
     }
 
     public bool Start(ushort port)
+    {
+        _driver = CreateDriver(null);
+        _connections = new NativeList<NetworkConnection>(16, Allocator.Persistent);
+
+        var endpoint = NetworkEndpoint.AnyIpv4.WithPort(port);
+        if (_driver.Bind(endpoint) != 0)
+        {
+            _driver.Dispose();
+            return false;
+        }
+
+        _driver.Listen();
+        return true;
+    }
+
+    // Binds through a Unity Relay allocation instead of a local port, so clients behind
+    // NAT/CGNAT can connect without port forwarding. relayServerData comes from
+    // RelayNetworkService.CreateHostAllocationAsync. The local port is irrelevant here —
+    // the driver only needs a socket to talk to the relay server, not to accept direct
+    // connections — so we bind AnyIpv4 with an OS-assigned port rather than the game port.
+    public bool StartRelay(RelayServerData relayServerData)
+    {
+        _driver = CreateDriver(relayServerData);
+        _connections = new NativeList<NetworkConnection>(16, Allocator.Persistent);
+
+        if (_driver.Bind(NetworkEndpoint.AnyIpv4) != 0)
+        {
+            _driver.Dispose();
+            return false;
+        }
+
+        _driver.Listen();
+        return true;
+    }
+
+    NetworkDriver CreateDriver(RelayServerData? relayServerData)
     {
         // Default queue capacity (512, shared across all connections) is sized for a much
         // lower tick rate than we now run at; the server fans a message out to every
@@ -49,19 +86,15 @@ public class NetworkServer
         // the client, same as the fragmentation stage above.
         settings.WithReliableStageParameters(windowSize: 256);
 
-        _driver = NetworkDriver.Create(settings);
-        _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
-        _connections = new NativeList<NetworkConnection>(16, Allocator.Persistent);
-
-        var endpoint = NetworkEndpoint.AnyIpv4.WithPort(port);
-        if (_driver.Bind(endpoint) != 0)
+        if (relayServerData.HasValue)
         {
-            _driver.Dispose();
-            return false;
+            var relay = relayServerData.Value;
+            settings.WithRelayParameters(ref relay);
         }
 
-        _driver.Listen();
-        return true;
+        var driver = NetworkDriver.Create(settings);
+        _reliable = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
+        return driver;
     }
 
     public void Tick()

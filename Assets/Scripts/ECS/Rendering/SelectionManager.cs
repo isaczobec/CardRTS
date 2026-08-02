@@ -40,7 +40,17 @@ public class SelectionManager : Singleton<SelectionManager>
 
     private readonly Dictionary<ulong, SelectionPrefab> _selectionObjects = new();
     private readonly Dictionary<ulong, TargetingPrefab> _targetingObjects = new();
+    // Separate instances, even though a given entity's selection ring and targeting ring
+    // always track the identical underlying position — TickPositionInterpolator.Update
+    // mutates its own per-entity Sample as a side effect (advancing the lenient overload's
+    // MoveTowards chase by Time.deltaTime), so calling it twice in the same frame for the
+    // same entityId (once per ring) through a SHARED instance would advance that chase
+    // TWICE in one frame, converging up to 2x faster than BasicTroopRenderer's own (single-
+    // call) interpolator — which is exactly what made the ring visibly run ahead of the
+    // model. Two independent instances each get called exactly once per frame, so each
+    // chases the true position at the correct rate and both stay in step with the model.
     private readonly TickPositionInterpolator _interpolator = new();
+    private readonly TickPositionInterpolator _targetingInterpolator = new();
     private readonly HashSet<ulong> _selectedEntityIds = new();
     public IReadOnlyCollection<ulong> SelectedEntityIds => _selectedEntityIds;
 
@@ -674,23 +684,27 @@ public class SelectionManager : Singleton<SelectionManager>
     // position if exactly one is selected, or the most recently selected one's position if
     // there are several. False (no follow) if nothing is selected.
     //
-    // Routed through _interpolator (the same one ApplySelectionPosition uses for this same
-    // entity's own selection ring) rather than the entity's raw PositionComponent, which
-    // only changes once per simulation tick — reusing it means the camera glides smoothly
-    // frame-to-frame in step with the ring instead of visibly stepping once per tick.
+    // Reads the selection ring's OWN already-computed transform (set this frame by
+    // ApplySelectionPosition) rather than re-deriving a position of its own — this used to
+    // call _interpolator.Update(targetId, ...) a second time for the same entity, which (since
+    // Update mutates that entity's shared per-instance Sample as a side effect) advanced the
+    // ring's own lenient chase an extra, uncoordinated step whenever this was also called in
+    // the same frame — see _targetingInterpolator's own doc comment for the identical failure
+    // mode. Reusing the ring's transform directly sidesteps that entirely and guarantees the
+    // camera glides in lockstep with exactly what's on screen, not a second independent guess
+    // at the same position.
     public bool TryGetFocusPositionForSelection(out Vector3 worldPos)
     {
         worldPos = default;
-        if (_selectedEntityIds.Count == 0 || _positionStore == null) return false;
+        if (_selectedEntityIds.Count == 0) return false;
 
         ulong targetId = (_lastSelectedEntityId != 0 && _selectedEntityIds.Contains(_lastSelectedEntityId))
             ? _lastSelectedEntityId
             : FirstSelectedId();
 
-        if (targetId == 0 || !_positionStore.HasComponent(targetId)) return false;
+        if (targetId == 0 || !_selectionObjects.TryGetValue(targetId, out SelectionPrefab prefab)) return false;
 
-        Vector3 rawWorldPos = WorldPositionFor(_positionStore.GetComponent(targetId));
-        worldPos = _interpolator.Update(targetId, rawWorldPos, IsMoving(targetId), IsTeleported(targetId));
+        worldPos = prefab.transform.position;
         return true;
     }
 
@@ -840,6 +854,7 @@ public class SelectionManager : Singleton<SelectionManager>
         DestroySelectionObject(e.EntityId);
         DestroyTargetingObject(e.EntityId);
         _interpolator.Remove(e.EntityId);
+        _targetingInterpolator.Remove(e.EntityId);
     }
 
     public void DeleteSelectionObject(EntityDeletedEvent e)
@@ -848,6 +863,7 @@ public class SelectionManager : Singleton<SelectionManager>
         DestroySelectionObject(e.EntityId);
         DestroyTargetingObject(e.EntityId);
         _interpolator.Remove(e.EntityId);
+        _targetingInterpolator.Remove(e.EntityId);
     }
 
     private void DestroySelectionObject(ulong entityId)
@@ -873,15 +889,15 @@ public class SelectionManager : Singleton<SelectionManager>
     // BasicTroopRenderer's own branch uses).
     public void ApplySelectionPosition(ulong entityId, ref PositionComponent pos, SelectionPrefab selection)
     {
-        selection.transform.position = InterpolatedPosition(entityId, pos);
+        selection.transform.position = InterpolatedPosition(_interpolator, entityId, pos);
     }
 
     public void ApplyTargetingPosition(ulong entityId, ref PositionComponent pos, TargetingPrefab targeting)
     {
-        targeting.transform.position = InterpolatedPosition(entityId, pos);
+        targeting.transform.position = InterpolatedPosition(_targetingInterpolator, entityId, pos);
     }
 
-    private Vector3 InterpolatedPosition(ulong entityId, PositionComponent pos)
+    private Vector3 InterpolatedPosition(TickPositionInterpolator interpolator, ulong entityId, PositionComponent pos)
     {
         Vector3 worldPos = WorldPositionFor(pos);
         bool isMoving = IsMoving(entityId);
@@ -890,10 +906,10 @@ public class SelectionManager : Singleton<SelectionManager>
         if (isMoving && !IsDisplaced(entityId))
         {
             float speedWorldUnitsPerSecond = StatsQuery.GetSpeed(_ecs, entityId, DefaultSpeed) / StatsQuery.SpeedScale;
-            return _interpolator.Update(entityId, worldPos, isMoving, teleported, speedWorldUnitsPerSecond);
+            return interpolator.Update(entityId, worldPos, isMoving, teleported, speedWorldUnitsPerSecond);
         }
 
-        return _interpolator.Update(entityId, worldPos, isMoving, teleported);
+        return interpolator.Update(entityId, worldPos, isMoving, teleported);
     }
 
     private static Vector3 WorldPositionFor(PositionComponent pos)

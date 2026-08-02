@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 
 public class NetworkClient
@@ -25,16 +26,47 @@ public class NetworkClient
             return false;
         }
 
+        _driver = CreateDriver(null);
+        _connection = _driver.Connect(endpoint);
+        return true;
+    }
+
+    // Connects through a Unity Relay allocation instead of a direct IP, so a host behind
+    // NAT/CGNAT can be reached without port forwarding. relayServerData comes from
+    // RelayNetworkService.JoinAllocationAsync. Unlike the direct-IP path, Connect() doesn't
+    // implicitly bind a local socket for relay traffic, so it's done explicitly here first.
+    public bool ConnectRelay(RelayServerData relayServerData)
+    {
+        _driver = CreateDriver(relayServerData);
+
+        if (_driver.Bind(NetworkEndpoint.AnyIpv4) != 0)
+        {
+            DevConsole.LogError("[Net] Relay client bind failed.");
+            _driver.Dispose();
+            return false;
+        }
+
+        _connection = _driver.Connect(relayServerData.Endpoint);
+        return true;
+    }
+
+    NetworkDriver CreateDriver(RelayServerData? relayServerData)
+    {
         var settings = new NetworkSettings();
         settings.WithNetworkConfigParameters(receiveQueueCapacity: 1024, sendQueueCapacity: 1024);
-        // Must match the server's pipeline stages/config — see NetworkServer.Start.
+        // Must match the server's pipeline stages/config — see NetworkServer.CreateDriver.
         settings.WithFragmentationStageParameters(payloadCapacity: 256 * 1024);
         settings.WithReliableStageParameters(windowSize: 256);
 
-        _driver = NetworkDriver.Create(settings);
-        _reliable = _driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
-        _connection = _driver.Connect(endpoint);
-        return true;
+        if (relayServerData.HasValue)
+        {
+            var relay = relayServerData.Value;
+            settings.WithRelayParameters(ref relay);
+        }
+
+        var driver = NetworkDriver.Create(settings);
+        _reliable = driver.CreatePipeline(typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage));
+        return driver;
     }
 
     public void Tick()

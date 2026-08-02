@@ -15,6 +15,7 @@ public class DeflectionUpgrade : CardUpgrade
     public override string Description =>
         $"Reduces incoming damage the further away the attacker is — no reduction within {MinRange:0} tiles, scaling up to {MaxReductionRatio * 100f:0}% at {MaxRange:0}+ tiles.";
     public override string ImageName => "Deflection";
+    public override UpgradeCategory Category => UpgradeCategory.Defense;
     public override int ShopGoldCost => 165;
     public override int MaxStackCount => 1;
 

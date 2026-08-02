@@ -12,6 +12,8 @@ public class LifestealUpgrade : CardUpgrade
     public override string Title => "Lifesteal";
     public override string Description => $"Heals for {LifestealRatio * 100f:0}% of damage dealt.";
     public override string ImageName => "Lifesteal";
+    // Reads more as sustain/survivability than raw damage output — filed under Defense.
+    public override UpgradeCategory Category => UpgradeCategory.Defense;
     public override int ShopGoldCost => 160;
 
     public override Action<ulong, ECS> OnSpawnAtPointCardPlayed => (entityId, ecs) =>

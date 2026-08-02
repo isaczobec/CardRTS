@@ -13,6 +13,7 @@ public class SpeedBoostUpgrade : CardUpgrade
     // ("Speed" + "Boost") — also happens to be the same key SpeedBoostCard's own temporary
     // buff already uses, so no new image asset is needed for this one.
     public override string ImageName => "SpeedBoost";
+    public override UpgradeCategory Category => UpgradeCategory.Utility;
     public override int ShopGoldCost => 70;
     // Explicit design ask — up to 3 copies of any basic stat upgrade may be equipped on the
     // same card.

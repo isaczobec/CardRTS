@@ -50,6 +50,12 @@ public class BasicMeleeAISystem : ISystem
     // simultaneous lag spike — see DeterministicJitter.
     private const float DriftToleranceJitterAmplitude = 1.5f;
 
+    // How close (as a fraction of Range) this troop may get to its OWN current chase point
+    // before MoveToward proactively refreshes it to the target's live position, rather than
+    // waiting to actually reach it — see MoveToward's own doc comment on why literally
+    // arriving there is itself the problem when chasing a still-fleeing target.
+    private const float NearArrivalRangeRatio = 0.5f;
+
     private readonly List<ulong> _queryBuffer = new List<ulong>();
     private readonly HashSet<ulong> _movedThisTick = new HashSet<ulong>();
 
@@ -137,6 +143,23 @@ public class BasicMeleeAISystem : ISystem
         {
             ai.CooldownTicksRemaining--;
             _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+
+            // A fresh move order during the cooldown cancels the chase-to-keep-up below,
+            // same as it cancels an in-progress windup above — the player's own destination
+            // takes over instead (applied later this same Execute pass by PathfindingSystem).
+            if (ai.CooldownTicksRemaining <= 0 || _movedThisTick.Contains(id))
+            {
+                if (ai.CooldownTargetId != 0)
+                {
+                    ai.CooldownTargetId = 0;
+                    _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+                }
+            }
+            else
+            {
+                ChaseWhileOnCooldown(id, ref ai, ref mov, myPos);
+            }
+
             return;
         }
 
@@ -261,6 +284,7 @@ public class BasicMeleeAISystem : ISystem
 
             int attackSpeedTicks = StatsQuery.GetAttackSpeed(_ecs, id, TickManager.MillisecondsToTicks(DefaultAttackSpeedMilliseconds));
             ai.CooldownTicksRemaining = Mathf.RoundToInt(attackSpeedTicks * ai.CooldownMultiplier);
+            ai.CooldownTargetId = targetId;
         }
 
         ai.AttackTargetId = 0;
@@ -395,6 +419,41 @@ public class BasicMeleeAISystem : ISystem
         _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
     }
 
+    // While recovering from a landed hit (CooldownTicksRemaining > 0 — see Tick's own
+    // cooldown branch), keeps closing the gap to whichever target it just hit if that target
+    // has since drifted out of range, instead of standing completely idle for the whole
+    // recovery window and only starting to catch up once it ends. Purely positional — it
+    // still can't actually attack again until the cooldown itself reaches 0; this just keeps
+    // it from falling further behind in the meantime.
+    private void ChaseWhileOnCooldown(ulong id, ref BasicMeleeAIComponent ai, ref MovableComponent mov, Vector2 myPos)
+    {
+        ulong targetId = ai.CooldownTargetId;
+        if (targetId == 0 || !IsValidTarget(targetId))
+        {
+            if (targetId != 0)
+            {
+                ai.CooldownTargetId = 0;
+                _ecs.Delta.MarkComponentDirty(id, typeof(BasicMeleeAIComponent));
+            }
+            return;
+        }
+
+        int range = StatsQuery.GetRange(_ecs, id, DefaultRange);
+        float dist = DistanceTo(targetId, myPos);
+
+        if (dist <= range)
+        {
+            if (mov.currentMovementMode != MovementMode.NotMoving)
+            {
+                mov.currentMovementMode = MovementMode.NotMoving;
+                _ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
+            }
+            return;
+        }
+
+        MoveToward(id, ref mov, ref ai, targetId, range, myPos);
+    }
+
     // Only recomputes the chase destination (and lets PathfindingSystem repath) once the
     // target has moved more than a drift tolerance from where it was the last time we did —
     // repathing on every tiny step of a moving target is wasteful. That tolerance is at
@@ -407,6 +466,19 @@ public class BasicMeleeAISystem : ISystem
     // repath is "correctly" delayed. Switching to a different target, or resuming movement
     // after an attack windup (which clears PathfindingSystem's cached path), always forces a
     // fresh one regardless of drift.
+    //
+    // ALSO refreshes regardless of drift once this troop is about to reach its own current
+    // chase point (see NearArrivalRangeRatio) — a fleeing target has always moved on again by
+    // the time this troop actually gets there, so letting PathfindingSystem run the path out
+    // to the very end means it "arrives," stops dead (MovementMode.NotMoving, IsMoving false)
+    // for a tick, and only re-chases once this system notices next tick. Against a target
+    // whose speed is close to this troop's own, that repeats on every approach, and the dead
+    // ticks (no distance closed while the target keeps fleeing) can eat the entire speed
+    // advantage that should otherwise let a faster troop close the gap — visible as
+    // stop-and-go pursuit that never quite lands a hit, however generous AttackRangeMultiplier
+    // is, since the windup this is meant to set up never reliably starts in the first place.
+    // Refreshing early enough that PathfindingSystem always has a fresh, not-yet-reached
+    // point to walk avoids ever hitting that stop condition at all.
     private void MoveToward(ulong id, ref MovableComponent mov, ref BasicMeleeAIComponent ai, ulong targetId, int range, Vector2 myPos)
     {
         if (!ActivationQuery.CanMove(_ecs, id)) return;
@@ -423,7 +495,10 @@ public class BasicMeleeAISystem : ISystem
         bool targetDrifted = !sameTarget
             || Vector2.Distance(targetVec, new Vector2(ai.LastPathTargetX, ai.LastPathTargetY)) > driftTolerance;
 
-        if (!modeNeedsFixing && !targetDrifted) return;
+        bool aboutToArrive = sameTarget
+            && Vector2.Distance(myPos, new Vector2(ai.LastPathTargetX, ai.LastPathTargetY)) <= range * NearArrivalRangeRatio;
+
+        if (!modeNeedsFixing && !targetDrifted && !aboutToArrive) return;
 
         if (modeNeedsFixing)
             mov.currentMovementMode = MovementMode.MoveToDestination;

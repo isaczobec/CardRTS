@@ -20,6 +20,12 @@ public abstract class CardUpgrade
     // Key into ImageRegistry for this upgrade's artwork — mirrors Card.ImageName.
     public abstract string ImageName { get; }
 
+    // Broad category this upgrade belongs to — drives UpgradeShopUIManager's Offense/
+    // Defense/Utility filter buttons, mirrors Card.Category's role for the card shop's own
+    // Troop/Building/Spell filter. Offense is the default (most upgrades are); override per
+    // upgrade.
+    public virtual UpgradeCategory Category => UpgradeCategory.Offense;
+
     // Persistent gold price to buy this upgrade — same shape as Card.ShopGoldCost.
     public virtual int ShopGoldCost => 0;
 

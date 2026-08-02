@@ -23,6 +23,13 @@ public struct BasicMeleeAIComponent : IComponent
     // troop will act again (move, target, or attack) — see BasicMeleeAISystem.Tick.
     public int CooldownTicksRemaining;
 
+    // Which entity this troop just hit — 0 whenever CooldownTicksRemaining is 0. While both
+    // are set, the troop can't start a new attack yet, but if this target has drifted out of
+    // range in the meantime it still chases (without attacking) to keep pace, rather than
+    // standing completely idle for the whole recovery window — see
+    // BasicMeleeAISystem.ChaseWhileOnCooldown.
+    public ulong CooldownTargetId;
+
     // Multiple of the attack windup (AttackSpeed ticks) that CooldownTicksRemaining is set
     // to once a hit lands — see BasicMeleeAISystem.ResolveAttack. 3 reproduces every
     // existing troop's original hardcoded behavior; a card can set this lower to give a

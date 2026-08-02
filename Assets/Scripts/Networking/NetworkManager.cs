@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
+using Unity.Networking.Transport.Relay;
 using UnityEngine;
 
 // Must run before MessageConsumer/TickManager (see their own [DefaultExecutionOrder]) so an
@@ -102,6 +104,89 @@ public class NetworkManager : Singleton<NetworkManager>
         }
         else
             _client = null;
+    }
+
+    // ── Unity Relay (play over the internet without port forwarding) ──────────
+
+    // Set once CreateHostAllocationAsync succeeds; share this with clients out-of-band
+    // (voice chat, Discord, etc.) so they can `net-connect <code> -relay`.
+    public string RelayJoinCode { get; private set; }
+
+    public void StartServerRelay(int maxConnections, string region)
+    {
+        if (_server != null)
+        {
+            DevConsole.LogWarning("[Net] Server already running.");
+            return;
+        }
+        // Assigned before the allocation request completes so a second net-start-server
+        // call issued while it's in flight hits the "already running" guard above instead
+        // of racing a second allocation.
+        _server = new NetworkServer(InboundQueue);
+        _ = StartServerRelayAsync(maxConnections, region);
+    }
+
+    async Task StartServerRelayAsync(int maxConnections, string region)
+    {
+        DevConsole.LogInfo("[Net] Requesting Relay allocation...");
+        try
+        {
+            var (joinCode, relayServerData) = await RelayNetworkService.CreateHostAllocationAsync(maxConnections, region);
+            if (_server.StartRelay(relayServerData))
+            {
+                RelayJoinCode = joinCode;
+                Context.AddRole(NetworkRole.Server);
+                DevConsole.LogInfo($"[Net] Relay server started. Join code: {joinCode}");
+            }
+            else
+            {
+                DevConsole.LogError("[Net] Failed to start Relay server.");
+                _server = null;
+            }
+        }
+        catch (Exception e)
+        {
+            DevConsole.LogError($"[Net] Relay allocation failed: {e.Message}");
+            _server = null;
+        }
+    }
+
+    public void ConnectToServerRelay(string joinCode)
+    {
+        if (_client != null)
+        {
+            DevConsole.LogWarning("[Net] Client already connected or connecting.");
+            return;
+        }
+        if (IsServer)
+        {
+            // See the equivalent guard in ConnectToServer — a host never connects to itself.
+            DevConsole.LogWarning("[Net] Already running as server — the host doesn't need to connect to itself.");
+            return;
+        }
+        _client = new NetworkClient(InboundQueue);
+        _ = ConnectToServerRelayAsync(joinCode);
+    }
+
+    async Task ConnectToServerRelayAsync(string joinCode)
+    {
+        DevConsole.LogInfo($"[Net] Joining Relay with code {joinCode}...");
+        try
+        {
+            RelayServerData relayServerData = await RelayNetworkService.JoinAllocationAsync(joinCode);
+            if (_client.ConnectRelay(relayServerData))
+            {
+                Context.AddRole(NetworkRole.Client);
+                DevConsole.LogInfo("[Net] Relay connection initiated.");
+            }
+            else
+                _client = null;
+        }
+        catch (Exception e)
+        {
+            DevConsole.LogError($"[Net] Relay join failed: {e.Message}");
+            _client = null;
+        }
     }
 
     public void SendToAll(byte[] data) => _server?.SendToAll(data);
@@ -349,12 +434,12 @@ public class NetworkManager : Singleton<NetworkManager>
         // baseline passive income.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
             GoldPerSecond = 0f,
-            Gold = 10000,
-            Wood = 10000,
-            Stone = 10000,
-            Metal = 10000,
-            Gems = 10000,
-            Soulstones = 10000,
+            Gold = 100,
+            Wood = 200,
+            Stone = 200,
+            Metal = 200,
+            Gems = 0,
+            Soulstones = 0,
             });
         // ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
         //     GoldPerSecond = 0f,
@@ -456,9 +541,20 @@ public class NetworkManager : Singleton<NetworkManager>
     {
         DevConsole.RegisterCommand(
             "net-start-server",
-            "Starts a server. Usage: net-start-server [port]",
+            "Starts a server. Usage: net-start-server [port]\n" +
+            "Over Unity Relay (no port forwarding needed): net-start-server -relay [max=<n>] [region=<region>]",
             info =>
             {
+                if (Array.IndexOf(info.flagArgs, "relay") >= 0)
+                {
+                    int maxConnections = 7;
+                    if (info.keyWordArgs.TryGetValue("max", out string maxStr) && !int.TryParse(maxStr, out maxConnections))
+                        return DevCommandResult.Error("Invalid max connections number.");
+                    info.keyWordArgs.TryGetValue("region", out string region);
+                    StartServerRelay(maxConnections, region);
+                    return DevCommandResult.Success("Requesting Relay allocation...");
+                }
+
                 ushort port = 9000;
                 if (info.positionalArgs.Length > 0 && !ushort.TryParse(info.positionalArgs[0], out port))
                     return DevCommandResult.Error("Invalid port number.");
@@ -468,9 +564,19 @@ public class NetworkManager : Singleton<NetworkManager>
 
         DevConsole.RegisterCommand(
             "net-connect",
-            "Connects to a server. Usage: net-connect [host] [port]",
+            "Connects to a server. Usage: net-connect [host] [port]\n" +
+            "Over Unity Relay: net-connect <joinCode> -relay",
             info =>
             {
+                if (Array.IndexOf(info.flagArgs, "relay") >= 0)
+                {
+                    if (info.positionalArgs.Length == 0)
+                        return DevCommandResult.Error("Usage: net-connect <joinCode> -relay");
+                    string joinCode = info.positionalArgs[0];
+                    ConnectToServerRelay(joinCode);
+                    return DevCommandResult.Success($"Joining Relay with code {joinCode}...");
+                }
+
                 string host = info.positionalArgs.Length > 0 ? info.positionalArgs[0] : "127.0.0.1";
                 ushort port = 9000;
                 if (info.positionalArgs.Length > 1 && !ushort.TryParse(info.positionalArgs[1], out port))
@@ -500,7 +606,10 @@ public class NetworkManager : Singleton<NetworkManager>
             _ =>
             {
                 if (IsServer)
-                    return DevCommandResult.Success($"Server running. Connections: {_server.ConnectionCount}");
+                {
+                    string relayInfo = RelayJoinCode != null ? $" Relay join code: {RelayJoinCode}." : "";
+                    return DevCommandResult.Success($"Server running. Connections: {_server.ConnectionCount}.{relayInfo}");
+                }
                 if (IsClient)
                     return DevCommandResult.Success($"Client. Connected: {_client.IsConnected}");
                 return DevCommandResult.Success("Not running.");

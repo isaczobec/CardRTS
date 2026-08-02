@@ -46,10 +46,20 @@ public class TickPositionInterpolator
         }
 
         Sample sample = AdvanceSample(entityId, worldPos);
-        _samples[entityId] = sample;
 
         float alpha = Mathf.Clamp01(TickManager.instance.TimeSinceLastTick / TickManager.TickInterval);
-        return Vector3.Lerp(sample.Previous, sample.Current, alpha);
+        Vector3 lerped = Vector3.Lerp(sample.Previous, sample.Current, alpha);
+
+        // Kept in sync with whatever this overload actually returns (e.g. while displaced —
+        // see the lenient overload's own doc comment on why callers must use THIS overload,
+        // not that one, during a knockback) so that if a caller switches back to the lenient
+        // overload afterward (displacement ending), its MoveTowards chase resumes from
+        // wherever this was actually last rendered, not from a stale pre-displacement point
+        // frozen the last time the lenient overload ran.
+        sample.Visual = lerped;
+        _samples[entityId] = sample;
+
+        return lerped;
     }
 
     // Lenient counterpart to the plain Update above — same not-moving/teleported snap

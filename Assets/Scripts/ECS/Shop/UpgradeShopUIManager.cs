@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Upgrade shop — populates a grid with one UpgradeGameObject per UpgradeType registered in
@@ -34,6 +35,14 @@ public class UpgradeShopUIManager : ShopWindowBase<UpgradeShopUIManager>
     [SerializeField] private string _hoverSoundName = "ShopCardHover";
     [SerializeField] private string _buySoundName = "ShopBuy";
 
+    // Category filter buttons — null (unassigned) means "no such filter button exists,"
+    // handled the same as every other optional Inspector reference in this codebase.
+    [Header("Filters")]
+    [SerializeField] private Button _allFilterButton;
+    [SerializeField] private Button _offenseFilterButton;
+    [SerializeField] private Button _defenseFilterButton;
+    [SerializeField] private Button _utilityFilterButton;
+
     private readonly List<UpgradeGameObject> _upgrades = new List<UpgradeGameObject>();
     private readonly Dictionary<UpgradeGameObject, CardUpgrade> _upgradeDefinitions = new Dictionary<UpgradeGameObject, CardUpgrade>();
 
@@ -42,17 +51,47 @@ public class UpgradeShopUIManager : ShopWindowBase<UpgradeShopUIManager>
     // attach. Null means the picker is closed/there's nothing pending.
     private UpgradeType? _pendingUpgradeType;
 
+    // Null = "All" (every category shown) — the default, so the grid opens unfiltered.
+    private UpgradeCategory? _activeCategoryFilter;
+
     public void Initialize()
     {
         InitializeBase();
 
         PopulateGrid();
         RefreshAffordability();
+        InitializeFilterButtons();
 
         if (_previewPanel != null)
             _previewPanel.gameObject.SetActive(false);
         if (_deckPickerWindow != null)
             _deckPickerWindow.SetActive(false);
+    }
+
+    // ── Filtering ────────────────────────────────────────────────────────────
+
+    private void InitializeFilterButtons()
+    {
+        if (_allFilterButton != null)
+            _allFilterButton.onClick.AddListener(() => SetCategoryFilter(null));
+        if (_offenseFilterButton != null)
+            _offenseFilterButton.onClick.AddListener(() => SetCategoryFilter(UpgradeCategory.Offense));
+        if (_defenseFilterButton != null)
+            _defenseFilterButton.onClick.AddListener(() => SetCategoryFilter(UpgradeCategory.Defense));
+        if (_utilityFilterButton != null)
+            _utilityFilterButton.onClick.AddListener(() => SetCategoryFilter(UpgradeCategory.Utility));
+    }
+
+    private void SetCategoryFilter(UpgradeCategory? category)
+    {
+        _activeCategoryFilter = category;
+
+        foreach (UpgradeGameObject go in _upgrades)
+        {
+            if (!_upgradeDefinitions.TryGetValue(go, out CardUpgrade upgrade)) continue;
+            bool visible = _activeCategoryFilter == null || upgrade.Category == _activeCategoryFilter.Value;
+            go.gameObject.SetActive(visible);
+        }
     }
 
     protected override void Update()

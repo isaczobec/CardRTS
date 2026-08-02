@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Populates the card shop grid with one CardGameObject instance per CardType registered in
@@ -34,8 +35,19 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
     [SerializeField] private string _hoverSoundName = "ShopCardHover";
     [SerializeField] private string _buySoundName = "ShopBuy";
 
+    // Category filter buttons — null (unassigned) means "no such filter button exists,"
+    // handled the same as every other optional Inspector reference in this codebase.
+    [Header("Filters")]
+    [SerializeField] private Button _allFilterButton;
+    [SerializeField] private Button _troopFilterButton;
+    [SerializeField] private Button _buildingFilterButton;
+    [SerializeField] private Button _spellFilterButton;
+
     private readonly List<CardGameObject> _shopCards = new List<CardGameObject>();
     private readonly Dictionary<CardGameObject, Card> _shopCardDefinitions = new Dictionary<CardGameObject, Card>();
+
+    // Null = "All" (every category shown) — the default, so the grid opens unfiltered.
+    private CardCategory? _activeCategoryFilter;
 
     public void Initialize()
     {
@@ -43,9 +55,36 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
 
         PopulateGrid();
         RefreshAffordability();
+        InitializeFilterButtons();
 
         if (_hoverPreviewCard != null)
             _hoverPreviewCard.gameObject.SetActive(false);
+    }
+
+    // ── Filtering ────────────────────────────────────────────────────────────
+
+    private void InitializeFilterButtons()
+    {
+        if (_allFilterButton != null)
+            _allFilterButton.onClick.AddListener(() => SetCategoryFilter(null));
+        if (_troopFilterButton != null)
+            _troopFilterButton.onClick.AddListener(() => SetCategoryFilter(CardCategory.Troop));
+        if (_buildingFilterButton != null)
+            _buildingFilterButton.onClick.AddListener(() => SetCategoryFilter(CardCategory.Building));
+        if (_spellFilterButton != null)
+            _spellFilterButton.onClick.AddListener(() => SetCategoryFilter(CardCategory.Spell));
+    }
+
+    private void SetCategoryFilter(CardCategory? category)
+    {
+        _activeCategoryFilter = category;
+
+        foreach (CardGameObject go in _shopCards)
+        {
+            if (!_shopCardDefinitions.TryGetValue(go, out Card card)) continue;
+            bool visible = _activeCategoryFilter == null || card.Category == _activeCategoryFilter.Value;
+            go.gameObject.SetActive(visible);
+        }
     }
 
     private void PopulateGrid()

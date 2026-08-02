@@ -30,11 +30,11 @@ public class GoblinSnatcherCard : SpawnAtPointCard
     // 4x — explicit design ask.
     private const float DetectionRangeMultiplier = 48f;
     private const float ChaseRangeMultiplier = 96f;
-    private const float AttackRangeMultiplier = 1.5f;
+    private const float AttackRangeMultiplier = 4f;
     private const float CooldownMultiplier = 2f;
 
     // Permanent damage bonus vs. buildings (see BuildingDamageBonusComponent/System).
-    private const float BuildingDamageBonusRatio = 0.2f;
+    private const float BuildingDamageBonusRatio = 0.3f;
 
     private const float MaxDistanceFromBuilding = 20f;
 
@@ -45,7 +45,7 @@ public class GoblinSnatcherCard : SpawnAtPointCard
     public override CardType Type => CardType.GoblinSnatcher;
     public override string Title => "Goblin Snatcher";
     public override string ImageName => "GoblinSnatcher";
-    public override string Description => "A fast, fragile raider that deals 20% more damage to buildings.";
+    public override string Description => $"A fast, fragile raider that deals {BuildingDamageBonusRatio*100:0f}% more damage to buildings.";
     public override string IndicatorPrefabName => "GoblinSnatcher";
 
     public override StatsComponent DefaultStats => BuildStats();

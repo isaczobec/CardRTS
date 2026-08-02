@@ -44,6 +44,7 @@ public class EntitySpawnAction : IWorldGenAction
     private const float SoulstoneSelectionScale  = 2f;
 
     private const float SoulstoneSmallInitialRespawnSeconds  = 7.5f  * 60f;
+    // private const float SoulstoneSmallInitialRespawnSeconds  = 7.5f  * 60f;
     private const float SoulstoneMediumInitialRespawnSeconds = 12.5f * 60f;
     private const float SoulstoneLargeInitialRespawnSeconds  = 17.5f * 60f;
     private const float SoulstoneSteadyStateRespawnSeconds   = 5f  * 60f;

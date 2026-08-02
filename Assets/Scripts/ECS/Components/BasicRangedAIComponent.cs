@@ -24,6 +24,13 @@ public struct BasicRangedAIComponent : IComponent
     // attack) — see BasicRangedAISystem.Tick.
     public int WindDownTicksRemaining;
 
+    // Which entity this troop just fired at — 0 whenever WindDownTicksRemaining is 0. While
+    // both are set, the troop can't start a new attack yet, but if this target has drifted
+    // out of range in the meantime it still chases (without attacking) to keep pace, rather
+    // than standing completely idle for the whole wind-down — see
+    // BasicRangedAISystem.ChaseWhileWindingDown.
+    public ulong WindDownTargetId;
+
     // Multiple of the attack windup (AttackSpeed ticks) that WindDownTicksRemaining is set
     // to once a shot fires — see BasicRangedAISystem.ResolveAttack. 3 reproduces every
     // existing troop's original hardcoded behavior; a card can set this lower to give a

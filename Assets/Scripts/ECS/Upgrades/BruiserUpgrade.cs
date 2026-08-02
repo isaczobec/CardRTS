@@ -15,6 +15,7 @@ public class BruiserUpgrade : CardUpgrade
         $"Reduces incoming damage by {DeferralRatio * 100f:0}%, but that damage is instead taken over time at {DrainPerSecond:0}/second. " +
         "The banked damage clears if this troop goes 5 seconds without taking a hit.";
     public override string ImageName => "Bruiser";
+    public override UpgradeCategory Category => UpgradeCategory.Defense;
     public override int ShopGoldCost => 185;
     public override int MaxStackCount => 1;
 

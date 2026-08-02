@@ -421,6 +421,16 @@ public class TickManager : Singleton<TickManager>
         ECS = CreateSimulationECS();
     }
 
+    // Not registered from Awake — this class's [DefaultExecutionOrder(-100)] only reorders
+    // Awake relative to other Awakes, not the broader "every Awake runs before any Start"
+    // phase guarantee, so Start is the earliest point DevConsole.instance (default execution
+    // order, its own Awake) is guaranteed to already be set, regardless of this class's
+    // explicit order.
+    void Start()
+    {
+        GiveResourcesCommand.Register();
+    }
+
     // Called on a client when GameStart is received — before the game begins ticking.
     // Also called on the host from NetworkManager before StartGame().
     public void SetupClientECS()
