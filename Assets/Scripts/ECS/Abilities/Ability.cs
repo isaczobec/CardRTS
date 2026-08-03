@@ -44,7 +44,7 @@ public class Ability
 
     // The following Show*/Clamp* fields are purely client-side presentation, read by
     // AbilityIndicatorManager while this ability's hotkey is held (see
-    // AbilityInputManager.HeldCasterId/HeldSlot) — AbilitySystem itself never looks at them.
+    // AbilityInputManager.HeldAbilityId) — AbilitySystem itself never looks at them.
 
     // Ground circle of radius Range, centered on the caster.
     public bool ShowRangeCircle;
@@ -107,4 +107,32 @@ public class Ability
     public Action<ECS, AbilityUsedInput> ExecuteInstant;
     public Action<ECS, AbilityUsedAtLocationInput> ExecuteAtLocation;
     public Action<ECS, AbilityUsedOnEntityInput> ExecuteOnEntity;
+
+    // The following fields drive AbilityCasterTargeting.FindCasters — deciding WHICH of the
+    // player's own troops actually cast this ability when its ability-bar hotkey (see
+    // AbilityBarComponent/AbilityInputManager) is pressed and released. Entirely client-side
+    // targeting/UX (like the Show*/Clamp* fields above) — AbilitySystem itself only ever
+    // validates one (casterId, abilityId) pair at a time and doesn't care how many casters a
+    // single key-release resolved to.
+
+    // Distance (world/tile units) from the cursor within which an off-cooldown troop that has
+    // this ability equipped is a candidate caster — the same role Ability.TargetSelectionRadius
+    // plays for resolving a TargetEntity ability's CAST TARGET near the cursor, just for
+    // resolving the CASTER instead.
+    public float CasterSelectionRadius = 15f;
+
+    // Max number of troops that may simultaneously cast this ability from one hotkey
+    // press/release — the closest MaxSimultaneousCasters eligible troops (within
+    // CasterSelectionRadius, or among the selection — see PrioritizeSelectedTroops) are chosen.
+    // <= 0 means unlimited: every eligible troop found casts.
+    public int MaxSimultaneousCasters = 1;
+
+    // When true: if one or more of the player's currently-selected troops (see
+    // SelectionManager) have this ability equipped at all (regardless of cooldown), casting is
+    // restricted to just the selected troops that are actually off-cooldown right now —
+    // CasterSelectionRadius/cursor distance is ignored entirely in that case (only
+    // MaxSimultaneousCasters still caps how many of them cast). Falls back to ordinary
+    // cursor-proximity selection (CasterSelectionRadius, above) when no selected troop has this
+    // ability equipped at all.
+    public bool PrioritizeSelectedTroops;
 }

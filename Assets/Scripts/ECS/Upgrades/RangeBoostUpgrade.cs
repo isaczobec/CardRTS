@@ -4,7 +4,7 @@ using System;
 // permanent modifier entity (rather than a direct StatsComponent mutation) is used.
 public class RangeBoostUpgrade : CardUpgrade
 {
-    private const float RangeRatioBonus = 0.27f;
+    private const float RangeRatioBonus = 0.19f;
 
     public override UpgradeType Type => UpgradeType.RangeBoost;
     public override string Title => "Range Boost";
@@ -13,7 +13,7 @@ public class RangeBoostUpgrade : CardUpgrade
     // ("Range" + "Boost") so this one image asset serves both the shop icon and the in-combat
     // buff icon.
     public override string ImageName => "RangeBoost";
-    public override int ShopGoldCost => 70;
+    public override int ShopGoldCost => 80;
     // Explicit design ask — up to 3 copies of any basic stat upgrade may be equipped on the
     // same card.
     public override int MaxStackCount => 3;

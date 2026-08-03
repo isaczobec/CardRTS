@@ -4,7 +4,7 @@ using System;
 // permanent modifier entity (rather than a direct StatsComponent mutation) is used.
 public class SpeedBoostUpgrade : CardUpgrade
 {
-    private const float SpeedRatioBonus = 0.20f;
+    private const float SpeedRatioBonus = 0.16f;
 
     public override UpgradeType Type => UpgradeType.SpeedBoost;
     public override string Title => "Speed Boost";

@@ -86,6 +86,7 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
             Wood = 30
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.SkillshotAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

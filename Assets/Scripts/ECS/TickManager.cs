@@ -265,6 +265,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<ResourceGainDebuffComponent>(73);
         _componentTypeRegistry.Register<VengefulSpiritsSourceComponent>(74);
         _componentTypeRegistry.Register<CripplingStrikesSourceComponent>(75);
+        _componentTypeRegistry.Register<AbilityBarComponent>(76);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -456,6 +457,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<VengefulSpiritsSourceComponent>>(171);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<CripplingStrikesSourceComponent>>(172);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<CripplingStrikesSourceComponent>>(173);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<AbilityBarComponent>>(174);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<AbilityBarComponent>>(175);
 
         ECS = CreateSimulationECS();
     }
@@ -685,6 +688,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
+        ecs.AddComponentStore(new ComponentStore<AbilityBarComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnableInPlaceComponent>());
         ecs.AddComponentStore(new ComponentStore<OnDeathResourceDropComponent>());
         ecs.AddComponentStore(new ComponentStore<ActivatableComponent>());
@@ -890,6 +894,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CardComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerDeckComponent>());
         ecs.AddComponentStore(new ComponentStore<PlayerResourcesComponent>());
+        ecs.AddComponentStore(new ComponentStore<AbilityBarComponent>());
         ecs.AddComponentStore(new ComponentStore<RespawnableInPlaceComponent>());
         ecs.AddComponentStore(new ComponentStore<OnDeathResourceDropComponent>());
         ecs.AddComponentStore(new ComponentStore<ActivatableComponent>());

@@ -57,6 +57,17 @@ public struct AbilityComponent : IComponent
     public int Ability3ChargeCooldownTicksRemaining;
     public int Ability4ChargeCooldownTicksRemaining;
 
+    // Which of this component's 4 slots (if any) has abilityId equipped, or -1 if none does.
+    // Shared by AbilitySystem.TryBeginCast (via AbilityEligibility.CanCast) and
+    // AbilityCasterTargeting, so both agree on the same slot for the same ability.
+    public int FindSlot(int abilityId)
+    {
+        for (int slot = 0; slot < 4; slot++)
+            if (GetAbilityId(slot) == abilityId)
+                return slot;
+        return -1;
+    }
+
     // slot is 0-3 (Q/W/E/R). Returns 0 (no ability) for an out-of-range slot.
     public int GetAbilityId(int slot) => slot switch
     {

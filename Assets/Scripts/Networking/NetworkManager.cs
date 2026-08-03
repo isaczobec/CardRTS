@@ -467,6 +467,9 @@ public class NetworkManager : Singleton<NetworkManager>
         //     });
         ecs.AddComponent(entity.Id, new ShopPurchaseHistoryComponent());
         ecs.AddComponent(entity.Id, new PlayerTotalResourceValueComponent());
+        // Player-wide ability bar — starts empty, appended to as the player buys
+        // ability-granting cards (see AbilityBarHelper.RegisterPurchasedAbilities).
+        ecs.AddComponent(entity.Id, new AbilityBarComponent());
 
         // Starting decks are intentionally empty — players buy their first cards from the
         // shop instead (see ShopPricingHelper for the discounted early-purchase pricing).

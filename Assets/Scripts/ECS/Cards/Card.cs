@@ -139,4 +139,13 @@ public abstract class Card
     // via Category — override to false on the handful of Troop-category cards whose ENTIRE
     // spawn is lifetime-limited (EphemeralSkeletonsCard, HealerGuardianCard).
     public virtual bool CanCollectResources => Category == CardCategory.Troop;
+
+    // AbilityManager ability id(s) this card's OnPlayed equips on the troop it spawns, in the
+    // order they should first appear on the player-wide ability bar (see AbilityBarComponent/
+    // AbilityBarHelper.RegisterPurchasedAbilities, called from BuyCardSystem on a successful
+    // purchase) — static declarative data, not derived from OnPlayed itself, since resolving
+    // it would otherwise require actually spawning a throwaway entity. Empty for any card that
+    // grants no ability (the overwhelming majority); override on the handful that equip an
+    // AbilityComponent.
+    public virtual int[] GrantedAbilityIds => System.Array.Empty<int>();
 }

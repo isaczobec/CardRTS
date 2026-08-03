@@ -85,6 +85,14 @@ public static class AbilityManager
     // Short windup before the shot actually fires — see BuildSkillshotAbility. The caster
     // can't move or act (ActionWindupComponent vetoes CanMove/CanPerform) for the duration.
     private const float SkillshotWindupSeconds = 0.4f;
+    // Fallback radius (see Ability.CasterSelectionRadius) used only when no Ranger is
+    // currently selected — PrioritizeSelectedTroops is on for this ability (explicit design
+    // ask: "select your Rangers, aim, volley"), so in the common case every selected Ranger
+    // casts regardless of this radius. Must comfortably exceed SkillshotAbilityRange itself —
+    // otherwise aiming near the edge of the shot's actual range (a legal cast point) would
+    // put the cursor further from the caster than this radius allows, and no Ranger would
+    // ever resolve as a caster there at all.
+    private const float SkillshotCasterSelectionRadius = 100f;
     private const float MeleeStrikeRange = 6f;
     private const int MeleeStrikeDamage = 25;
     // Not used for any cast validation (RingOfProjectilesAbility is Instant — no location
@@ -115,6 +123,13 @@ public static class AbilityManager
     // the caster's own CanMove/CanPerform for the duration, and ResolveIceNova (the actual
     // effect) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
     private const float IceNovaCastTimeSeconds = 1f;
+    // See Ability.CasterSelectionRadius — an instant, self-centered nova; a single closest
+    // Ice Man triggering it (not the whole roster at once) is the intended AOE-clear payoff.
+    // Explicit design ask: this should comfortably exceed IceNovaRange itself, the same as
+    // every other ability's own CasterSelectionRadius — otherwise the preview's own range
+    // circle (drawn at IceNovaRange around the caster) could extend past the radius the cursor
+    // is even allowed to select that caster from, which reads as backwards.
+    private const float IceNovaCasterSelectionRadius = 55f;
 
     private const float PushRange = 18f;
     // World units/second — DisplacementSystem steps the target by this every tick for
@@ -131,6 +146,11 @@ public static class AbilityManager
     // caster's own CanMove/CanPerform for the duration, and ResolveGroundSlam (the actual
     // push) is deferred via ScheduledCallSystem to fire on the windup's very last tick.
     private const float GroundSlamWindupSeconds = 0.6f;
+    // Slow, deliberate melee tank — a tight-ish caster-selection radius (see
+    // Ability.CasterSelectionRadius) keeps this a single surgical push, not something that
+    // fires from a Stone Construct clear across the screen. Still comfortably exceeds
+    // GroundSlamRange itself, matching every other ability's own CasterSelectionRadius.
+    private const float GroundSlamCasterSelectionRadius = 15f;
 
     // How long Shadow Cloak's untargetability lasts — explicit design ask (StalkerCard).
     private const float ShadowCloakDurationSeconds = 8f;
@@ -140,6 +160,18 @@ public static class AbilityManager
     // instances while cloaked — see ShadowCloakSystem's own DamageRequest.SubscribeExecuted
     // handler. Explicit design ask (StalkerCard).
     private const int ShadowCloakMaxDamageInstancesBeforeBreak = 2;
+    // See Ability.CasterSelectionRadius — a self-buff escape/ambush tool, meant to trigger
+    // one nearby Stalker at a time, not the whole roster. Comfortably exceeds
+    // ShadowCloakCastIndicatorRadius below, same as every other ability's own
+    // CasterSelectionRadius vs. its own Range. 3.5x the original 12 — explicit design ask
+    // (the cursor shouldn't have to be nearly on top of the Stalker to select it).
+    private const float ShadowCloakCasterSelectionRadius = 42f;
+    // Shadow Cloak is Instant/self-targeted — it has no real "cast range" to speak of, so
+    // this isn't a gameplay distance at all, purely a small cosmetic ShowRangeCircle (see
+    // BuildShadowCloakAbility) drawn around whichever Stalker currently resolves as the
+    // caster while the hotkey is held, so the player gets a clear "this one will cloak if I
+    // let go" cue — explicit design ask.
+    private const float ShadowCloakCastIndicatorRadius = 3f;
 
     // Not used for any cast validation (the shot always travels its own pool's Range — see
     // ProjectilePool.AimSkillshot), only so AbilityIndicatorManager can preview roughly how
@@ -149,6 +181,11 @@ public static class AbilityManager
     // Mirrors BuildSkillshotAbility's own SkillshotWindupSeconds — an ActionWindupComponent
     // blocks the caster's own CanMove/CanPerform for the duration.
     private const float HookWindupSeconds = 0.4f;
+    // See Ability.CasterSelectionRadius — a hard single-target pull; multi-hooking the same
+    // fight would stack CC too strongly, so this stays a single closest-Pirate cast. Must
+    // comfortably exceed HookAbilityRange itself, same as every other ability's own
+    // CasterSelectionRadius.
+    private const float HookCasterSelectionRadius = 65f;
 
     // How far a target may be from the caster to be a legal Kinetic Pull cast — also used
     // (alongside KineticPullSpeed/KineticPullDurationSeconds below) so a max-range target
@@ -167,9 +204,26 @@ public static class AbilityManager
     // PushAbilityId/GroundSlamAbilityId already use).
     private const float KineticPullSpeed = 20f;
     private const float KineticPullDurationSeconds = KineticPullRange / KineticPullSpeed;
+    // See Ability.CasterSelectionRadius — hard CC, same single-caster reasoning as
+    // HookCasterSelectionRadius. Must comfortably exceed KineticPullRange itself, same as
+    // every other ability's own CasterSelectionRadius.
+    private const float KineticPullCasterSelectionRadius = 32f;
 
     private const float KineticShieldMaxHealth = 100f;
     private const float KineticShieldDurationSeconds = 7f;
+    // See Ability.CasterSelectionRadius — kept consistent with this troop's own
+    // KineticPullCasterSelectionRadius rather than opening this up to a squad-wide shield.
+    // Comfortably exceeds KineticShieldCastIndicatorRadius below, same as every other
+    // ability's own CasterSelectionRadius vs. its own Range. 3.5x the original 14 — explicit
+    // design ask (the cursor shouldn't have to be nearly on top of the Kinetic Knight to
+    // select it), matching ShadowCloakCasterSelectionRadius's own bump.
+    private const float KineticShieldCasterSelectionRadius = 49f;
+    // Kinetic Shield is Instant/self-targeted — it has no real "cast range" to speak of, so
+    // this isn't a gameplay distance at all, purely a small cosmetic ShowRangeCircle (see
+    // BuildKineticShieldAbility) drawn around whichever Kinetic Knight currently resolves as
+    // the caster while the hotkey is held, so the player gets a clear "this one will shield if
+    // I let go" cue — explicit design ask, mirrors ShadowCloakCastIndicatorRadius.
+    private const float KineticShieldCastIndicatorRadius = 3f;
 
     // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
@@ -318,6 +372,11 @@ public static class AbilityManager
             // (faster, longer-range) projectile — see SkillshotRangedTroopCard, which sets
             // up that second pool.
             ProjectileOwnerIndex = 1,
+            // Explicit design ask: select your Rangers, aim, and every selected one volleys
+            // together — see Ability.PrioritizeSelectedTroops/MaxSimultaneousCasters.
+            CasterSelectionRadius = SkillshotCasterSelectionRadius,
+            MaxSimultaneousCasters = 0, // unlimited
+            PrioritizeSelectedTroops = true,
         };
 
         ability.ExecuteAtLocation = (ecs, input) =>
@@ -375,6 +434,8 @@ public static class AbilityManager
             // Pirate has no separate auto-attack pool (it's a melee troop) — the hook is its
             // only pool, at the default index.
             ProjectileOwnerIndex = 0,
+            CasterSelectionRadius = HookCasterSelectionRadius,
+            MaxSimultaneousCasters = 1,
         };
 
         ability.ExecuteAtLocation = (ecs, input) =>
@@ -488,6 +549,8 @@ public static class AbilityManager
         CanTargetEnemyOrNeutral = true,
         ShowRangeCircle = true,
         ShowTargetIndicator = true,
+        CasterSelectionRadius = GroundSlamCasterSelectionRadius,
+        MaxSimultaneousCasters = 1,
         ExecuteOnEntity = (ecs, input) =>
         {
             ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
@@ -556,6 +619,8 @@ public static class AbilityManager
         CanTargetEnemyOrNeutral = true,
         ShowRangeCircle = true,
         ShowTargetIndicator = true,
+        CasterSelectionRadius = KineticPullCasterSelectionRadius,
+        MaxSimultaneousCasters = 1,
         ExecuteOnEntity = (ecs, input) =>
         {
             ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
@@ -621,6 +686,12 @@ public static class AbilityManager
         Name = "Kinetic Shield",
         Description = "Grants the Kinetic Knight a 100 HP shield that fully blocks incoming damage for 7 seconds.",
         ImageName = "KineticShield",
+        // Purely cosmetic — see KineticShieldCastIndicatorRadius's own comment. Not a real
+        // cast range (Instant/self-targeted, never consulted by AbilitySystem).
+        Range = KineticShieldCastIndicatorRadius,
+        ShowRangeCircle = true,
+        CasterSelectionRadius = KineticShieldCasterSelectionRadius,
+        MaxSimultaneousCasters = 1,
         ExecuteInstant = (ecs, input) =>
         {
             EntityHandle modifier = ecs.CreateEntity();
@@ -653,6 +724,12 @@ public static class AbilityManager
         Name = "Shadow Cloak",
         Description = "Cloaks the caster, making it untargetable by enemies for a short time. Shots already fired at it can still land.",
         ImageName = "ShadowCloak",
+        // Purely cosmetic — see ShadowCloakCastIndicatorRadius's own comment. Not a real
+        // cast range (Instant/self-targeted, never consulted by AbilitySystem).
+        Range = ShadowCloakCastIndicatorRadius,
+        ShowRangeCircle = true,
+        CasterSelectionRadius = ShadowCloakCasterSelectionRadius,
+        MaxSimultaneousCasters = 1,
         ExecuteInstant = (ecs, input) =>
         {
             EntityHandle modifier = ecs.CreateEntity();
@@ -672,7 +749,7 @@ public static class AbilityManager
             });
             ecs.AddComponent(modifier.Id, new StatModifierComponent
             {
-                SpeedRatioBonus = 1.35f,
+                SpeedRatioBonus = 0.9f,
             });
         },
     };
@@ -692,6 +769,8 @@ public static class AbilityManager
         Range = IceNovaRange,
         ImageName = "IceNova",
         ShowRangeCircle = true,
+        CasterSelectionRadius = IceNovaCasterSelectionRadius,
+        MaxSimultaneousCasters = 1,
         ExecuteInstant = (ecs, input) =>
         {
             ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();

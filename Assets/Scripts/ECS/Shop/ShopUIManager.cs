@@ -152,7 +152,11 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
     private void OnShopCardClicked(CardGameObject clickedCard)
     {
         if (!_shopCardDefinitions.TryGetValue(clickedCard, out Card card)) return;
-        if (GetAvailableGold() < ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, LocalPlayerId(), card)) return;
+        ushort localPlayerId = LocalPlayerId();
+
+        if (GetAvailableGold() < ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, localPlayerId, card)) return;
+        if (ShopPricingHelper.HasReachedPurchaseLimit(Ecs, localPlayerId)) return;
+        if (AbilityBarHelper.WouldExceedCapacity(Ecs, localPlayerId, card.GrantedAbilityIds)) return;
 
         InputBuffer.EnqueueInput(new BuyCardInput { CardType = card.Type });
         PlayShopSound(_buySoundName);
@@ -191,12 +195,19 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
         int availableGold = GetAvailableGold();
         ushort localPlayerId = LocalPlayerId();
 
+        // Same for every card this refresh (a global per-player cap), so it's computed once
+        // rather than re-checked per card — unlike the ability-bar check below, which is
+        // specific to what each individual card would grant.
+        bool purchaseLimitReached = ShopPricingHelper.HasReachedPurchaseLimit(Ecs, localPlayerId);
+
         foreach (CardGameObject go in _shopCards)
         {
             if (!_shopCardDefinitions.TryGetValue(go, out Card card)) continue;
 
             go.ShopGoldCost = ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, localPlayerId, card);
-            go.RefreshShopAffordability(availableGold);
+
+            bool blocked = purchaseLimitReached || AbilityBarHelper.WouldExceedCapacity(Ecs, localPlayerId, card.GrantedAbilityIds);
+            go.RefreshShopAffordability(availableGold, blocked);
         }
     }
 }

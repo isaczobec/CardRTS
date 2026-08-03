@@ -291,11 +291,16 @@ public class CardGameObject : MonoBehaviour,
 
     // Alternative to RefreshAffordability for shop-style prefabs (see ShopUIManager): there
     // are no per-resource cost rows to color and no ResourceCost to check against — just
-    // the unaffordable overlay, compared against ShopGoldCost instead.
-    public void RefreshShopAffordability(int availableGold)
+    // the unaffordable overlay, compared against ShopGoldCost instead. blocked covers any
+    // OTHER reason this specific purchase would be rejected server-side right now (the
+    // match-wide purchase cap, or this card's own abilities not fitting on the ability bar —
+    // see ShopPricingHelper.HasReachedPurchaseLimit/AbilityBarHelper.WouldExceedCapacity) —
+    // folded into the same overlay rather than a separate one, since either way the card just
+    // isn't buyable right now.
+    public void RefreshShopAffordability(int availableGold, bool blocked = false)
     {
         if (_unaffordableOverlay != null)
-            _unaffordableOverlay.SetActive(availableGold < ShopGoldCost);
+            _unaffordableOverlay.SetActive(blocked || availableGold < ShopGoldCost);
     }
 
     private static void SetStatRow(StatRow row, int value)

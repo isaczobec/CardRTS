@@ -19,13 +19,13 @@ public class StalkerCard : SpawnAtPointCard
 {
     // Unchanged from BasicMeleeTroopCard — see its own comment for the balance baseline
     // these are scaled from.
-    private const int MaxHealth = 250;
+    private const int MaxHealth = 220;
     // Slightly faster than BasicMeleeTroopCard.Speed (50) — explicit design ask.
     private const int Speed = 46;
     private const int Range = 5;
     private const int Armor = 20;
     private const int Damage = 30;
-    private const float AttackSpeedMilliseconds = 333f;
+    private const float AttackSpeedMilliseconds = 490f;
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
@@ -43,7 +43,7 @@ public class StalkerCard : SpawnAtPointCard
     private const float ShadowCloakCooldownSeconds = 45f;
 
     // Ambush payoff (see OnHitScheduleComponent/ResolveAmbush) — explicit design ask.
-    private const float AmbushTargetSlowDurationSeconds = 8f;
+    private const float AmbushTargetSlowDurationSeconds = 7f;
     private const float AmbushTargetSlowRatio = -0.4f;
     // AttackSpeed is a tick PERIOD (lower = faster attacks — see StatsQuery.GetAttackSpeed),
     // the opposite of every other stat here, where higher is better. A "-20% attack speed"
@@ -52,10 +52,10 @@ public class StalkerCard : SpawnAtPointCard
     // right back for display so the UI still reads "-20%" despite the mechanically-inverted
     // sign.
     private const float AmbushTargetAttackSpeedDebuffRatio = 0.3f;
-    private const float AmbushSelfAttackSpeedBuffDurationSeconds = 8f;
+    private const float AmbushSelfAttackSpeedBuffDurationSeconds = 7f;
     // "+60% attack speed" (attacks faster) needs a NEGATIVE ratio (shortens the period) —
     // same inverted-sign reasoning as AmbushTargetAttackSpeedDebuffRatio above.
-    private const float AmbushSelfAttackSpeedBuffRatio = -0.6f;
+    private const float AmbushSelfAttackSpeedBuffRatio = -0.75f;
 
     static StalkerCard()
     {
@@ -81,6 +81,7 @@ public class StalkerCard : SpawnAtPointCard
             Metal = 30,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.ShadowCloakAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

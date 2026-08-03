@@ -25,6 +25,8 @@ public class RenderingSetup : Singleton<RenderingSetup>
 
 
         SelectionManager.instance.Initialize();
+        TroopMarkerManager.instance.Initialize();
+        TroopMarkerIconManager.instance.Initialize();
         MoveMarkerManager.instance.Initialize();
         HealthBarManager.instance.Initialize();
         EntityTimerTextRenderer.instance.Initialize();
@@ -42,6 +44,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         AbilityInputManager.instance.Initialize();
         AbilityBarUI.instance.Initialize();
         AbilityIndicatorManager.instance.Initialize();
+        AbilityStatusIconManager.instance.Initialize();
         AudioManager.instance.Initialize();
         ShopUIManager.instance.Initialize();
         UpgradeShopUIManager.instance.Initialize();

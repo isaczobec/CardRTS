@@ -1,18 +1,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Shows a held ability's preview indicators — a range circle around the caster, a circle at
-// the cast point, a direction arrow from the caster toward the cast point, and/or a marker
-// on whichever entity would be targeted — driven entirely by AbilityInputManager's
-// currently-held slot (HeldCasterId/HeldSlot, set while a Q/W/E/R key is held down but not
-// yet released — see AbilityInputManager) and the equipped Ability's own
-// Show*/ClampCastLocationToRange fields. All indicators are optional per ability and can be
-// combined freely; each is only shown while its own flag is set on the currently-held
-// ability. The cast point used for the circle/arrow is resolved through
-// AbilityTargeting.ResolveCastPoint, the exact same clamping AbilityInputManager applies to
-// what it actually sends, so the preview never lies about where the cast will land; the
-// target-entity marker likewise reuses EntityTargeting.FindClosestSelectable, the same
-// resolution AbilityInputManager uses for a TargetEntity ability's actual cast.
+// Shows preview indicators for whichever troop(s) currently resolve as the caster(s) of a
+// held ability-bar hotkey — a range circle around each such troop, a circle at each caster's
+// own cast point / a direction arrow from each caster toward it (skillshot-style abilities),
+// and/or a marker on whichever entity would be targeted — driven by AbilityInputManager's
+// currently-held ability (HeldAbilityId) and AbilityCasterTargeting's own resolution of who
+// would actually cast it right now (mirrors exactly what AbilityInputManager itself will do
+// on key release), plus the equipped Ability's own Show*/ClampCastLocationToRange fields. All
+// indicators are optional per ability and can be combined freely; each is only shown while
+// its own flag is set on the held ability.
+//
+// Since MORE THAN ONE troop can resolve as a caster at once (see Ability.
+// MaxSimultaneousCasters/PrioritizeSelectedTroops), the range circle/cursor circle/direction
+// arrow are each a small per-caster POOL (keyed by caster entity id) rather than a single lazy
+// instance — every resolved caster gets its own positioned indicator, and each caster clamps
+// its own cast point to its own Range independently (see AbilityTargeting.ResolveCastPoint),
+// so two casters at different distances can legitimately show different cursor
+// circles/arrows. The entity-target marker stays a SINGLE instance — the resolved
+// target-under-cursor is the same regardless of which caster is asking (only the per-caster
+// range check differs), so there's only ever one entity being pointed at, shown as long as at
+// least one resolved caster is actually in range of it.
 //
 // Separate from the ECS architecture, like CardRangeIndicatorManager — never registered as
 // an ISystem, just polls AbilityInputManager/the live cursor each frame.
@@ -27,11 +35,17 @@ public class AbilityIndicatorManager : Singleton<AbilityIndicatorManager>
     [SerializeField] private Color _cursorCircleColor = new Color(1f, 0f, 0f, 0.25f);
 
     private ECS _ecs;
-    private RangeIndicatorPrefab _rangeCircleInstance;
-    private RangeIndicatorPrefab _cursorCircleInstance;
-    private AbilityDirectionIndicatorPrefab _directionArrowInstance;
+
+    // Pooled per-caster instances, keyed by caster entity id — entries are never removed,
+    // just deactivated once that caster stops being a currently-resolved caster (see
+    // PruneStale), and reused again if/when it becomes one again.
+    private readonly Dictionary<ulong, RangeIndicatorPrefab> _rangeCircleInstances = new Dictionary<ulong, RangeIndicatorPrefab>();
+    private readonly Dictionary<ulong, RangeIndicatorPrefab> _cursorCircleInstances = new Dictionary<ulong, RangeIndicatorPrefab>();
+    private readonly Dictionary<ulong, AbilityDirectionIndicatorPrefab> _directionArrowInstances = new Dictionary<ulong, AbilityDirectionIndicatorPrefab>();
     private EntityTargetIndicator _targetIndicator;
 
+    private readonly List<ulong> _casterBuffer = new List<ulong>();
+    private readonly HashSet<ulong> _activeCasterSet = new HashSet<ulong>();
     private readonly List<ulong> _targetQueryBuffer = new List<ulong>();
 
     public void Initialize()
@@ -44,158 +58,184 @@ public class AbilityIndicatorManager : Singleton<AbilityIndicatorManager>
     {
         if (TickManager.instance == null || !TickManager.instance.IsGameStarted) { HideAll(); return; }
 
-        ulong casterId = AbilityInputManager.instance != null ? AbilityInputManager.instance.HeldCasterId : 0;
-        int slot = AbilityInputManager.instance != null ? AbilityInputManager.instance.HeldSlot : -1;
-        if (casterId == 0 || slot < 0) { HideAll(); return; }
-
-        ComponentStore<AbilityComponent> abilityStore = _ecs.GetComponentStore<AbilityComponent>();
-        if (abilityStore == null || !abilityStore.HasComponent(casterId)) { HideAll(); return; }
-
-        AbilityComponent abilities = abilityStore.GetComponent(casterId);
-        int abilityId = abilities.GetAbilityId(slot);
+        int abilityId = AbilityInputManager.instance != null ? AbilityInputManager.instance.HeldAbilityId : 0;
         if (abilityId == 0 || !AbilityManager.TryGet(abilityId, out Ability ability)) { HideAll(); return; }
 
-        // A cast that AbilitySystem is just going to reject anyway (still on cooldown)
-        // shouldn't get a preview implying it's ready — matches AbilityBarUI's own
-        // cooldown-overlay gating off the same GetCooldownTicksRemaining.
-        if (abilities.GetCooldownTicksRemaining(slot) > 0) { HideAll(); return; }
+        if (!TileSpaceMouse.TryGetPosition(out float cursorX, out float cursorY)) { HideAll(); return; }
+
+        ushort localPlayerId = NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
+        IReadOnlyCollection<ulong> selected = SelectionManager.instance != null ? SelectionManager.instance.SelectedEntityIds : null;
+        AbilityCasterTargeting.FindCasters(_ecs, abilityId, ability, cursorX, cursorY, localPlayerId, selected, _casterBuffer);
 
         ComponentStore<PositionComponent> posStore = _ecs.GetComponentStore<PositionComponent>();
-        if (posStore == null || !posStore.HasComponent(casterId)) { HideAll(); return; }
-        PositionComponent casterPos = posStore.GetComponent(casterId);
+        if (posStore == null || _casterBuffer.Count == 0) { HideAll(); return; }
 
-        UpdateRangeCircle(ability, casterPos);
-        UpdateCursorIndicators(ability, casterId, casterPos);
-        UpdateTargetIndicator(ability, casterId, casterPos);
+        _activeCasterSet.Clear();
+        foreach (ulong id in _casterBuffer)
+            _activeCasterSet.Add(id);
+
+        foreach (ulong casterId in _casterBuffer)
+        {
+            if (!posStore.HasComponent(casterId)) continue;
+            PositionComponent casterPos = posStore.GetComponent(casterId);
+
+            UpdateRangeCircle(ability, casterId, casterPos);
+            UpdateCursorIndicators(ability, casterId, casterPos, cursorX, cursorY);
+        }
+
+        PruneStale(_rangeCircleInstances, _activeCasterSet);
+        PruneStale(_cursorCircleInstances, _activeCasterSet);
+        PruneStale(_directionArrowInstances, _activeCasterSet);
+
+        UpdateTargetIndicator(ability, localPlayerId, posStore, cursorX, cursorY);
     }
 
-    private void UpdateRangeCircle(Ability ability, PositionComponent casterPos)
+    private void UpdateRangeCircle(Ability ability, ulong casterId, PositionComponent casterPos)
     {
         if (!ability.ShowRangeCircle || ability.Range <= 0f)
         {
-            SetActive(_rangeCircleInstance, false);
+            HideIfExists(_rangeCircleInstances, casterId);
             return;
         }
 
-        if (_rangeCircleInstance == null)
-        {
-            if (_rangeCirclePrefab == null) return;
-            _rangeCircleInstance = Instantiate(_rangeCirclePrefab, transform);
-            _rangeCircleInstance.SetColor(_rangeCircleColor);
-        }
+        RangeIndicatorPrefab instance = GetOrCreate(_rangeCircleInstances, casterId, _rangeCirclePrefab);
+        if (instance == null) return;
 
-        _rangeCircleInstance.transform.position = WorldPositionForXY(casterPos.X, casterPos.Y);
-        _rangeCircleInstance.SetScale(ability.Range * 2f); // radius -> diameter
-        _rangeCircleInstance.gameObject.SetActive(true);
+        instance.SetColor(_rangeCircleColor);
+        instance.transform.position = WorldPositionForXY(casterPos.X, casterPos.Y);
+        instance.SetScale(ability.Range * 2f); // radius -> diameter
+        instance.gameObject.SetActive(true);
     }
 
-    private void UpdateCursorIndicators(Ability ability, ulong casterId, PositionComponent casterPos)
+    private void UpdateCursorIndicators(Ability ability, ulong casterId, PositionComponent casterPos, float rawX, float rawY)
     {
         bool needsCursor = ability.ShowCursorCircle || ability.ShowDirectionArrow;
-        if (!needsCursor || !TileSpaceMouse.TryGetPosition(out float rawX, out float rawY))
+        if (!needsCursor)
         {
-            SetActive(_cursorCircleInstance, false);
-            SetActive(_directionArrowInstance, false);
+            HideIfExists(_cursorCircleInstances, casterId);
+            HideIfExists(_directionArrowInstances, casterId);
             return;
         }
 
         AbilityTargeting.ResolveCastPoint(_ecs, casterId, ability, rawX, rawY, out float x, out float y);
 
-        UpdateCursorCircle(ability, x, y);
-        UpdateDirectionArrow(ability, casterPos, x, y);
+        UpdateCursorCircle(ability, casterId, x, y);
+        UpdateDirectionArrow(ability, casterId, casterPos, x, y);
     }
 
-    private void UpdateCursorCircle(Ability ability, float x, float y)
+    private void UpdateCursorCircle(Ability ability, ulong casterId, float x, float y)
     {
         if (!ability.ShowCursorCircle)
         {
-            SetActive(_cursorCircleInstance, false);
+            HideIfExists(_cursorCircleInstances, casterId);
             return;
         }
 
-        if (_cursorCircleInstance == null)
-        {
-            if (_cursorCirclePrefab == null) return;
-            _cursorCircleInstance = Instantiate(_cursorCirclePrefab, transform);
-            _cursorCircleInstance.SetColor(_cursorCircleColor);
-        }
+        RangeIndicatorPrefab instance = GetOrCreate(_cursorCircleInstances, casterId, _cursorCirclePrefab);
+        if (instance == null) return;
 
-        _cursorCircleInstance.transform.position = WorldPositionForXY(x, y);
-        _cursorCircleInstance.SetScale(ability.CursorCircleRadius * 2f); // radius -> diameter
-        _cursorCircleInstance.gameObject.SetActive(true);
+        instance.SetColor(_cursorCircleColor);
+        instance.transform.position = WorldPositionForXY(x, y);
+        instance.SetScale(ability.CursorCircleRadius * 2f); // radius -> diameter
+        instance.gameObject.SetActive(true);
     }
 
-    private void UpdateDirectionArrow(Ability ability, PositionComponent casterPos, float x, float y)
+    private void UpdateDirectionArrow(Ability ability, ulong casterId, PositionComponent casterPos, float x, float y)
     {
         if (!ability.ShowDirectionArrow)
         {
-            SetActive(_directionArrowInstance, false);
+            HideIfExists(_directionArrowInstances, casterId);
             return;
         }
 
-        if (_directionArrowInstance == null)
-        {
-            if (_directionArrowPrefab == null) return;
-            _directionArrowInstance = Instantiate(_directionArrowPrefab, transform);
-        }
+        AbilityDirectionIndicatorPrefab instance = GetOrCreate(_directionArrowInstances, casterId, _directionArrowPrefab);
+        if (instance == null) return;
 
         Vector3 basePos = WorldPositionForXY(casterPos.X, casterPos.Y);
         Vector3 tipPos = WorldPositionForXY(x, y);
         Vector3 delta = tipPos - basePos;
         float length = ability.DirectionArrowAlwaysMaxRange ? ability.Range : delta.magnitude;
 
-        _directionArrowInstance.transform.position = basePos;
+        instance.transform.position = basePos;
         if (delta.sqrMagnitude > 0.0001f)
-            _directionArrowInstance.transform.rotation = Quaternion.FromToRotation(Vector3.right, delta.normalized);
-        _directionArrowInstance.SetLength(length);
-        _directionArrowInstance.gameObject.SetActive(true);
+            instance.transform.rotation = Quaternion.FromToRotation(Vector3.right, delta.normalized);
+        instance.SetLength(length);
+        instance.gameObject.SetActive(true);
     }
 
-    private void UpdateTargetIndicator(Ability ability, ulong casterId, PositionComponent casterPos)
+    private void UpdateTargetIndicator(Ability ability, ushort localPlayerId, ComponentStore<PositionComponent> posStore, float cursorX, float cursorY)
     {
-        if (!ability.ShowTargetIndicator || !TileSpaceMouse.TryGetPosition(out float x, out float y))
+        if (!ability.ShowTargetIndicator)
         {
             _targetIndicator.Hide();
             return;
         }
 
-        ushort localPlayerId = NetworkManager.instance != null ? NetworkManager.instance.LocalPlayerId : (ushort)0;
         ulong targetId = EntityTargeting.FindClosestSelectable(
-            _ecs, x, y, ability.TargetSelectionRadius, localPlayerId,
+            _ecs, cursorX, cursorY, ability.TargetSelectionRadius, localPlayerId,
             ability.CanTargetFriendly, ability.CanTargetEnemyOrNeutral, _targetQueryBuffer);
-        if (targetId == 0)
-        {
-            _targetIndicator.Hide();
-            return;
-        }
-
-        ComponentStore<PositionComponent> posStore = _ecs.GetComponentStore<PositionComponent>();
-        if (posStore == null || !posStore.HasComponent(targetId))
-        {
-            _targetIndicator.Hide();
-            return;
-        }
-
-        // Same range check AbilityInputManager applies before actually sending a cast — no
-        // point showing a target marker for an entity the cast would just get rejected for.
-        float dx = posStore.GetComponent(targetId).X - casterPos.X;
-        float dy = posStore.GetComponent(targetId).Y - casterPos.Y;
-        if (dx * dx + dy * dy > ability.Range * ability.Range)
+        if (targetId == 0 || !posStore.HasComponent(targetId))
         {
             _targetIndicator.Hide();
             return;
         }
 
         PositionComponent targetPos = posStore.GetComponent(targetId);
+
+        // Only worth showing if at least one currently-resolved caster is actually within
+        // range of it — same per-caster range precheck AbilityInputManager itself applies
+        // before sending a cast, just checked across every resolved caster instead of one.
+        bool anyCasterInRange = false;
+        foreach (ulong casterId in _casterBuffer)
+        {
+            if (!posStore.HasComponent(casterId)) continue;
+            PositionComponent casterPos = posStore.GetComponent(casterId);
+            float dx = targetPos.X - casterPos.X, dy = targetPos.Y - casterPos.Y;
+            if (dx * dx + dy * dy <= ability.Range * ability.Range)
+            {
+                anyCasterInRange = true;
+                break;
+            }
+        }
+
+        if (!anyCasterInRange)
+        {
+            _targetIndicator.Hide();
+            return;
+        }
+
         _targetIndicator.Show(WorldPositionForXY(targetPos.X, targetPos.Y));
     }
 
     private void HideAll()
     {
-        SetActive(_rangeCircleInstance, false);
-        SetActive(_cursorCircleInstance, false);
-        SetActive(_directionArrowInstance, false);
+        foreach (KeyValuePair<ulong, RangeIndicatorPrefab> kvp in _rangeCircleInstances) SetActive(kvp.Value, false);
+        foreach (KeyValuePair<ulong, RangeIndicatorPrefab> kvp in _cursorCircleInstances) SetActive(kvp.Value, false);
+        foreach (KeyValuePair<ulong, AbilityDirectionIndicatorPrefab> kvp in _directionArrowInstances) SetActive(kvp.Value, false);
         _targetIndicator?.Hide();
+    }
+
+    private T GetOrCreate<T>(Dictionary<ulong, T> pool, ulong casterId, T prefab) where T : Component
+    {
+        if (prefab == null) return null;
+        if (pool.TryGetValue(casterId, out T existing) && existing != null) return existing;
+
+        T instance = Instantiate(prefab, transform);
+        pool[casterId] = instance;
+        return instance;
+    }
+
+    private static void HideIfExists<T>(Dictionary<ulong, T> pool, ulong casterId) where T : Component
+    {
+        if (pool.TryGetValue(casterId, out T instance))
+            SetActive(instance, false);
+    }
+
+    private static void PruneStale<T>(Dictionary<ulong, T> pool, HashSet<ulong> active) where T : Component
+    {
+        foreach (KeyValuePair<ulong, T> kvp in pool)
+            if (!active.Contains(kvp.Key))
+                SetActive(kvp.Value, false);
     }
 
     private static void SetActive(Component c, bool active)

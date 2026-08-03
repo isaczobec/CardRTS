@@ -53,6 +53,7 @@ public class StoneConstructCard : SpawnAtPointCard
             Stone = 280
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.GroundSlamAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

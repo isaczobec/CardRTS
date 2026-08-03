@@ -13,11 +13,14 @@ using UnityEngine;
 ///   Space (held)                  — continuously follows the current selection every
 ///                                    frame (see SelectionManager.TryGetFocusPositionForSelection),
 ///                                    suppressing edge-scroll while it's actively tracking
+///   Z X C V B N M (held)          — continuously follows whichever troop is bound to that
+///                                    key (see TroopMarkerManager.TryGetFollowPosition), same
+///                                    edge-scroll suppression as held Space
 ///   Scroll wheel                  — raise/lower the camera's elevation, clamped between
 ///                                    _minDistance and _maxDistance
 /// </summary>
 [RequireComponent(typeof(Camera))]
-public class CameraController : MonoBehaviour
+public class CameraController : Singleton<CameraController>
 {
     [Header("View")]
     [SerializeField] float _pitch = 50f;
@@ -103,7 +106,7 @@ public class CameraController : MonoBehaviour
         bool dragPanning = altPressed && Input.GetMouseButton(0);
         bool rotating    = altPressed && Input.GetMouseButton(1);
 
-        bool following = HandleFollowSelection();
+        bool following = HandleFollowSelection() || HandleFollowMarker();
 
         // Edge-scroll would otherwise fight the follow every frame (re-centering, then
         // immediately getting nudged back off-center by the cursor sitting near an edge).
@@ -153,6 +156,21 @@ public class CameraController : MonoBehaviour
         if (!Input.GetKey(KeyCode.Space)) return false;
         if (SelectionManager.instance == null) return false;
         if (!SelectionManager.instance.TryGetFocusPositionForSelection(out Vector3 pos)) return false;
+
+        JumpTo(pos);
+        return true;
+    }
+
+    // Held marker key (see TroopMarkerManager — Z X C V B N M) that's currently NOT hovering
+    // a troop (that gesture means "rebind," not "follow" — see that class's own doc comment):
+    // re-centers the camera on whichever troop is bound to it every frame it's held, exactly
+    // mirroring HandleFollowSelection's own Space-key behavior above for a keyboard-bound
+    // troop instead of the current selection.
+    bool HandleFollowMarker()
+    {
+        if (DevConsole.IsOpen) return false;
+        if (TroopMarkerManager.instance == null) return false;
+        if (!TroopMarkerManager.instance.TryGetFollowPosition(out Vector3 pos)) return false;
 
         JumpTo(pos);
         return true;

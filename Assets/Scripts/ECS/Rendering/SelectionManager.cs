@@ -682,6 +682,16 @@ public class SelectionManager : Singleton<SelectionManager>
             prefab.SetSelected(color);
     }
 
+    // Deselects everything, then selects ONLY entityId — the keyboard equivalent of a plain
+    // (non-additive) click-select, same _friendlySingleSelectedColor a mouse click would use.
+    // No ownership/selectability validation here (same trust level Select() itself already
+    // has) — used by TroopMarkerManager's double-tap-a-marker-key gesture.
+    public void SelectOnly(ulong entityId)
+    {
+        DeselectAll();
+        Select(entityId, _friendlySingleSelectedColor);
+    }
+
     private void DeselectAll()
     {
         foreach (ulong entityId in _selectedEntityIds)
@@ -725,6 +735,20 @@ public class SelectionManager : Singleton<SelectionManager>
     {
         foreach (ulong id in _selectedEntityIds) return id;
         return 0;
+    }
+
+    // Current interpolated world position of ANY selectable entity's own tracking ring — not
+    // just the current selection (unlike TryGetFocusPositionForSelection above). Every
+    // selectable entity already has a ring/interpolator from SetupSelection regardless of
+    // whether it's ever been selected, so this is reused by TroopMarkerManager for its own
+    // camera-follow/marker-icon positioning instead of running a second independent
+    // TickPositionInterpolator chasing the exact same entity.
+    public bool TryGetEntityPosition(ulong entityId, out Vector3 worldPos)
+    {
+        worldPos = default;
+        if (!_selectionObjects.TryGetValue(entityId, out SelectionPrefab prefab)) return false;
+        worldPos = prefab.transform.position;
+        return true;
     }
 
     // Tab: cycles the camera through every entity the local player owns (independent of

@@ -1,8 +1,13 @@
 using System.Collections.Generic;
 
-// Reads BuyCardInput each tick: validates the requested CardType is real and the buying
-// player can afford its Card.ShopGoldCost, then deducts that cost via a
-// ResourcesDeductedRequest. Unlike SpawnAtPointCardPlaySystem, this is NOT gated behind an
+// Reads BuyCardInput each tick: validates the requested CardType is real, that the player
+// hasn't already hit the match-wide ShopPricingHelper.MaxCardsPurchased cap, that the card's
+// own GrantedAbilityIds (if any) would still fit on the player's AbilityBarComponent (see
+// AbilityBarHelper.WouldExceedCapacity), and that the buying player can afford its
+// Card.ShopGoldCost — then deducts that cost via a ResourcesDeductedRequest. ShopUIManager
+// mirrors all three checks for the shop's own unaffordable-overlay display (see
+// RefreshAffordability/OnShopCardClicked there), so the two can never disagree about whether a
+// given card is currently buyable. Unlike SpawnAtPointCardPlaySystem, this is NOT gated behind an
 // isServer check at the top — resource deduction is just a component mutation and safe to
 // predict (mirroring AbilitySystem's own reasoning), so a buying client sees its gold spent
 // immediately instead of waiting on the server round-trip.
@@ -44,6 +49,18 @@ public static class BuyCardSystem
             return;
         }
 
+        if (ShopPricingHelper.HasReachedPurchaseLimit(ecs, input.ClientId))
+        {
+            DebugLogger.LogWarning($"[BuyCardSystem] Rejected: player {input.ClientId} has already bought {ShopPricingHelper.MaxCardsPurchased} cards (the match limit).", "cards");
+            return;
+        }
+
+        if (AbilityBarHelper.WouldExceedCapacity(ecs, input.ClientId, definition.GrantedAbilityIds))
+        {
+            DebugLogger.LogWarning($"[BuyCardSystem] Rejected: {input.CardType} would push player {input.ClientId}'s ability bar past {AbilityBarComponent.SlotCount} slots.", "cards");
+            return;
+        }
+
         int shopGoldCost = ShopPricingHelper.GetEffectiveShopGoldCost(ecs, input.ClientId, definition);
         ResourceCost shopCost = new ResourceCost { Gold = shopGoldCost };
         PlayerResourcesComponent resources = resourceStore.GetComponent(resourceEntityId);
@@ -54,6 +71,11 @@ public static class BuyCardSystem
         }
 
         ecs.Requests.Process(new ResourcesDeductedRequest(resourceEntityId, shopCost), ecs);
+
+        // Deterministic (CardType -> granted ability ids never varies), so — like the
+        // resource deduction above — safe to predict here rather than gating behind isServer
+        // below. See AbilityBarHelper.RegisterPurchasedAbilities.
+        AbilityBarHelper.RegisterPurchasedAbilities(ecs, input.ClientId, definition.GrantedAbilityIds);
 
         bool isServer = NetworkManager.instance == null || NetworkManager.instance.IsServer;
         if (!isServer) return;

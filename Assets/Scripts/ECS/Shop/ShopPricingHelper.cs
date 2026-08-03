@@ -10,6 +10,12 @@ public static class ShopPricingHelper
     public const int DiscountedPurchaseCount = 6;
     public const int DiscountedShopGoldCost = 10;
 
+    // Hard cap on how many cards a player may EVER buy from the shop in a single match,
+    // regardless of gold — explicit design ask. Checked by both BuyCardSystem (the
+    // authoritative reject) and ShopUIManager (the unaffordable-overlay display), so the two
+    // can never disagree about when a player's hit the ceiling.
+    public const int MaxCardsPurchased = 9;
+
     public static int GetEffectiveShopGoldCost(ECS ecs, ushort playerId, Card card)
     {
         if (GetCardsPurchased(ecs, playerId) < DiscountedPurchaseCount)
@@ -17,6 +23,9 @@ public static class ShopPricingHelper
 
         return card.ShopGoldCost;
     }
+
+    public static bool HasReachedPurchaseLimit(ECS ecs, ushort playerId)
+        => GetCardsPurchased(ecs, playerId) >= MaxCardsPurchased;
 
     // ShopPurchaseHistoryComponent lives on the same entity as PlayerResourcesComponent (see
     // NetworkManager.SpawnPlayerEntity), so this reuses ResourceHelper's own lookup rather

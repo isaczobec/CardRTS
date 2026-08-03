@@ -58,6 +58,7 @@ public class IceManCard : SpawnAtPointCard
             Gems = 10,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.IceNovaAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

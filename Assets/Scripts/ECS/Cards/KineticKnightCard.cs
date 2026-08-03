@@ -54,6 +54,7 @@ public class KineticKnightCard : SpawnAtPointCard
             Soulstones = 1,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.KineticPullAbilityId, AbilityManager.KineticShieldAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

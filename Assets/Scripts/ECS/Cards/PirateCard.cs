@@ -65,6 +65,7 @@ public class PirateCard : SpawnAtPointCard
             Stone = 30
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.HookAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {

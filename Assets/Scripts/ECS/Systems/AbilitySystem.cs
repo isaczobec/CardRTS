@@ -159,39 +159,19 @@ public static class AbilitySystem
     }
 
     // Shared validation for both input kinds. Out params are only meaningful when this
-    // returns true.
+    // returns true. The eligibility gate itself (ownership/activation/cooldown/charges) lives
+    // in AbilityEligibility.CanCast, shared with AbilityCasterTargeting's client-side caster
+    // selection so the two can never disagree about who's allowed to cast.
     private static bool TryBeginCast(ECS ecs, ulong casterId, int abilityId, ushort clientId,
         ComponentStore<AbilityComponent> abilityStore, ComponentStore<TroopComponent> troopStore,
         out Ability ability, out int slot)
     {
         ability = null;
-        slot = -1;
 
-        if (abilityStore == null || troopStore == null) return false;
-        if (!abilityStore.HasComponent(casterId) || !troopStore.HasComponent(casterId)) return false;
-        if (troopStore.GetComponent(casterId).OwnerPlayerId != clientId) return false;
-        if (!ActivationQuery.IsActivated(ecs, casterId)) return false;
-        // Casting an ability is itself an "action" a silence (or similar) can veto,
-        // independently of whether the caster is activated/alive at all.
-        if (!ActivationQuery.CanPerform(ecs, casterId)) return false;
-
-        AbilityComponent abilities = abilityStore.GetComponent(casterId);
-        slot = FindSlot(abilities, abilityId);
-        if (slot < 0) return false;
-        if (abilities.GetCooldownTicksRemaining(slot) > 0) return false;
-        // A MaxCharges <= 1 slot never consults charges at all — CooldownTicksRemaining
-        // above is the only gate, exactly as before charges existed.
-        if (abilities.GetMaxCharges(slot) > 1 && abilities.GetChargesRemaining(slot) <= 0) return false;
+        if (!AbilityEligibility.CanCast(ecs, casterId, abilityId, clientId, abilityStore, troopStore, out slot))
+            return false;
 
         return AbilityManager.TryGet(abilityId, out ability);
-    }
-
-    private static int FindSlot(AbilityComponent abilities, int abilityId)
-    {
-        for (int slot = 0; slot < 4; slot++)
-            if (abilities.GetAbilityId(slot) == abilityId)
-                return slot;
-        return -1;
     }
 
     private static void CommitCooldown(ECS ecs, ulong casterId, int slot, ComponentStore<AbilityComponent> abilityStore, float worldX, float worldY)
