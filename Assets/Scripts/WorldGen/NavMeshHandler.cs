@@ -135,6 +135,42 @@ public class NavMeshHandler : Singleton<NavMeshHandler>
         return GetNodeAt(tileX, tileY);
     }
 
+    // Same as GetNodeAt, but if (x, y) itself isn't covered by any node, spirals outward
+    // tile-by-tile (up to maxTileRadius) for the nearest one instead of giving up — same
+    // expanding-ring idea as EntityClusterFeature.TryFindNearbyFreeTile, just over navmesh
+    // nodes instead of raw tile types. Used as Pathfinding.PathFindNavMesh's START node
+    // fallback: an entity's own continuous position can, in rare cases (a funnel-smoothed
+    // waypoint sitting exactly on a walkable/blocked tile boundary, floating-point drift,
+    // etc.), floor into a tile with no node at all — without this, that entity could never
+    // path anywhere again, from anywhere, since PathFindNavMesh has no start node to search
+    // from. Deliberately NOT used for the destination side of a path — an unreachable
+    // destination should still correctly fail rather than snapping to whatever's nearby.
+    public NavMeshNode GetNearestNodeAt(ushort x, ushort y, int maxTileRadius = 8)
+    {
+        NavMeshNode direct = GetNodeAt(x, y);
+        if (direct != null) return direct;
+
+        for (int radius = 1; radius <= maxTileRadius; radius++)
+        {
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                for (int dx = -radius; dx <= radius; dx++)
+                {
+                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != radius) continue;
+
+                    int nx = x + dx;
+                    int ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= _worldSize || ny >= _worldSize) continue;
+
+                    NavMeshNode node = _nodeGrid[ny, nx];
+                    if (node != null) return node;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public void CreateNavMesh(WorldManager worldManager)
     {
         _worldManager = worldManager;

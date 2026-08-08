@@ -30,7 +30,11 @@ public static class Pathfinding
         ushort desTileX = (ushort)Mathf.FloorToInt(desX);
         ushort desTileY = (ushort)Mathf.FloorToInt(desY);
 
-        NavMeshNode startNode = navMeshHandler.GetNodeAt(tileX, tileY);
+        // Start uses the nearest-node fallback (see GetNearestNodeAt) since this is an
+        // entity's own live position, which can rarely drift just outside every node — the
+        // destination gets no such fallback, since an unreachable/non-walkable target
+        // should still correctly fail here rather than silently snapping elsewhere.
+        NavMeshNode startNode = navMeshHandler.GetNearestNodeAt(tileX, tileY);
         NavMeshNode endNode = navMeshHandler.GetNodeAt(desTileX, desTileY);
 
         if (startNode == null || endNode == null)

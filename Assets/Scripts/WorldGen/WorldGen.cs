@@ -248,6 +248,17 @@ public enum TileType : byte
     Snow = 4,
     Gravel = 5,
     Ice = 6,
+    // Void — the default fill for a floating-island world (see FillWorldFeature). Must be
+    // configured with HasCollision = true in WorldManager's Tile Settings so nothing can
+    // walk/spawn/path over open space between islands.
+    Air = 7,
+    // Walkable ground stamped under an island prefab's footprint (see IslandFootprint /
+    // IslandPlayerBaseFeature). Must be configured with HasCollision = false.
+    Island = 8,
+    // Walkable ground stamped along a bridge's curve between two islands (see
+    // IslandBridgeFeature / BridgeSegmentFootprint). Must be configured with
+    // HasCollision = false.
+    Bridge = 9,
 }
 
 /// <summary>

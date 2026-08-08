@@ -73,7 +73,9 @@ public class SpawnPlayerBasesFeature : WorldGenFeature
         Bases = bases;
     }
 
-    private static Action<ulong, ECS> SpawnerFor(ushort ownerPlayerId) => (id, ecs) =>
+    // Public so other placement features (e.g. IslandPlayerBaseFeature) can spawn the exact
+    // same base entity without duplicating BuildingSpawnHelper wiring.
+    public static Action<ulong, ECS> SpawnerFor(ushort ownerPlayerId) => (id, ecs) =>
         BuildingSpawnHelper.AddBuildingComponents(ecs, id, ownerPlayerId, RenderableType.PlayerBaseCore, BaseMaxHealth,
             ticksUntilActive: 1); // already in the initial snapshot — no card-play-style delay needed, see EntitySpawnAction.SpawnTree
 }
