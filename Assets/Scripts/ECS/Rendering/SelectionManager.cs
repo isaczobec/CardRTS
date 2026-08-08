@@ -604,8 +604,20 @@ public class SelectionManager : Singleton<SelectionManager>
     {
         if (_selectedEntityIds.Count == 0) return;
 
-        Vector2 clickPoint = new Vector2(tx, ty);
-        Vector2 centroid = _selectedEntityIds.Count > 1 ? ComputeSelectionCentroid() : clickPoint;
+        Vector2 rawClickPoint = new Vector2(tx, ty);
+        Vector2 centroid = ComputeSelectionCentroid();
+
+        // Clamp the click itself to walkable ground before it's used as anyone's
+        // destination or shown as a marker — previously only each troop's per-formation
+        // OFFSET from the click was clamped (and only when >1 troop was selected), so a
+        // single troop (or the shared base point every formation offset is measured from)
+        // could be sent straight at a non-walkable tile: PathfindingSystem would then
+        // correctly refuse to move it, but MoveMarkerManager had already shown a marker
+        // there with nothing to ever resolve it. Reuses the same "march from a known-good
+        // point toward the target, stop at the last walkable step" logic formation offsets
+        // already use, so a click past the edge of an island now just walks to the shore
+        // closest to where you clicked instead of silently doing nothing.
+        Vector2 clickPoint = ClampFormationDestination(centroid, rawClickPoint - centroid);
 
         List<MoveTroopInput.EntityDestination> moves = new List<MoveTroopInput.EntityDestination>();
         foreach (ulong entityId in _selectedEntityIds)

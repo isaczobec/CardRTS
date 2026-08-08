@@ -69,6 +69,16 @@ public static class SpawnAtPointCardPlaySystem
             return;
         }
 
+        // Nothing may be spawned onto non-walkable ground (water/mountain/Air/etc. — see
+        // WorldManager's Tile Settings) — reuses the same navmesh lookup pathfinding itself
+        // is built from, rather than a separate tile-collision check, so "spawnable" and
+        // "reachable" can never disagree.
+        if (NavMeshHandler.instance != null && NavMeshHandler.instance.GetNodeAtWorldCoords(input.X, input.Y) == null)
+        {
+            DebugLogger.LogWarning($"[SpawnAtPointCardPlaySystem] Rejected: ({input.X}, {input.Y}) is not on walkable ground (client {input.ClientId}).", "cards");
+            return;
+        }
+
         if (definition.RequiresFriendlyBuildingRange())
         {
             bool inBuildingRange = BuildingRangeHelper.IsWithinRangeOfFriendlyBuilding(ecs, card.OwnerPlayerId, input.X, input.Y, definition.MaxDistanceFromFriendlyBuilding);

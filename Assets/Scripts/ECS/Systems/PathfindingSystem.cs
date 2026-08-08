@@ -94,6 +94,21 @@ public class PathfindingSystem : ISystem
             List<Vector2> path = cached.Path;
             if (path == null || path.Count == 0)
             {
+                // Confirmed unreachable (no route exists — see Pathfinding.PathFindNavMesh),
+                // not just "not computed yet". For a player-issued move, clear the order the
+                // same way arrival does below, rather than leaving playerDestinationSet true
+                // forever: without this, a destination that can never resolve (e.g. it was
+                // beyond every walkable tile) left MoveMarkerManager's marker considering the
+                // order "still in progress" for its whole fallback lifetime instead of
+                // disappearing immediately. AI-driven modes are left alone here — they
+                // re-evaluate their own destination independently each tick.
+                if (mov.currentMovementMode == MovementMode.MoveToPlayerSetDestination)
+                {
+                    _entityIdsToPaths.Remove(id);
+                    mov.playerDestinationSet = false;
+                    mov.currentMovementMode = MovementMode.NotMoving;
+                    ecs.Delta.MarkComponentDirty(id, typeof(MovableComponent));
+                }
                 SetIsMoving(ecs, id, ref mov, false);
                 return;
             }

@@ -34,14 +34,20 @@ public class WorldRenderer : MonoBehaviour
     {
         Clear();
 
-        var tileArray = TextureRegistry.BuildArray();
-        if (tileArray != null)
-            ChunkMaterial.SetTexture("_TileTextures", tileArray);
+        // Chunk terrain mesh + tile-ID texture generation disabled for the floating-islands
+        // rework — islands are "ready" textured prefabs (see IslandPlayerBaseFeature /
+        // IslandSpawnAction), not a per-tile-type-textured ground mesh, so there's currently
+        // nothing for WorldMeshGenerator/TileTextureRegistry to usefully build. Re-enable
+        // this block if a visible backdrop mesh (ocean/cloud plane, etc.) is wanted later.
+        //
+        // var tileArray = TextureRegistry.BuildArray();
+        // if (tileArray != null)
+        //     ChunkMaterial.SetTexture("_TileTextures", tileArray);
+        //
+        // for (ushort cy = 0; cy < WorldGenHandler.WorldSizeChunks; cy++)
+        //     for (ushort cx = 0; cx < WorldGenHandler.WorldSizeChunks; cx++)
+        //         SpawnChunk(handler, cx, cy);
 
-        for (ushort cy = 0; cy < WorldGenHandler.WorldSizeChunks; cy++)
-            for (ushort cx = 0; cx < WorldGenHandler.WorldSizeChunks; cx++)
-                SpawnChunk(handler, cx, cy);
-        
         foreach (Chunk c in handler.IterateChunks())
         {
             foreach ((ushort tx, ushort ty) in c.IterateWorldTiles())

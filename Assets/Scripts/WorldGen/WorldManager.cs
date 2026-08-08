@@ -13,6 +13,25 @@ public class WorldManager : Singleton<WorldManager>
 
     [SerializeField] TileSettings[] _tileSettings;
 
+    // Candidate island prefabs for IslandPlayerBaseFeature — each must have an IslandFootprint
+    // component (see that class) marking which tiles under the model are walkable. One is
+    // picked at random (deterministically, via handler.Random) per player.
+    [SerializeField] GameObject[] _islandPrefabs;
+
+    // How far in from the world edge the ring of islands is inscribed — see
+    // IslandPlayerBaseFeature.EdgeOffset. Needs to comfortably clear the largest configured
+    // island's half-width/height so its footprint never gets clipped against the world border.
+    [SerializeField] float _islandEdgeOffset = 40f;
+
+    // Candidate bridge segment prefabs for IslandBridgeFeature — each must have a
+    // BridgeSegmentFootprint component (see that class) declaring its real-world length/
+    // width. One is picked at random (deterministically) per bridge.
+    [SerializeField] GameObject[] _bridgeSegmentPrefabs;
+
+    // How far a bridge's curve bows away from a straight line between its two islands — see
+    // IslandBridgeFeature.BowDistance.
+    [SerializeField] float _bridgeBowDistance = 6f;
+
     public WorldGenHandler Handler { get; private set; }
 
     // Indexed by (int)TileType for O(1) lookup. Built in GenerateAndRender.
@@ -151,6 +170,27 @@ public class WorldManager : Singleton<WorldManager>
         // matter which feature enqueues the first EntitySpawnAction.
         handler.AddResource(new SpawnedEntityRegistry());
 
+        // --- Floating islands, work in progress ---
+        // Void-fill the whole world, then place one island + player base per connected
+        // client, evenly spaced around the map like SpawnPlayerBasesFeature used to place
+        // bases alone. Everything below this (biomes/terrain noise, soulstone/gem clusters,
+        // base-clearing passes) is commented out for now — it all assumed a fully-painted
+        // terrain grid and will need reworking (or replacing) for a mostly-Air world with
+        // sparse walkable islands. Re-enable piece by piece as the islands feature grows
+        // (e.g. entity clusters restricted to TileType.Island once that's wanted).
+        handler.features.Add(new FillWorldFeature { FillType = TileType.Air });
+        handler.features.Add(new IslandPlayerBaseFeature
+        {
+            IslandPrefabs = _islandPrefabs,
+            EdgeOffset = _islandEdgeOffset,
+        });
+        handler.features.Add(new IslandBridgeFeature
+        {
+            BridgeSegmentPrefabs = _bridgeSegmentPrefabs,
+            BowDistance = _bridgeBowDistance,
+        });
+        return;
+#pragma warning disable CS0162 // unreachable code below — kept intact to restore later
         // Spawn player bases first, before any terrain/entity features run, so everything
         // added below can see where they ended up (via GetPreviousFeature) if it needs to.
         handler.features.Add(new SpawnPlayerBasesFeature());
@@ -451,6 +491,7 @@ public class WorldManager : Singleton<WorldManager>
         // No trees/other spawned entities overlapping a base — must run after every
         // feature above that could have placed one nearby (EntityClusterFeature, etc.).
         handler.features.Add(new ClearActionsNearBasesFeature { Radius = 8f });
+#pragma warning restore CS0162
     }
 
 }
