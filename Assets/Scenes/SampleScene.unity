@@ -1136,7 +1136,6 @@ MonoBehaviour:
   _upgradePrefab: {fileID: 1618629990793734202, guid: a5fb05a544caa3c4fb40cbd39a0d71e2, type: 3}
   _gridContainer: {fileID: 1253349407}
   _scrollPanel: {fileID: 0}
-  _scrollPanel: {fileID: 0}
   _previewPanel: {fileID: 619194860}
   _deckPickerWindow: {fileID: 1564428565}
   _deckPickerCardPrefab: {fileID: 6489080255067186424, guid: 1167f02e6afbe6c4692400d2fa3b2a35, type: 3}
@@ -9891,7 +9890,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 76.82373, y: 18.698975}
+  m_AnchoredPosition: {x: 76.82373, y: 18.698914}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &867664181
@@ -10927,7 +10926,6 @@ MonoBehaviour:
   _edgeThreshold: 0.05
   _dragPanSensitivity: 0.5
   _rotateSensitivity: 1
-  _doubleTapAltResetWindow: 0.3
   _doubleTapAltResetWindow: 0.3
   _zoomSensitivity: 15
   _minDistance: 12
@@ -12089,6 +12087,53 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AreaEffectRadiusModifierRenderer
   _prefab: {fileID: 7953956060509625171, guid: b1bbf71818ba6a9498b9ca8f12786a3d, type: 3}
   _heightOffset: 0.01
+--- !u!1 &1073754079
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1073754081}
+  - component: {fileID: 1073754080}
+  m_Layer: 0
+  m_Name: IslandRegistry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1073754080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073754079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a55a93285ab35334182fe6620bde9acb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IslandRegistry
+  Entries:
+  - Name: IslandLarge
+    Prefab: {fileID: 8565415708622677354, guid: 2b32c4d2e746fae40b5bbe91f158ea0a, type: 3}
+--- !u!4 &1073754081
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073754079}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1074914389
 GameObject:
   m_ObjectHideFlags: 0
@@ -14698,7 +14743,6 @@ MonoBehaviour:
   _closeSoundName: CardSelect
   _shopCardPrefab: {fileID: 6489080255067186424, guid: d5daba2c612918941a92958cae075969, type: 3}
   _gridContainer: {fileID: 1272823540}
-  _scrollPanel: {fileID: 0}
   _scrollPanel: {fileID: 0}
   _hoverPreviewCard: {fileID: 1585825894}
   _hoverSoundName: CardHover
@@ -18402,8 +18446,9 @@ MonoBehaviour:
     HasCollision: 0
   - Type: 9
     HasCollision: 0
-  _islandPrefabs:
-  - {fileID: 8565415708622677354, guid: de6df747f895d584ebfd705293aa1911, type: 3}
+  _islandRegistry: {fileID: 1073754080}
+  _playerBaseIslandNames:
+  - IslandLarge
   _islandEdgeOffset: 40
   _bridgeSegmentPrefabs:
   - {fileID: 4682736271393328688, guid: 7bc4e7291caef7a40b5e851559a46cf0, type: 3}
@@ -18688,7 +18733,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22, y: 11}
+  m_AnchoredPosition: {x: -22.000061, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567
@@ -23112,6 +23157,7 @@ Transform:
   - {fileID: 1311735491}
   - {fileID: 677668851}
   - {fileID: 1537083955}
+  - {fileID: 1073754081}
   - {fileID: 379280427}
   - {fileID: 648465013}
   - {fileID: 1292187812}
@@ -25344,5 +25390,3 @@ SceneRoots:
   - {fileID: 649030908}
   - {fileID: 1889187866}
   - {fileID: 1222910824}
-  - {fileID: 862289856351908680}
-  - {fileID: 4546674266164694259}

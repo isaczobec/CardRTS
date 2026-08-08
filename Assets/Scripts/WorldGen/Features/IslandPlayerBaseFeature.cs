@@ -9,15 +9,19 @@ using UnityEngine;
 /// used, just carrying an island footprint along with each base instead of dropping the base
 /// directly onto whatever terrain was already there.
 ///
-/// For each player: picks a random entry from IslandPrefabs, stamps its IslandFootprint's
-/// occupied cells as TileType.Island (walkable — see WorldManager's Tile Settings), enqueues
-/// an IslandSpawnAction to instantiate the visual prefab, and spawns the player's base entity
-/// on the footprint's BaseAnchor cell via the same component set SpawnPlayerBasesFeature used
-/// (BuildingSpawnHelper, through SpawnPlayerBasesFeature.SpawnerFor).
+/// For each player: resolves IslandNames against WorldManager.instance.IslandRegistry (so
+/// which island TYPES are eligible for a player base is data — Inspector-assigned names —
+/// rather than a direct prefab list this feature holds itself), picks one at random, stamps
+/// its IslandFootprint's occupied cells as TileType.Island (walkable — see WorldManager's
+/// Tile Settings), enqueues an IslandSpawnAction to instantiate the visual prefab, and spawns
+/// the player's base entity on the footprint's BaseAnchor cell via the same component set
+/// SpawnPlayerBasesFeature used (BuildingSpawnHelper, through SpawnPlayerBasesFeature.SpawnerFor).
 /// </summary>
 public class IslandPlayerBaseFeature : WorldGenFeature
 {
-    public GameObject[] IslandPrefabs;
+    // Names looked up in WorldManager.instance.IslandRegistry — any island registered under
+    // one of these is eligible to be picked for a player base. See IslandRegistry.
+    public string[] IslandNames;
     public float EdgeOffset = 40f;
 
     public readonly struct IslandPlacement
@@ -55,9 +59,17 @@ public class IslandPlayerBaseFeature : WorldGenFeature
         List<ushort> clientIds = handler.ConnectedClientIds;
         if (clientIds == null || clientIds.Count == 0) return;
 
-        if (IslandPrefabs == null || IslandPrefabs.Length == 0)
+        IslandRegistry registry = WorldManager.instance != null ? WorldManager.instance.IslandRegistry : null;
+        if (registry == null)
         {
-            Debug.LogWarning("[IslandPlayerBaseFeature] No IslandPrefabs assigned — skipping.");
+            Debug.LogWarning("[IslandPlayerBaseFeature] No IslandRegistry assigned on WorldManager — skipping.");
+            return;
+        }
+
+        List<GameObject> candidatePrefabs = registry.GetPrefabs(IslandNames);
+        if (candidatePrefabs.Count == 0)
+        {
+            Debug.LogWarning("[IslandPlayerBaseFeature] None of IslandNames resolved to a registered island — skipping.");
             return;
         }
 
@@ -77,7 +89,7 @@ public class IslandPlayerBaseFeature : WorldGenFeature
             int centerTileX = Mathf.RoundToInt(center + Mathf.Cos(angle) * radius);
             int centerTileY = Mathf.RoundToInt(center + Mathf.Sin(angle) * radius);
 
-            GameObject prefab = IslandPrefabs[handler.Random.Next(IslandPrefabs.Length)];
+            GameObject prefab = candidatePrefabs[handler.Random.Next(candidatePrefabs.Count)];
             IslandFootprint footprint = prefab != null ? prefab.GetComponent<IslandFootprint>() : null;
             if (footprint == null)
             {

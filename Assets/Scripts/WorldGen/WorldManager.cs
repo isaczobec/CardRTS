@@ -13,10 +13,16 @@ public class WorldManager : Singleton<WorldManager>
 
     [SerializeField] TileSettings[] _tileSettings;
 
-    // Candidate island prefabs for IslandPlayerBaseFeature — each must have an IslandFootprint
-    // component (see that class) marking which tiles under the model are walkable. One is
-    // picked at random (deterministically, via handler.Random) per player.
-    [SerializeField] GameObject[] _islandPrefabs;
+    // Maps island type names to prefabs (see IslandRegistry) — WorldGenFeatures that place
+    // islands (e.g. IslandPlayerBaseFeature) request one by name against this rather than
+    // holding prefab references themselves.
+    [SerializeField] IslandRegistry _islandRegistry;
+    public IslandRegistry IslandRegistry => _islandRegistry;
+
+    // Which IslandRegistry entries are eligible to be picked for a player base — one is
+    // picked at random (deterministically, via handler.Random) per player. See
+    // IslandPlayerBaseFeature.IslandNames.
+    [SerializeField] string[] _playerBaseIslandNames;
 
     // How far in from the world edge the ring of islands is inscribed — see
     // IslandPlayerBaseFeature.EdgeOffset. Needs to comfortably clear the largest configured
@@ -181,7 +187,7 @@ public class WorldManager : Singleton<WorldManager>
         handler.features.Add(new FillWorldFeature { FillType = TileType.Air });
         handler.features.Add(new IslandPlayerBaseFeature
         {
-            IslandPrefabs = _islandPrefabs,
+            IslandNames = _playerBaseIslandNames,
             EdgeOffset = _islandEdgeOffset,
         });
         handler.features.Add(new IslandBridgeFeature
