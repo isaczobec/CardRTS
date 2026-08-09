@@ -45,11 +45,10 @@ public class EntitySpawnAction : IWorldGenAction
     private const float SoulstoneBlockRadius     = 1f;
     private const float SoulstoneSelectionScale  = 2f;
 
-    private const float SoulstoneSmallInitialRespawnSeconds  = 7.5f  * 60f;
-    // private const float SoulstoneSmallInitialRespawnSeconds  = 7.5f  * 60f;
-    private const float SoulstoneMediumInitialRespawnSeconds = 12.5f * 60f;
-    private const float SoulstoneLargeInitialRespawnSeconds  = 17.5f * 60f;
-    private const float SoulstoneSteadyStateRespawnSeconds   = 5f  * 60f;
+    private const float SoulstoneSmallInitialRespawnSeconds  = 4f  * 60f;
+    private const float SoulstoneMediumInitialRespawnSeconds = 8f  * 60f;
+    private const float SoulstoneLargeInitialRespawnSeconds  = 12f * 60f;
+    private const float SoulstoneSteadyStateRespawnSeconds   = 4f  * 60f;
 
     // Neutral gem deposit (see GemClusterFeature) — spawned alive, same shape as
     // Tree/Rock/Ore, just dropping Gems instead.

@@ -125,10 +125,12 @@ public static class BridgeConnectionBuilder
     // Every one of the island's BridgeAnchors, converted to world positions — or, if it has
     // none marked, a single-element fallback list containing its default (center) anchor
     // cell (with a warning), so a connection can still be attempted rather than silently
-    // failing.
+    // failing. Reads through RotatedIslandFootprint (not IslandFootprint directly) so a
+    // rotated island's anchors reflect wherever they actually ended up facing, not their
+    // as-authored positions.
     private static List<Vector2> GatherAnchorWorldPositions(IslandPlacementHelper.PlacedIsland island)
     {
-        IslandFootprint footprint = island.Footprint;
+        RotatedIslandFootprint footprint = island.RotatedFootprint;
         var result = new List<Vector2>();
 
         foreach (Vector2Int cell in footprint.BridgeAnchors)

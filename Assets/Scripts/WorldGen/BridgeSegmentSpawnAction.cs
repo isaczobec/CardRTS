@@ -4,9 +4,10 @@ using UnityEngine;
 // rotation, and (non-uniform) scale. Like IslandSpawnAction, this has no ECS/networked
 // representation — the Bridge tiles IslandBridgeFeature stamped during generation are what's
 // actually synced — so it isn't gated to the server; every peer instantiates its own local
-// copy. Kept separate from IslandSpawnAction (rather than adding rotation/scale there) since
-// islands are deliberately never rotated or stretched, while bridge segments always need to
-// face along — and now exactly fill — whatever stretch of curve they were placed on.
+// copy. Kept separate from IslandSpawnAction (rather than reusing this one for both) since a
+// bridge segment's Scale is stretched per-instance to exactly fill its own slice of curve (see
+// BridgeConnectionBuilder.PlaceSegments) — islands can now rotate too (see
+// IslandSpawnAction.Rotation / IslandPlacementHelper.TryPlaceIsland), but never stretch.
 public class BridgeSegmentSpawnAction : IWorldGenAction
 {
     public GameObject Prefab;

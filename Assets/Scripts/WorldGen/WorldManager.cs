@@ -33,6 +33,10 @@ public class WorldManager : Singleton<WorldManager>
     // MidIslandFeature.IslandName.
     [SerializeField] string _midIslandName;
 
+    // IslandRegistry name for the small gem-deposit islands placed close to the mid island, one
+    // per player base — see GemIslandFeature.IslandName.
+    [SerializeField] string _gemIslandName;
+
     // Maps bridge type names to pools of segment prefabs (see BridgeRegistry) — features that
     // build bridges (IslandBridgeFeature, WedgeIslandFeature) request a type by name against
     // this rather than holding prefab references themselves, so different kinds of connection
@@ -237,11 +241,11 @@ public class WorldManager : Singleton<WorldManager>
         // --- Floating islands, work in progress ---
         // Void-fill the whole world, then place one island + player base per connected
         // client, evenly spaced around the map like SpawnPlayerBasesFeature used to place
-        // bases alone. Everything below this (biomes/terrain noise, soulstone/gem clusters,
-        // base-clearing passes) is commented out for now — it all assumed a fully-painted
-        // terrain grid and will need reworking (or replacing) for a mostly-Air world with
-        // sparse walkable islands. Re-enable piece by piece as the islands feature grows
-        // (e.g. entity clusters restricted to TileType.Island once that's wanted).
+        // bases alone. Soulstones/gems/tree-stone-ore clusters below are the floating-island-
+        // native replacements for the old (still-present-but-unreachable) biome-based versions
+        // further down — everything from the unreachable `handler.features.Add(new
+        // SpawnPlayerBasesFeature())` onward assumed a fully-painted terrain grid and will need
+        // reworking (or replacing) for a mostly-Air world with sparse walkable islands.
         handler.features.Add(new FillWorldFeature { FillType = TileType.Air });
         handler.features.Add(new IslandPlayerBaseFeature
         {
@@ -252,6 +256,12 @@ public class WorldManager : Singleton<WorldManager>
         {
             IslandName = _midIslandName,
         });
+
+        // Neutral soulstone objective cluster, in a ring on the mid island — only needs the mid
+        // island's tiles to already exist, so it runs right after MidIslandFeature regardless of
+        // the bridge/wedge network built below.
+        handler.features.Add(new SoulstoneClusterFeature());
+
         handler.features.Add(new IslandBridgeFeature
         {
             BridgeTypeName = _mainBridgeTypeName,
@@ -264,6 +274,18 @@ public class WorldManager : Singleton<WorldManager>
             RingBowChordMultiplier = _ringBowChordMultiplier,
             BridgePaddingTiles = _bridgePaddingTiles,
         });
+
+        // One gem-deposit island per base, close to the mid island and bridged to it — must run
+        // after IslandBridgeFeature (so the guaranteed ring/spoke network claims its space
+        // first) and before WedgeIslandFeature (so wedge filler islands correctly route around
+        // the gem islands placed here — see GemIslandFeature's own doc comment).
+        handler.features.Add(new GemIslandFeature
+        {
+            IslandName = _gemIslandName,
+            BridgeTypeName = _wedgeBridgeTypeName,
+            BridgePaddingTiles = _bridgePaddingTiles,
+        });
+
         handler.features.Add(new WedgeIslandFeature
         {
             IslandWeights = _wedgeIslandWeights,
@@ -278,6 +300,11 @@ public class WorldManager : Singleton<WorldManager>
             MaxExtraConnections = _wedgeMaxExtraConnections,
             CenterBiasSamples = _wedgeCenterBiasSamples,
         });
+
+        // Tree/stone/ore clusters scattered across every ring/spoke waypoint island and wedge
+        // filler island placed above — see IslandResourceClusterFeature's own doc comment for
+        // why player bases, the mid island, and the gem islands above are excluded.
+        handler.features.Add(new IslandResourceClusterFeature());
         return;
 #pragma warning disable CS0162 // unreachable code below — kept intact to restore later
         // Spawn player bases first, before any terrain/entity features run, so everything

@@ -12125,6 +12125,8 @@ MonoBehaviour:
     Prefab: {fileID: 8565415708622677354, guid: dcc08152a8c4d4c488d266c90bc660ae, type: 3}
   - Name: BridgeIsland
     Prefab: {fileID: 8565415708622677354, guid: a38e8517a369b4b4e88183df1b20185d, type: 3}
+  - Name: GemIsland
+    Prefab: {fileID: 8565415708622677354, guid: 070d7fbe56392644498d77326aea5531, type: 3}
 --- !u!4 &1073754081
 Transform:
   m_ObjectHideFlags: 0
@@ -18508,6 +18510,7 @@ MonoBehaviour:
   - IslandLarge
   _islandEdgeOffset: 35
   _midIslandName: MidIsland
+  _gemIslandName: GemIsland
   _bridgeRegistry: {fileID: 1400688410}
   _mainBridgeTypeName: MainBridge
   _wedgeBridgeTypeName: SmallBridge

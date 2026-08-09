@@ -95,8 +95,16 @@ public class WedgeIslandFeature : WorldGenFeature
     // Resolved once per Generate() call from BridgeTypeName — see ResolveBridgePrefabs.
     private GameObject[] _bridgePrefabs;
 
+    // Every filler island this feature successfully placed — read by IslandResourceClusterFeature
+    // (via GetPreviousFeature) so it knows which islands are eligible for scattered tree/stone/ore
+    // clusters, alongside IslandBridgeFeature.WaypointIslands.
+    public IReadOnlyList<IslandPlacementHelper.PlacedIsland> PlacedIslands { get; private set; } = new List<IslandPlacementHelper.PlacedIsland>();
+
+    private List<IslandPlacementHelper.PlacedIsland> _placedIslands;
+
     public override void Generate(WorldGenHandler handler)
     {
+        _placedIslands = new List<IslandPlacementHelper.PlacedIsland>();
         var islandsFeature = handler.GetPreviousFeature<IslandPlayerBaseFeature>();
         if (islandsFeature == null || islandsFeature.Islands.Count < 2) return;
 
@@ -154,6 +162,8 @@ public class WedgeIslandFeature : WorldGenFeature
             for (int k = 0; k < count; k++)
                 TryPlaceWedgeIsland(handler, angleStart, angleEnd, innerRadius, outerRadius, mapCenter, allIslands, weightedPrefabs, worldSize);
         }
+
+        PlacedIslands = _placedIslands;
     }
 
     private GameObject[] ResolveBridgePrefabs()
@@ -268,11 +278,15 @@ public class WedgeIslandFeature : WorldGenFeature
             // again here only to guard a footprint so large its origin still falls outside
             // the map even from an already-clamped center; centerTileX/Y themselves are
             // never reclamped again below, which is what keeps this consistent with the
-            // actual placement.
+            // actual placement. Wedge filler islands are never rotated, so this is always the
+            // 0-degree (identity) RotatedIslandFootprint — same shape/anchors as footprint
+            // itself.
             var candidateIsland = new IslandPlacementHelper.PlacedIsland(
                 (ushort)Mathf.Clamp(originX, 0, worldSize - 1),
                 (ushort)Mathf.Clamp(originY, 0, worldSize - 1),
-                footprint);
+                footprint,
+                FootprintRotator.Rotate(footprint, 0f),
+                0f);
 
             if (!TryFindConnectableIsland(handler, candidateIsland, allIslands, null, worldSize,
                     out BridgeConnectionBuilder.BridgeCandidate bridgeCandidate, out GameObject bridgePrefab, out BridgeSegmentFootprint bridgeSegmentInfo,
@@ -286,6 +300,7 @@ public class WedgeIslandFeature : WorldGenFeature
 
             BridgeConnectionBuilder.Commit(handler, bridgeCandidate, bridgePrefab, bridgeSegmentInfo, BridgePaddingTiles, worldSize);
             allIslands.Add(placed.Value);
+            _placedIslands.Add(placed.Value);
 
             // Optional extra connections, each to a DIFFERENT island than any already
             // connected to (see connectedTargets) — a roll or search failure just stops
