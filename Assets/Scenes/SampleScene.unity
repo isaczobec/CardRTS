@@ -9890,7 +9890,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 76.82373, y: 18.698914}
+  m_AnchoredPosition: {x: 76.82373, y: 18.69873}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &867664181
@@ -12119,6 +12119,12 @@ MonoBehaviour:
   Entries:
   - Name: IslandLarge
     Prefab: {fileID: 8565415708622677354, guid: 2b32c4d2e746fae40b5bbe91f158ea0a, type: 3}
+  - Name: IslandMedium
+    Prefab: {fileID: 8565415708622677354, guid: 2afcaab529fbcff4388a3075edc86f25, type: 3}
+  - Name: MidIsland
+    Prefab: {fileID: 8565415708622677354, guid: dcc08152a8c4d4c488d266c90bc660ae, type: 3}
+  - Name: BridgeIsland
+    Prefab: {fileID: 8565415708622677354, guid: a38e8517a369b4b4e88183df1b20185d, type: 3}
 --- !u!4 &1073754081
 Transform:
   m_ObjectHideFlags: 0
@@ -18449,10 +18455,19 @@ MonoBehaviour:
   _islandRegistry: {fileID: 1073754080}
   _playerBaseIslandNames:
   - IslandLarge
-  _islandEdgeOffset: 40
+  _islandEdgeOffset: 20
+  _midIslandName: MidIsland
   _bridgeSegmentPrefabs:
   - {fileID: 4682736271393328688, guid: 7bc4e7291caef7a40b5e851559a46cf0, type: 3}
-  _bridgeBowDistance: 28
+  _bridgeBowDistance: 0
+  _spokeBowDistance: 0
+  _intermittentIslandNames:
+  - BridgeIsland
+  _ringIntermittentCount: 2
+  _spokeIntermittentCount: 1
+  _ringBowEdgeMargin: 20
+  _ringBowChordMultiplier: 16
+  _bridgePaddingTiles: 3
 --- !u!114 &1537083959
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18733,7 +18748,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22.000061, y: 11}
+  m_AnchoredPosition: {x: -21.999878, y: 11}
   m_SizeDelta: {x: -614.686, y: -320.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564428567

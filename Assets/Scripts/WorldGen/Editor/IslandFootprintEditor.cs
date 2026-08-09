@@ -35,6 +35,17 @@ public class IslandFootprintEditor : Editor
     // selected, same as any other tool-mode toggle in the Unity editor.
     private bool _floodFillMode;
 
+    // Independent scroll positions for the two grids — GetCellButtonSize keeps most islands
+    // fully visible without needing to scroll at all, but once a grid is wide enough to hit
+    // MinCellButtonSize, its row width can still exceed the inspector's — these let you pan
+    // across it horizontally instead of it just clipping/wrapping.
+    private Vector2 _walkableScrollPosition;
+    private Vector2 _bridgeAnchorScrollPosition;
+
+    // Minimum spacing (tiles) PlaceBridgeAnchorsAlongEdge keeps between the anchors it
+    // places — editor-only tool state, not footprint data, same as _floodFillMode.
+    private float _edgeAnchorInterval = 4f;
+
     public override void OnInspectorGUI()
     {
         var footprint = (IslandFootprint)target;
@@ -81,6 +92,8 @@ public class IslandFootprintEditor : Editor
 
         EditorGUILayout.Space();
 
+        _walkableScrollPosition = EditorGUILayout.BeginScrollView(_walkableScrollPosition, GUILayout.ExpandWidth(true));
+
         // Drawn top row first (y = Height-1 down to 0) so the grid reads the way it looks
         // from above in the Scene view, not bottom-up.
         for (int y = footprint.Height - 1; y >= 0; y--)
@@ -112,9 +125,20 @@ public class IslandFootprintEditor : Editor
             EditorGUILayout.EndHorizontal();
         }
 
+        EditorGUILayout.EndScrollView();
+
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Bridge Anchor Points (click to toggle)", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox("Mark cells at the island's edge where a bridge is allowed to touch down. Should normally also be walkable cells above.", UnityEditor.MessageType.None);
+
+        EditorGUILayout.BeginHorizontal();
+        _edgeAnchorInterval = Mathf.Max(1f, EditorGUILayout.FloatField("Edge Anchor Interval", _edgeAnchorInterval));
+        if (GUILayout.Button("Place Anchors Along Edge", GUILayout.Width(160f)))
+            PlaceBridgeAnchorsAlongEdge(footprint, _edgeAnchorInterval);
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.HelpBox("Replaces every current bridge anchor with a fresh ring of points spaced at least Edge Anchor Interval tiles apart around the walkable mask's outer edge — a starting point to review/adjust, not a final answer.", UnityEditor.MessageType.Info);
+
+        _bridgeAnchorScrollPosition = EditorGUILayout.BeginScrollView(_bridgeAnchorScrollPosition, GUILayout.ExpandWidth(true));
 
         for (int y = footprint.Height - 1; y >= 0; y--)
         {
@@ -136,6 +160,8 @@ public class IslandFootprintEditor : Editor
             }
             EditorGUILayout.EndHorizontal();
         }
+
+        EditorGUILayout.EndScrollView();
 
         SceneView.RepaintAll();
     }
@@ -252,5 +278,80 @@ public class IslandFootprintEditor : Editor
 
         EditorUtility.SetDirty(footprint);
         Debug.Log($"[IslandFootprintEditor] Auto-detect found {hitCount}/{footprint.Width * footprint.Height} walkable cells.");
+    }
+
+    // Replaces BridgeAnchors with a fresh ring of points spaced at least intervalTiles apart
+    // around the walkable mask's outer edge — same "seed a starting point, then review" spirit
+    // as AutoDetectWalkableCells above. Boundary cells are sorted by angle around the
+    // footprint's centroid (a stand-in for "walk the perimeter in order" that holds up fine
+    // for the roughly star-convex blob shapes islands actually are — a true contour trace
+    // would handle wilder concave/ring shapes better, but isn't worth the complexity here),
+    // then kept greedily: a cell only survives if it's far enough from every anchor already
+    // kept, which is what actually produces the requested spacing.
+    private static void PlaceBridgeAnchorsAlongEdge(IslandFootprint footprint, float intervalTiles)
+    {
+        List<Vector2Int> boundaryCells = FindBoundaryCells(footprint);
+        if (boundaryCells.Count == 0)
+        {
+            Debug.LogWarning("[IslandFootprintEditor] No walkable cells to trace an edge from — mark some walkable cells (or run Auto-Detect) first.");
+            return;
+        }
+
+        Vector2 centroid = Vector2.zero;
+        foreach (Vector2Int cell in boundaryCells)
+            centroid += new Vector2(cell.x, cell.y);
+        centroid /= boundaryCells.Count;
+
+        boundaryCells.Sort((a, b) =>
+        {
+            float angleA = Mathf.Atan2(a.y - centroid.y, a.x - centroid.x);
+            float angleB = Mathf.Atan2(b.y - centroid.y, b.x - centroid.x);
+            return angleA.CompareTo(angleB);
+        });
+
+        List<Vector2Int> selected = new List<Vector2Int>();
+        float minDistSqr = intervalTiles * intervalTiles;
+
+        foreach (Vector2Int cell in boundaryCells)
+        {
+            bool farEnough = true;
+            foreach (Vector2Int existing in selected)
+            {
+                float dx = cell.x - existing.x, dy = cell.y - existing.y;
+                if (dx * dx + dy * dy < minDistSqr)
+                {
+                    farEnough = false;
+                    break;
+                }
+            }
+            if (farEnough) selected.Add(cell);
+        }
+
+        Undo.RecordObject(footprint, "Place Bridge Anchors Along Edge");
+        footprint.BridgeAnchors.Clear();
+        footprint.BridgeAnchors.AddRange(selected);
+        EditorUtility.SetDirty(footprint);
+
+        Debug.Log($"[IslandFootprintEditor] Placed {selected.Count} bridge anchor(s) along the edge.");
+    }
+
+    // Every occupied cell that borders a non-occupied (or out-of-bounds — IsOccupied already
+    // treats those the same) cell in one of the 4 cardinal directions.
+    private static List<Vector2Int> FindBoundaryCells(IslandFootprint footprint)
+    {
+        var result = new List<Vector2Int>();
+        for (int y = 0; y < footprint.Height; y++)
+        {
+            for (int x = 0; x < footprint.Width; x++)
+            {
+                if (!footprint.IsOccupied(x, y)) continue;
+
+                bool isBoundary = !footprint.IsOccupied(x + 1, y) || !footprint.IsOccupied(x - 1, y) ||
+                                   !footprint.IsOccupied(x, y + 1) || !footprint.IsOccupied(x, y - 1);
+                if (isBoundary)
+                    result.Add(new Vector2Int(x, y));
+            }
+        }
+        return result;
     }
 }

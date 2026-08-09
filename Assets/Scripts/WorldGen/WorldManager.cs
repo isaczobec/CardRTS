@@ -29,14 +29,41 @@ public class WorldManager : Singleton<WorldManager>
     // island's half-width/height so its footprint never gets clipped against the world border.
     [SerializeField] float _islandEdgeOffset = 40f;
 
+    // IslandRegistry name for the single neutral island placed at the exact map center — see
+    // MidIslandFeature.IslandName.
+    [SerializeField] string _midIslandName;
+
     // Candidate bridge segment prefabs for IslandBridgeFeature — each must have a
     // BridgeSegmentFootprint component (see that class) declaring its real-world length/
     // width. One is picked at random (deterministically) per bridge.
     [SerializeField] GameObject[] _bridgeSegmentPrefabs;
 
-    // How far a bridge's curve bows away from a straight line between its two islands — see
-    // IslandBridgeFeature.BowDistance.
+    // How far a single ring hop's curve bows away from a straight line between its two
+    // anchor points — see IslandBridgeFeature.BowDistance.
     [SerializeField] float _bridgeBowDistance = 6f;
+
+    // Bow for spoke (base-to-mid-island) connections — 0 makes them completely straight.
+    // See IslandBridgeFeature.SpokeBowDistance.
+    [SerializeField] float _spokeBowDistance = 0f;
+
+    // IslandRegistry names for waypoint islands threaded along a bridge — see
+    // IslandBridgeFeature.IntermittentIslandNames.
+    [SerializeField] string[] _intermittentIslandNames;
+
+    // How many waypoint islands sit along each base-to-base ring connection / each
+    // base-to-mid-island spoke connection — see IslandBridgeFeature.RingIntermittentCount /
+    // SpokeIntermittentCount.
+    [SerializeField] int _ringIntermittentCount = 3;
+    [SerializeField] int _spokeIntermittentCount = 1;
+
+    // See IslandBridgeFeature.RingBowEdgeMargin / RingBowChordMultiplier.
+    [SerializeField] float _ringBowEdgeMargin = 10f;
+    [SerializeField] float _ringBowChordMultiplier = 1.5f;
+
+    // How far past each anchor point a bridge's stamped tiles overshoot, guaranteeing they
+    // connect to the island even if a sample lands exactly on a tile boundary — see
+    // IslandBridgeFeature.BridgePaddingTiles.
+    [SerializeField] float _bridgePaddingTiles = 1f;
 
     public WorldGenHandler Handler { get; private set; }
 
@@ -190,10 +217,21 @@ public class WorldManager : Singleton<WorldManager>
             IslandNames = _playerBaseIslandNames,
             EdgeOffset = _islandEdgeOffset,
         });
+        handler.features.Add(new MidIslandFeature
+        {
+            IslandName = _midIslandName,
+        });
         handler.features.Add(new IslandBridgeFeature
         {
             BridgeSegmentPrefabs = _bridgeSegmentPrefabs,
             BowDistance = _bridgeBowDistance,
+            SpokeBowDistance = _spokeBowDistance,
+            IntermittentIslandNames = _intermittentIslandNames,
+            RingIntermittentCount = _ringIntermittentCount,
+            SpokeIntermittentCount = _spokeIntermittentCount,
+            RingBowEdgeMargin = _ringBowEdgeMargin,
+            RingBowChordMultiplier = _ringBowChordMultiplier,
+            BridgePaddingTiles = _bridgePaddingTiles,
         });
         return;
 #pragma warning disable CS0162 // unreachable code below — kept intact to restore later

@@ -62,7 +62,7 @@ public class IslandFootprint : MonoBehaviour
 
     // Converts a local cell (e.g. one from BridgeAnchors) into a world tile-space point —
     // the center of that tile — given this island's placed origin (its bottom-left world
-    // tile, see IslandPlayerBaseFeature.IslandPlacement.OriginX/Y).
+    // tile, see IslandPlacementHelper.PlacedIsland.OriginX/Y).
     public Vector2 AnchorWorldPosition(Vector2Int localCell, int originX, int originY)
         => new Vector2(originX + localCell.x + 0.5f, originY + localCell.y + 0.5f);
 
