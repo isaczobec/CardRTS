@@ -33,10 +33,21 @@ public class WorldManager : Singleton<WorldManager>
     // MidIslandFeature.IslandName.
     [SerializeField] string _midIslandName;
 
-    // Candidate bridge segment prefabs for IslandBridgeFeature — each must have a
-    // BridgeSegmentFootprint component (see that class) declaring its real-world length/
-    // width. One is picked at random (deterministically) per bridge.
-    [SerializeField] GameObject[] _bridgeSegmentPrefabs;
+    // Maps bridge type names to pools of segment prefabs (see BridgeRegistry) — features that
+    // build bridges (IslandBridgeFeature, WedgeIslandFeature) request a type by name against
+    // this rather than holding prefab references themselves, so different kinds of connection
+    // can look visually distinct (see _mainBridgeTypeName / _wedgeBridgeTypeName below).
+    [SerializeField] BridgeRegistry _bridgeRegistry;
+    public BridgeRegistry BridgeRegistry => _bridgeRegistry;
+
+    // Bridge type for every ring/spoke connection in the main network — see
+    // IslandBridgeFeature.BridgeTypeName.
+    [SerializeField] string _mainBridgeTypeName;
+
+    // Bridge type for wedge-filler-island connections — deliberately separate from
+    // _mainBridgeTypeName so the two kinds of connection can read as visually distinct — see
+    // WedgeIslandFeature.BridgeTypeName.
+    [SerializeField] string _wedgeBridgeTypeName;
 
     // How far a single ring hop's curve bows away from a straight line between its two
     // anchor points — see IslandBridgeFeature.BowDistance.
@@ -64,6 +75,26 @@ public class WorldManager : Singleton<WorldManager>
     // connect to the island even if a sample lands exactly on a tile boundary — see
     // IslandBridgeFeature.BridgePaddingTiles.
     [SerializeField] float _bridgePaddingTiles = 1f;
+
+    // (Name, Weight) pairs WedgeIslandFeature picks filler islands from — see
+    // WedgeIslandFeature.IslandWeights.
+    [SerializeField] WeightedIslandEntry[] _wedgeIslandWeights;
+
+    // How many filler islands WedgeIslandFeature places in each wedge-shaped gap between the
+    // mid and side bridges — see WedgeIslandFeature.MinIslandsPerWedge / MaxIslandsPerWedge.
+    [SerializeField] int _minIslandsPerWedge = 1;
+    [SerializeField] int _maxIslandsPerWedge = 2;
+
+    // See WedgeIslandFeature.WedgeAngularInset / WedgeRadialMargin.
+    [SerializeField] float _wedgeAngularInset = 0.12f;
+    [SerializeField] float _wedgeRadialMargin = 8f;
+
+    // See WedgeIslandFeature.ExtraConnectionChance / MaxExtraConnections.
+    [SerializeField] float _wedgeExtraConnectionChance = 0.3f;
+    [SerializeField] int _wedgeMaxExtraConnections = 2;
+
+    // See WedgeIslandFeature.CenterBiasSamples.
+    [SerializeField] int _wedgeCenterBiasSamples = 3;
 
     public WorldGenHandler Handler { get; private set; }
 
@@ -223,7 +254,7 @@ public class WorldManager : Singleton<WorldManager>
         });
         handler.features.Add(new IslandBridgeFeature
         {
-            BridgeSegmentPrefabs = _bridgeSegmentPrefabs,
+            BridgeTypeName = _mainBridgeTypeName,
             BowDistance = _bridgeBowDistance,
             SpokeBowDistance = _spokeBowDistance,
             IntermittentIslandNames = _intermittentIslandNames,
@@ -232,6 +263,20 @@ public class WorldManager : Singleton<WorldManager>
             RingBowEdgeMargin = _ringBowEdgeMargin,
             RingBowChordMultiplier = _ringBowChordMultiplier,
             BridgePaddingTiles = _bridgePaddingTiles,
+        });
+        handler.features.Add(new WedgeIslandFeature
+        {
+            IslandWeights = _wedgeIslandWeights,
+            MinIslandsPerWedge = _minIslandsPerWedge,
+            MaxIslandsPerWedge = _maxIslandsPerWedge,
+            BridgeTypeName = _wedgeBridgeTypeName,
+            BowDistance = _bridgeBowDistance,
+            BridgePaddingTiles = _bridgePaddingTiles,
+            WedgeAngularInset = _wedgeAngularInset,
+            WedgeRadialMargin = _wedgeRadialMargin,
+            ExtraConnectionChance = _wedgeExtraConnectionChance,
+            MaxExtraConnections = _wedgeMaxExtraConnections,
+            CenterBiasSamples = _wedgeCenterBiasSamples,
         });
         return;
 #pragma warning disable CS0162 // unreachable code below — kept intact to restore later

@@ -13,7 +13,7 @@ public class BridgeSegmentSpawnAction : IWorldGenAction
     public Vector3 WorldPosition;
     public Quaternion Rotation;
 
-    // Applied as the instance's localScale — see IslandBridgeFeature.PlaceSegments, which
+    // Applied as the instance's localScale — see BridgeConnectionBuilder.PlaceSegments, which
     // stretches only the Z (length) axis so every segment exactly fills its own slice of the
     // curve regardless of how evenly BridgeSegmentFootprint.SegmentLength happened to divide
     // into the curve's actual length, without distorting the segment's width/height.

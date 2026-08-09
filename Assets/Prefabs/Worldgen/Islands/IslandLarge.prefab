@@ -26,11 +26,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 85ab59e81ceb88d4aa6fc3108a986fdb, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -29.06
+      value: -28.7
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 85ab59e81ceb88d4aa6fc3108a986fdb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 85ab59e81ceb88d4aa6fc3108a986fdb, type: 3}
       propertyPath: m_LocalRotation.w
@@ -68,6 +68,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 05a582e22f351fa498004aac64e72020, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 85ab59e81ceb88d4aa6fc3108a986fdb, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 7158796146257112550, guid: dd97263045234cb4ca24fafeed6e346c, type: 3}
     - target: {fileID: 919132149155446097, guid: 85ab59e81ceb88d4aa6fc3108a986fdb, type: 3}
       propertyPath: m_Name
       value: Meshy_AI_Floating_Grass_Island_0809115408_texture

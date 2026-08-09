@@ -14,19 +14,19 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.52200526, g: 0.5589396, b: 0.6377328, a: 1}
+  m_AmbientSkyColor: {r: 0.6392157, g: 0.6082217, b: 0.52156866, a: 1}
   m_AmbientEquatorColor: {r: 0.228, g: 0.25, b: 0.266, a: 1}
   m_AmbientGroundColor: {r: 0.13293608, g: 0.12162237, b: 0.09899495, a: 1}
-  m_AmbientIntensity: 1
+  m_AmbientIntensity: 2
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 73324b55f67f54c7bbf43204788b8bbe, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -94,7 +94,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 4890085278179872738, guid: 957f884551905b04cbcacb63f602a6a1, type: 2}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: 9163188be3bb9490e87152da256a628e, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -15969,6 +15969,57 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1398316346}
   m_CullTransparentMesh: 1
+--- !u!1 &1400688408
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1400688409}
+  - component: {fileID: 1400688410}
+  m_Layer: 0
+  m_Name: BridgeRegistry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1400688409
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1400688408}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1400688410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1400688408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3555f7d1c7cfb0d4386f4e605fbdb2b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BridgeRegistry
+  Entries:
+  - Name: MainBridge
+    Prefabs:
+    - {fileID: 4682736271393328688, guid: 7a281d51965801349ac3143d3c729819, type: 3}
+  - Name: SmallBridge
+    Prefabs:
+    - {fileID: 4682736271393328688, guid: 7bc4e7291caef7a40b5e851559a46cf0, type: 3}
 --- !u!1 &1408349736
 GameObject:
   m_ObjectHideFlags: 0
@@ -18455,19 +18506,34 @@ MonoBehaviour:
   _islandRegistry: {fileID: 1073754080}
   _playerBaseIslandNames:
   - IslandLarge
-  _islandEdgeOffset: 20
+  _islandEdgeOffset: 35
   _midIslandName: MidIsland
-  _bridgeSegmentPrefabs:
-  - {fileID: 4682736271393328688, guid: 7bc4e7291caef7a40b5e851559a46cf0, type: 3}
+  _bridgeRegistry: {fileID: 1400688410}
+  _mainBridgeTypeName: MainBridge
+  _wedgeBridgeTypeName: SmallBridge
   _bridgeBowDistance: 0
   _spokeBowDistance: 0
   _intermittentIslandNames:
   - BridgeIsland
-  _ringIntermittentCount: 2
+  _ringIntermittentCount: 3
   _spokeIntermittentCount: 1
   _ringBowEdgeMargin: 20
-  _ringBowChordMultiplier: 16
-  _bridgePaddingTiles: 3
+  _ringBowChordMultiplier: 20
+  _bridgePaddingTiles: 10
+  _wedgeIslandWeights:
+  - Name: IslandLarge
+    Weight: 0.7
+  - Name: BridgeIsland
+    Weight: 0.15
+  - Name: IslandMedium
+    Weight: 0.15
+  _minIslandsPerWedge: 1
+  _maxIslandsPerWedge: 4
+  _wedgeAngularInset: 0.12
+  _wedgeRadialMargin: 8
+  _wedgeExtraConnectionChance: 0.3
+  _wedgeMaxExtraConnections: 2
+  _wedgeCenterBiasSamples: 3
 --- !u!114 &1537083959
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23173,6 +23239,7 @@ Transform:
   - {fileID: 677668851}
   - {fileID: 1537083955}
   - {fileID: 1073754081}
+  - {fileID: 1400688409}
   - {fileID: 379280427}
   - {fileID: 648465013}
   - {fileID: 1292187812}
