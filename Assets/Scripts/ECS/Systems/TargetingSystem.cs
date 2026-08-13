@@ -183,6 +183,28 @@ public class TargetingSystem : ISystem
             targets.Remove(targetId);
     }
 
+    // Removes a specific target for a friendly troop regardless of its current kind — unlike
+    // RemoveAutomaticTarget, this also removes a player-assigned entry. Used by Aggressive-
+    // mode AI to drop a neutral (economy) target the instant a higher-priority enemy target
+    // takes over, even if that neutral target was explicitly player-assigned — see
+    // BasicMeleeAISystem/BasicRangedAISystem.
+    public void RemoveTarget(ulong friendlyTroopId, ulong targetId)
+    {
+        if (!_targets.TryGetValue(friendlyTroopId, out Dictionary<ulong, TargetKind> targets)) return;
+        targets.Remove(targetId);
+    }
+
+    // Removes every player-assigned target for a friendly troop, leaving any automatic one
+    // untouched — the mirror image of ClearAutomaticTargets. Used by GuardRetaliationSystem:
+    // taking a hit from an enemy overrides Guard mode's usual "never touch a manual order"
+    // rule so the troop fights back instead of continuing whatever it was explicitly told to
+    // do (e.g. chopping a tree while getting attacked).
+    public void ClearPlayerAssignedTargets(ulong friendlyTroopId)
+    {
+        if (!_targets.TryGetValue(friendlyTroopId, out Dictionary<ulong, TargetKind> targets)) return;
+        RemoveAllOfKind(targets, TargetKind.PlayerAssigned);
+    }
+
     private Dictionary<ulong, TargetKind> GetOrCreate(ulong friendlyTroopId)
     {
         if (!_targets.TryGetValue(friendlyTroopId, out Dictionary<ulong, TargetKind> targets))

@@ -41,6 +41,7 @@ public class RenderingSetup : Singleton<RenderingSetup>
         CardPlacementIndicatorManager.instance.Initialize();
         CardTargetIndicatorManager.instance.Initialize();
         DeployProgressIndicatorManager.instance.Initialize();
+        RecallProgressIndicatorManager.instance.Initialize();
         AbilityInputManager.instance.Initialize();
         AbilityBarUI.instance.Initialize();
         AbilityIndicatorManager.instance.Initialize();

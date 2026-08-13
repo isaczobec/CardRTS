@@ -846,6 +846,7 @@ public class TickManager : Singleton<TickManager>
         // has already cancelled a recall (see RecallSystem's own SubscribeExecuted<
         // DamageRequest>) before this tick's countdown/completion runs.
         ecs.RegisterSystem(RecallSystem.Instance);
+        ecs.RegisterSystem(GuardRetaliationSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);

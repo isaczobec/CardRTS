@@ -12,10 +12,18 @@ using UnityEngine;
 //    before anything else happens, same as the windup.
 //  - Otherwise, while not under an explicit player move order AND not in Passive mode,
 //    opportunistically auto-targets nearby enemies (TargetingSystem.SetAutomaticTarget).
-//  - Picks an active target: the closest player-assigned one always wins and is always
-//    pursued; otherwise the closest automatic one (never acquired in Passive mode) —
-//    dropped (RemoveAutomaticTarget) once this troop has strayed too far from its leash
-//    point in Guard mode, never dropped in Aggressive mode.
+//  - Picks an active target. Passive/Guard: the closest player-assigned target always wins
+//    and is always pursued; otherwise, in Guard, the closest AUTOMATIC target — preferring a
+//    real enemy over a neutral one (e.g. a resource node) if both are available (see
+//    ResolveGuardTarget) — dropped (RemoveAutomaticTarget) once this troop itself has strayed
+//    too far from its leash point. A manual order is never overridden in Guard — see
+//    GuardRetaliationSystem for the one exception (taking a hit from an enemy clears it and
+//    forces a fight-back instead).
+//    Aggressive is different: a real enemy ALWAYS wins over a neutral target, even one that's
+//    already (player- or auto-) assigned — see ResolveAggressiveTarget. A player-assigned
+//    enemy is always pursued; an automatically-acquired one is chased until it's more than
+//    ChaseRangeMultiplier away, then given up. Only once no enemy is worth chasing does it
+//    fall back to a neutral target (chased indefinitely, same as before this tiering existed).
 //  - If the active target is within Range, stops and starts a windup (AttackSpeed
 //    milliseconds, converted to ticks); otherwise chases it.
 //  - Once the windup finishes, fires a projectile at the target if it's still within
@@ -52,6 +60,7 @@ public class BasicRangedAISystem : ISystem
 
     private readonly List<ulong> _queryBuffer = new List<ulong>();
     private readonly HashSet<ulong> _movedThisTick = new HashSet<ulong>();
+    private readonly List<ulong> _clearScratch = new List<ulong>();
 
     private ECS _ecs;
     private ComponentStore<PositionComponent> _posStore;
@@ -163,23 +172,19 @@ public class BasicRangedAISystem : ISystem
         if (mode != AIMode.Passive && !mov.playerDestinationSet)
             AcquireTargets(id, troop.OwnerPlayerId, myPos, range * ai.DetectionRangeMultiplier);
 
-        ulong activeTarget = FindClosest(id, myPos, TargetKind.PlayerAssigned);
-
-        if (activeTarget == 0 && mode != AIMode.Passive && !mov.playerDestinationSet)
+        ulong activeTarget;
+        if (mode == AIMode.Aggressive)
         {
-            activeTarget = FindClosest(id, myPos, TargetKind.Automatic);
-
-            // Guard gives up a chase once IT (not the target) has wandered too far from its
-            // leash post; Aggressive never gives up an automatic target at all.
-            if (activeTarget != 0 && mode == AIMode.Guard)
-            {
-                Vector2 leashPos = new Vector2(mov.LeashX, mov.LeashY);
-                if (Vector2.Distance(myPos, leashPos) > range * ai.ChaseRangeMultiplier)
-                {
-                    _targeting.RemoveAutomaticTarget(id, activeTarget);
-                    activeTarget = 0;
-                }
-            }
+            activeTarget = ResolveAggressiveTarget(id, myPos, range, mov.playerDestinationSet, ref ai);
+        }
+        else
+        {
+            // Passive/Guard both always try a player-assigned target first, regardless of
+            // playerDestinationSet — an explicit attack order always wins. Only the automatic
+            // fallback below is mode/move-gated.
+            activeTarget = FindClosest(id, myPos, TargetKind.PlayerAssigned);
+            if (activeTarget == 0 && mode == AIMode.Guard && !mov.playerDestinationSet)
+                activeTarget = ResolveGuardTarget(id, myPos, range, ref mov, ref ai);
         }
 
         // Fallback for a client that doesn't own this troop, and so never received the
@@ -332,7 +337,11 @@ public class BasicRangedAISystem : ISystem
         return true;
     }
 
-    private ulong FindClosest(ulong friendlyId, Vector2 myPos, TargetKind kind)
+    // neutralOnly filters by target category on top of kind — null considers both categories
+    // (the original, pre-priority-tiering behavior), true/false restricts to only a
+    // neutral-owned (resource node) or only a real-enemy-owned target respectively. See
+    // ResolveAggressiveTarget/ResolveGuardTarget for how the two categories get prioritized.
+    private ulong FindClosest(ulong friendlyId, Vector2 myPos, TargetKind kind, bool? neutralOnly = null)
     {
         ulong bestId = 0;
         float bestDist = float.MaxValue;
@@ -341,6 +350,7 @@ public class BasicRangedAISystem : ISystem
         {
             if (_targeting.GetTargetKind(friendlyId, targetId) != kind) continue;
             if (!IsValidTarget(targetId)) continue;
+            if (neutralOnly.HasValue && IsNeutralTarget(targetId) != neutralOnly.Value) continue;
 
             float dist = DistanceTo(targetId, myPos);
             if (dist < bestDist)
@@ -351,6 +361,89 @@ public class BasicRangedAISystem : ISystem
         }
 
         return bestId;
+    }
+
+    // A target counts as "neutral" (a resource node, not a real enemy) purely by ownership —
+    // see TroopComponent.NEUTRAL_OWNER_PLAYER_ID. Every id reaching here already passed
+    // IsValidTarget/IsEnemy at some point, which both require a TroopComponent, but default
+    // to "not neutral" (i.e. treat it as an enemy) if that's somehow missing rather than
+    // silently misprioritizing it into the lower tier.
+    private bool IsNeutralTarget(ulong entityId)
+        => _troopStore.HasComponent(entityId) && _troopStore.GetComponent(entityId).OwnerPlayerId == TroopComponent.NEUTRAL_OWNER_PLAYER_ID;
+
+    // Aggressive mode's target priority: a real enemy always wins over a neutral one, even one
+    // that's already (player- or auto-) assigned — see the class doc comment. Player-assigned
+    // enemy targets are never given up; an automatically-acquired enemy is given up once this
+    // troop has chased it past ChaseRangeMultiplier (measured target-to-troop, unlike Guard's
+    // leash-to-troop measurement — Aggressive has no fixed post to measure from, since its
+    // leash creeps with it while it has a target). Falls back to a neutral target (chased
+    // indefinitely, same as before this tiering existed) only once no enemy is worth chasing.
+    private ulong ResolveAggressiveTarget(ulong id, Vector2 myPos, int range, bool playerDestinationSet, ref BasicRangedAIComponent ai)
+    {
+        ulong enemyTarget = FindClosest(id, myPos, TargetKind.PlayerAssigned, neutralOnly: false);
+
+        if (enemyTarget == 0 && !playerDestinationSet)
+        {
+            enemyTarget = FindClosest(id, myPos, TargetKind.Automatic, neutralOnly: false);
+            if (enemyTarget != 0 && DistanceTo(enemyTarget, myPos) > range * ai.ChaseRangeMultiplier)
+            {
+                _targeting.RemoveAutomaticTarget(id, enemyTarget);
+                enemyTarget = 0;
+            }
+        }
+
+        if (enemyTarget != 0)
+        {
+            // Committing to the enemy — drop every neutral target this troop was holding
+            // (manual or automatic), so it fully abandons whatever it was doing instead of
+            // half-heartedly keeping a resource-node target around it isn't pursuing anymore.
+            ClearNeutralTargets(id);
+            return enemyTarget;
+        }
+
+        ulong neutralTarget = FindClosest(id, myPos, TargetKind.PlayerAssigned, neutralOnly: true);
+        if (neutralTarget == 0 && !playerDestinationSet)
+            neutralTarget = FindClosest(id, myPos, TargetKind.Automatic, neutralOnly: true);
+
+        return neutralTarget;
+    }
+
+    // Guard mode's automatic-target priority — only ever reached once no player-assigned
+    // target exists at all (see Tick), so this never overrides a manual order, unlike
+    // Aggressive's equivalent. Prefers a real enemy over a neutral target, same tiering as
+    // Aggressive, but still gives up whichever one it picks once THIS TROOP has strayed too
+    // far from its leash post — unchanged from before this tiering existed, just applied to
+    // the tiered pick instead of unconditionally to "whatever was closest."
+    private ulong ResolveGuardTarget(ulong id, Vector2 myPos, int range, ref MovableComponent mov, ref BasicRangedAIComponent ai)
+    {
+        ulong candidate = FindClosest(id, myPos, TargetKind.Automatic, neutralOnly: false);
+        if (candidate == 0)
+            candidate = FindClosest(id, myPos, TargetKind.Automatic, neutralOnly: true);
+
+        if (candidate == 0) return 0;
+
+        Vector2 leashPos = new Vector2(mov.LeashX, mov.LeashY);
+        if (Vector2.Distance(myPos, leashPos) > range * ai.ChaseRangeMultiplier)
+        {
+            _targeting.RemoveAutomaticTarget(id, candidate);
+            return 0;
+        }
+
+        return candidate;
+    }
+
+    // Drops every neutral-owned target (both kinds) currently tracked for this troop — see
+    // ResolveAggressiveTarget. Snapshotted into a scratch list first since GetTargets returns
+    // a live view of the same dictionary RemoveTarget would be mutating.
+    private void ClearNeutralTargets(ulong id)
+    {
+        _clearScratch.Clear();
+        foreach (ulong targetId in _targeting.GetTargets(id))
+            if (IsNeutralTarget(targetId))
+                _clearScratch.Add(targetId);
+
+        foreach (ulong targetId in _clearScratch)
+            _targeting.RemoveTarget(id, targetId);
     }
 
     private float DistanceTo(ulong entityId, Vector2 from)

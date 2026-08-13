@@ -18,6 +18,11 @@ public static class SpawnAtPointCardPlaySystem
 {
     public static readonly GlobalSystem Instance = new GlobalSystem(Execute);
 
+    // Scratch buffer for every entity a single play actually spawned (see PlayCard) — reused
+    // across calls rather than allocated per call, same "static shared scratch list" shape
+    // RecallSystem's own _groupScratch uses.
+    private static readonly List<ulong> _spawnGroupScratch = new List<ulong>();
+
     private static void Execute(ECS ecs, FlagEventManager flagEvents)
     {
         List<SpawnAtPointInput> inputs = ecs.GetInputsForTick<SpawnAtPointInput>();
@@ -114,26 +119,56 @@ public static class SpawnAtPointCardPlaySystem
         ulong spawnedEntityId = spawnAtPointCard.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.X, input.Y);
         ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });
 
-        // Run every upgrade equipped on this card (see ECS/Upgrades/UpgradeComponent.cs — a
-        // card can carry any number of upgrade entities) against the entity this play just
-        // spawned. This whole system is server-only (see the isServer check in Execute
-        // above), matching the upgrade lambda's own "runs on the server" contract.
-        UpgradeQuery.ForEachUpgradeOnCard(ecs, input.CardEntityId, upgrade =>
-            upgrade.OnSpawnAtPointCardPlayed?.Invoke(spawnedEntityId, ecs));
+        // Tag the spawned entity as belonging to this played card instance (see
+        // SpawnedByCardComponent) — only for a Troop/Building card, and only if OnPlayed
+        // didn't already tag it (or several others) itself. Done BEFORE the upgrade loop
+        // below (unlike where this used to sit, after it) so a card whose OnPlayed spawns
+        // SEVERAL entities from one play (e.g. SkeletonsCard's 8, each already tagged inside
+        // its own spawn helper) is fully tagged in time for the CollectAliveSpawns call just
+        // below to find every one of them, not just spawnedEntityId itself. A Spell card's
+        // spawn (if any) is never tracked this way — see CardReturnHelper.
+        if ((definition.Category == CardCategory.Troop || definition.Category == CardCategory.Building) && ecs.HasEntity(spawnedEntityId))
+            SpawnedByCardHelper.Attach(ecs, spawnedEntityId, input.CardEntityId);
 
-        // A just-applied upgrade (e.g. HealthBonusUpgrade) can raise this entity's effective
+        // Every entity this play actually spawned — usually just spawnedEntityId, but a card
+        // whose OnPlayed spawns several entities from one play (e.g. SkeletonsCard/OrcsCard/
+        // EphemeralSkeletonsCard) needs every one of them here, not just the single id
+        // OnPlayed happened to return (see SpawnAtPointCard.OnPlayed's own doc comment on why
+        // it can only report one). Falls back to spawnedEntityId alone when nothing got
+        // tagged above (e.g. a Spell card).
+        SpawnedByCardHelper.CollectAliveSpawns(ecs, input.CardEntityId, _spawnGroupScratch);
+        if (_spawnGroupScratch.Count == 0)
+            _spawnGroupScratch.Add(spawnedEntityId);
+
+        // Run every upgrade equipped on this card (see ECS/Upgrades/UpgradeComponent.cs — a
+        // card can carry any number of upgrade entities) against EVERY entity this play just
+        // spawned, not just one — see _spawnGroupScratch above. This whole system is
+        // server-only (see the isServer check in Execute above), matching the upgrade
+        // lambda's own "runs on the server" contract.
+        UpgradeQuery.ForEachUpgradeOnCard(ecs, input.CardEntityId, upgrade =>
+        {
+            foreach (ulong id in _spawnGroupScratch)
+                upgrade.OnSpawnAtPointCardPlayed?.Invoke(id, ecs);
+        });
+
+        // A just-applied upgrade (e.g. HealthBonusUpgrade) can raise an entity's effective
         // max health via a StatModifierComponent — but TroopCardHelper/BuildingSpawnHelper
         // already set CurrentHealth to the pre-upgrade base MaxHealth before any of the loop
         // above ran (upgrades are applied to the entity AFTER it's spawned, not before), so
-        // without this the entity would spawn missing exactly the upgrade's bonus instead of
-        // at full health. Re-synced here, once, after every upgrade has had a chance to
-        // modify max health.
+        // without this each entity would spawn missing exactly the upgrade's bonus instead of
+        // at full health. Re-synced here, once per spawned entity, after every upgrade has
+        // had a chance to modify max health.
         ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
-        if (healthStore != null && healthStore.HasComponent(spawnedEntityId))
+        if (healthStore != null)
         {
-            ref HealthComponent health = ref healthStore.GetComponent(spawnedEntityId);
-            health.CurrentHealth = StatsQuery.GetMaxHealth(ecs, spawnedEntityId, health.CurrentHealth);
-            ecs.Delta.MarkComponentDirty(spawnedEntityId, typeof(HealthComponent));
+            foreach (ulong id in _spawnGroupScratch)
+            {
+                if (!healthStore.HasComponent(id)) continue;
+
+                ref HealthComponent health = ref healthStore.GetComponent(id);
+                health.CurrentHealth = StatsQuery.GetMaxHealth(ecs, id, health.CurrentHealth);
+                ecs.Delta.MarkComponentDirty(id, typeof(HealthComponent));
+            }
         }
 
         // Tag the spawned entity with its own resource value (see ResourceValueComponent),
@@ -144,14 +179,6 @@ public static class SpawnAtPointCardPlaySystem
         ComponentStore<ResourceValueComponent> resourceValueStore = ecs.GetComponentStore<ResourceValueComponent>();
         if (resourceValueStore != null && ecs.HasEntity(spawnedEntityId) && !resourceValueStore.HasComponent(spawnedEntityId))
             ResourceValueHelper.Attach(ecs, spawnedEntityId, card.OwnerPlayerId, definition.Cost);
-
-        // Tag the spawned entity as belonging to this played card instance (see
-        // SpawnedByCardComponent) — only for a Troop/Building card, and only if OnPlayed
-        // didn't already tag it (or several others) itself, the same "skip if already
-        // handled" shape as the ResourceValueComponent tagging just above. A Spell card's
-        // spawn (if any) is never tracked this way — see CardReturnHelper.
-        if ((definition.Category == CardCategory.Troop || definition.Category == CardCategory.Building) && ecs.HasEntity(spawnedEntityId))
-            SpawnedByCardHelper.Attach(ecs, spawnedEntityId, input.CardEntityId);
 
         // Construction Worker's own aura — no-ops unless spawnedEntityId is actually a
         // building and a qualifying worker is nearby (see BuildingRefundHelper). Placed after
