@@ -106,7 +106,7 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
             float spawnX = x + Mathf.Cos(angle) * SpawnRadius;
             float spawnY = y + Mathf.Sin(angle) * SpawnRadius;
 
-            ulong id = SpawnSingleEphemeralSkeleton(ecs, ownerPlayerId, spawnX, spawnY);
+            ulong id = SpawnSingleEphemeralSkeleton(ecs, ownerPlayerId, spawnX, spawnY, cardEntityId);
             if (i == 0) firstId = id;
         }
         return firstId;
@@ -117,7 +117,7 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     // them is killed, rather than that amount 8x over.
     private static readonly int GoldDropOnDeath = Mathf.RoundToInt((float)TroopCardHelper.DefaultGoldDropOnDeath / SkeletonCount);
 
-    private static ulong SpawnSingleEphemeralSkeleton(ECS ecs, ushort ownerPlayerId, float x, float y)
+    private static ulong SpawnSingleEphemeralSkeleton(ECS ecs, ushort ownerPlayerId, float x, float y, ulong cardEntityId)
     {
         StatsComponent stats = BuildStats();
 
@@ -162,6 +162,7 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
             }),
             // See ResourceValueComponent/PerSkeletonValue.
             (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerSkeletonValue),
+            (e, id) => SpawnedByCardHelper.Attach(e, id, cardEntityId),
         }, goldDropOnDeath: GoldDropOnDeath);
     }
 }

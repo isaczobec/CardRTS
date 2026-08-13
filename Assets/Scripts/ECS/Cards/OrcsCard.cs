@@ -98,13 +98,13 @@ public class OrcsCard : SpawnAtPointCard
             float spawnX = x + Mathf.Cos(angle) * SpawnRadius;
             float spawnY = y + Mathf.Sin(angle) * SpawnRadius;
 
-            ulong id = SpawnSingleOrc(ecs, ownerPlayerId, spawnX, spawnY);
+            ulong id = SpawnSingleOrc(ecs, ownerPlayerId, spawnX, spawnY, cardEntityId);
             if (i == 0) firstId = id;
         }
         return firstId;
     }
 
-    private static ulong SpawnSingleOrc(ECS ecs, ushort ownerPlayerId, float x, float y)
+    private static ulong SpawnSingleOrc(ECS ecs, ushort ownerPlayerId, float x, float y, ulong cardEntityId)
     {
         StatsComponent stats = BuildStats();
 
@@ -119,6 +119,7 @@ public class OrcsCard : SpawnAtPointCard
             }),
             // See ResourceValueComponent/PerOrcValue.
             (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerOrcValue),
+            (e, id) => SpawnedByCardHelper.Attach(e, id, cardEntityId),
         }, goldDropOnDeath: GoldDropOnDeath);
     }
 }

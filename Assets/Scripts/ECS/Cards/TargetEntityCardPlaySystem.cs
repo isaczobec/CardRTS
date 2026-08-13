@@ -134,12 +134,6 @@ public static class TargetEntityCardPlaySystem
         targetEntityCard.OnPlayed(ecs, input.CardEntityId, input.ClientId, input.TargetEntityId);
         ecs.FlagEvents.Add(new CardPlayedEvent { EntityId = input.CardEntityId });
 
-        // Recycle the card back into its owner's deck (at the back) rather than
-        // deleting it.
-        ref CardComponent playedCard = ref cardStore.GetComponent(input.CardEntityId);
-        playedCard.Location = CardLocation.Deck;
-        ecs.Delta.MarkComponentDirty(input.CardEntityId, typeof(CardComponent));
-
-        DeckHelper.EnqueueToDeck(ecs, card.OwnerPlayerId, input.CardEntityId);
+        CardReturnHelper.OnCardPlayed(ecs, cardStore, input.CardEntityId, card.OwnerPlayerId, definition.Category);
     }
 }

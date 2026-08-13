@@ -123,6 +123,7 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     private static readonly int DieTrigger = Animator.StringToHash("Die");
     private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
     private static readonly int IsDisplacedParam = Animator.StringToHash("IsDisplaced");
+    private static readonly int IsRecallingParam = Animator.StringToHash("IsRecalling");
     private static readonly int AttackSpeedMultiplierFloat = Animator.StringToHash("AttackSpeedMultiplier");
     private static readonly int MovementSpeedFloat = Animator.StringToHash("MovementSpeed");
 
@@ -328,6 +329,7 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
     {
         var posStore = _ecs?.GetComponentStore<PositionComponent>();
         var movStore = _ecs?.GetComponentStore<MovableComponent>();
+        var recallStore = _ecs?.GetComponentStore<RecallingComponent>();
         if (posStore == null) return;
 
         _speedUpdateTimer += Time.deltaTime;
@@ -377,6 +379,7 @@ public class VariedAttackTroopRenderer : MonoBehaviour, IComponentRenderer
             {
                 go.Animator.SetBool(IsMovingParam, isMoving);
                 go.Animator.SetBool(IsDisplacedParam, isDisplaced);
+                go.Animator.SetBool(IsRecallingParam, recallStore != null && recallStore.HasComponent(id));
 
                 if (updateSpeedParam && _runAnimationSpeedStat > 0f)
                 {

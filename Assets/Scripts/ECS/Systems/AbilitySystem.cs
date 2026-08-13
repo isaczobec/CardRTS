@@ -168,6 +168,12 @@ public static class AbilitySystem
     {
         ability = null;
 
+        // An ability order is always allowed to land, even mid-recall — it just ends the
+        // recall immediately instead of being silently blocked by CanPerformRequest's own
+        // veto (see RecallSystem.CancelRecall). Cancelled before CanCast runs below so a
+        // legitimate cast can still succeed the same tick.
+        RecallSystem.CancelRecall(ecs, casterId);
+
         if (!AbilityEligibility.CanCast(ecs, casterId, abilityId, clientId, abilityStore, troopStore, out slot))
             return false;
 

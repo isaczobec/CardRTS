@@ -106,7 +106,7 @@ public class SkeletonsCard : SpawnAtPointCard
             float spawnX = x + Mathf.Cos(angle) * SpawnRadius;
             float spawnY = y + Mathf.Sin(angle) * SpawnRadius;
 
-            ulong id = SpawnSingleSkeleton(ecs, ownerPlayerId, spawnX, spawnY);
+            ulong id = SpawnSingleSkeleton(ecs, ownerPlayerId, spawnX, spawnY, cardEntityId);
             if (i == 0) firstId = id;
         }
         return firstId;
@@ -118,7 +118,11 @@ public class SkeletonsCard : SpawnAtPointCard
     // if every one of them is killed, rather than that amount 8x over.
     private static readonly int GoldDropOnDeath = Mathf.RoundToInt((float)TroopCardHelper.DefaultGoldDropOnDeath / SkeletonCount);
 
-    private static ulong SpawnSingleSkeleton(ECS ecs, ushort ownerPlayerId, float x, float y)
+    // cardEntityId is the Skeletons card instance every skeleton this helper ever spawns
+    // (the initial ring of 8 AND any later resurrection) counts as being spawned by — see
+    // SpawnedByCardComponent — so the card can't return to its owner's hand/deck until every
+    // one of them (however many the legion has grown to) has died.
+    private static ulong SpawnSingleSkeleton(ECS ecs, ushort ownerPlayerId, float x, float y, ulong cardEntityId)
     {
         StatsComponent stats = BuildStats();
 
@@ -158,6 +162,7 @@ public class SkeletonsCard : SpawnAtPointCard
             // See ResourceValueComponent/PerSkeletonValue — applies to both the initial ring
             // of 8 and any later resurrection, since both funnel through this same helper.
             (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, PerSkeletonValue),
+            (e, id) => SpawnedByCardHelper.Attach(e, id, cardEntityId),
         }, goldDropOnDeath: GoldDropOnDeath);
     }
 
@@ -181,6 +186,13 @@ public class SkeletonsCard : SpawnAtPointCard
         if (troopStore == null || !troopStore.HasComponent(killerId)) return;
 
         ushort ownerPlayerId = troopStore.GetComponent(killerId).OwnerPlayerId;
-        SpawnSingleSkeleton(ecs, ownerPlayerId, call.Param1, call.Param2);
+
+        // Inherits the same card instance the killer skeleton was itself spawned by — the
+        // original played-card entity id isn't otherwise available at this deferred spawn
+        // site (this may be reached from an EphemeralSkeletonsCard-spawned killer too, since
+        // both cards register this same resolver — the resurrected skeleton then correctly
+        // belongs to THAT card instance instead).
+        ulong cardEntityId = SpawnedByCardHelper.ResolveCardEntityId(ecs, killerId);
+        SpawnSingleSkeleton(ecs, ownerPlayerId, call.Param1, call.Param2, cardEntityId);
     }
 }

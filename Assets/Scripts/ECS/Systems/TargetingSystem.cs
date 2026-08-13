@@ -57,6 +57,11 @@ public class TargetingSystem : ISystem
             if (troop.OwnerPlayerId != input.ClientId) continue;
             if (!ActivationQuery.IsActivated(ecs, friendlyId)) continue;
 
+            // An attack-target order is always allowed to land, even mid-recall — it just
+            // ends the recall immediately instead of being silently blocked by
+            // CanPerformRequest's own veto (see RecallSystem.CancelRecall).
+            RecallSystem.CancelRecall(ecs, friendlyId);
+
             Dictionary<ulong, TargetKind> targets = GetOrCreate(friendlyId);
 
             RemoveAllOfKind(targets, TargetKind.Automatic);

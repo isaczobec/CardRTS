@@ -266,6 +266,8 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<VengefulSpiritsSourceComponent>(74);
         _componentTypeRegistry.Register<CripplingStrikesSourceComponent>(75);
         _componentTypeRegistry.Register<AbilityBarComponent>(76);
+        _componentTypeRegistry.Register<SpawnedByCardComponent>(77);
+        _componentTypeRegistry.Register<RecallingComponent>(78);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -282,6 +284,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<MultiPointInput>(12);
         _inputTypeRegistry.Register<BuyUpgradeInput>(13);
         _inputTypeRegistry.Register<DiscardCardInput>(14);
+        _inputTypeRegistry.Register<RecallInput>(15);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<PositionComponent>>(1);
@@ -459,6 +462,10 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<CripplingStrikesSourceComponent>>(173);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<AbilityBarComponent>>(174);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<AbilityBarComponent>>(175);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<SpawnedByCardComponent>>(176);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<SpawnedByCardComponent>>(177);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<RecallingComponent>>(178);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<RecallingComponent>>(179);
 
         ECS = CreateSimulationECS();
     }
@@ -746,6 +753,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ResourceGainDebuffComponent>());
         ecs.AddComponentStore(new ComponentStore<VengefulSpiritsSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<CripplingStrikesSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<SpawnedByCardComponent>());
+        ecs.AddComponentStore(new ComponentStore<RecallingComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -801,6 +810,10 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(BuyUpgradeSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
         ecs.RegisterSystem(new DeckSystem());
+        // Recycles a played Troop/Building card back into its owner's deck once every
+        // troop/building it spawned has died — see CardReturnHelper (what puts a card into
+        // CardLocation.InPlay in the first place) and SpawnedByCardComponent.
+        ecs.RegisterSystem(CardReturnSystem.Instance);
         ecs.RegisterSystem(ProjectileOnHitSystem.Instance);
         ecs.RegisterSystem(ProjectileHitResolutionSystem.Instance);
         // Must be registered (thus Setup/Subscribe<DamageRequest>) before ArmorMitigationSystem
@@ -829,6 +842,10 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(HitboxImmunitySystem.Instance);
         ecs.RegisterSystem(AbilityCooldownSystem.Instance);
         ecs.RegisterSystem(AbilityChargeSystem.Instance);
+        // Registered after DamageResolutionSystem (above) so a hit landing this same tick
+        // has already cancelled a recall (see RecallSystem's own SubscribeExecuted<
+        // DamageRequest>) before this tick's countdown/completion runs.
+        ecs.RegisterSystem(RecallSystem.Instance);
         ecs.RegisterSystem(DeathSystem.Instance);
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);
@@ -952,6 +969,8 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<ResourceGainDebuffComponent>());
         ecs.AddComponentStore(new ComponentStore<VengefulSpiritsSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<CripplingStrikesSourceComponent>());
+        ecs.AddComponentStore(new ComponentStore<SpawnedByCardComponent>());
+        ecs.AddComponentStore(new ComponentStore<RecallingComponent>());
 
         return ecs;
     }

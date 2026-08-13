@@ -4,8 +4,11 @@ using System.Collections.Generic;
 /// Server-only. Reads SpawnAtPointInput each tick: validates the card entity exists,
 /// belongs to the requesting client, is currently in hand, and is actually a
 /// SpawnAtPointCard (see Card.cs), then dispatches to the matching Card definition's
-/// OnPlayed. The card entity isn't deleted — it's recycled back into its owner's deck (at
-/// the back, via DeckHelper) so DeckSystem eventually draws it again.
+/// OnPlayed. The card entity isn't deleted — see CardReturnHelper for what happens to it
+/// next: a Spell card is recycled straight back into its owner's deck (at the back, via
+/// DeckHelper) so DeckSystem eventually draws it again, while a Troop/Building card is held
+/// out of the deck/hand rotation until every troop/building it spawned has died (see
+/// SpawnedByCardComponent/CardReturnSystem).
 ///
 /// This is one of potentially several per-card-kind play systems (each pairing one
 /// InputBase subtype with one Card subtype) — see Card.cs for why OnPlayed lives on
@@ -142,18 +145,20 @@ public static class SpawnAtPointCardPlaySystem
         if (resourceValueStore != null && ecs.HasEntity(spawnedEntityId) && !resourceValueStore.HasComponent(spawnedEntityId))
             ResourceValueHelper.Attach(ecs, spawnedEntityId, card.OwnerPlayerId, definition.Cost);
 
+        // Tag the spawned entity as belonging to this played card instance (see
+        // SpawnedByCardComponent) — only for a Troop/Building card, and only if OnPlayed
+        // didn't already tag it (or several others) itself, the same "skip if already
+        // handled" shape as the ResourceValueComponent tagging just above. A Spell card's
+        // spawn (if any) is never tracked this way — see CardReturnHelper.
+        if ((definition.Category == CardCategory.Troop || definition.Category == CardCategory.Building) && ecs.HasEntity(spawnedEntityId))
+            SpawnedByCardHelper.Attach(ecs, spawnedEntityId, input.CardEntityId);
+
         // Construction Worker's own aura — no-ops unless spawnedEntityId is actually a
         // building and a qualifying worker is nearby (see BuildingRefundHelper). Placed after
         // the ResourceValueComponent tagging above since it reads that component.
         if (ecs.HasEntity(spawnedEntityId))
             BuildingRefundHelper.TryRefund(ecs, spawnedEntityId, card.OwnerPlayerId);
 
-        // Recycle the card back into its owner's deck (at the back) rather than
-        // deleting it.
-        ref CardComponent playedCard = ref cardStore.GetComponent(input.CardEntityId);
-        playedCard.Location = CardLocation.Deck;
-        ecs.Delta.MarkComponentDirty(input.CardEntityId, typeof(CardComponent));
-
-        DeckHelper.EnqueueToDeck(ecs, card.OwnerPlayerId, input.CardEntityId);
+        CardReturnHelper.OnCardPlayed(ecs, cardStore, input.CardEntityId, card.OwnerPlayerId, definition.Category);
     }
 }

@@ -43,6 +43,15 @@ public enum CardLocation : byte
 {
     Deck = 0,
     Hand = 1,
+
+    // Played, and held out of the deck/hand rotation entirely, because at least one
+    // troop/building it spawned is still alive in the world (or is itself still channeling a
+    // manual recall — see RecallingComponent) — see SpawnedByCardComponent/CardReturnSystem,
+    // which flips this back to Deck (and enqueues it) once every one of them is gone. Only
+    // ever set for a Troop/Building category card (see CardReturnHelper); a Spell card is
+    // still recycled straight back to Deck the instant it's played, same as before this
+    // location existed.
+    InPlay = 2,
 }
 
 public struct CardComponent : IComponent

@@ -211,6 +211,11 @@ public class SantaClausCard : SpawnAtPointCard
 
         int lifetimeTicks = TickManager.SecondsToTicks(SnatcherReinforcementLifetimeSeconds);
 
+        // Inherits the same card instance Santa himself was spawned by — the original
+        // played-card entity id isn't otherwise available at this deferred spawn site (see
+        // SkeletonsCard.ResolveSkeletonSummon for the identical pattern).
+        ulong cardEntityId = SpawnedByCardHelper.ResolveCardEntityId(ecs, santaId);
+
         TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, spawnX, spawnY, RenderableType.GoblinSnatcher, weakStats, new List<Action<ECS, ulong>>
         {
             // Matches GoblinSnatcherCard's own AI multipliers (private there, so restated
@@ -243,6 +248,7 @@ public class SantaClausCard : SpawnAtPointCard
                 ShowTimer              = true,
             }),
             (e, id) => ResourceValueHelper.Attach(e, id, ownerPlayerId, reinforcementValue),
+            (e, id) => SpawnedByCardHelper.Attach(e, id, cardEntityId),
         });
     }
 }

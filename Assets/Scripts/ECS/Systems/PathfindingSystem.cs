@@ -183,6 +183,11 @@ public class PathfindingSystem : ISystem
             if (troop.OwnerPlayerId != input.ClientId) continue;
             if (!ActivationQuery.IsActivated(ecs, entityId)) continue;
 
+            // A move order is always allowed to land, even mid-recall — it just ends the
+            // recall immediately instead of being silently blocked by
+            // CanMoveOnOwnAccountRequest's own veto (see RecallSystem.CancelRecall).
+            RecallSystem.CancelRecall(ecs, entityId);
+
             ref MovableComponent mov = ref movStore.GetComponent(entityId);
             mov.playerSetDestinationX = move.DestinationX;
             mov.playerSetDestinationY = move.DestinationY;
