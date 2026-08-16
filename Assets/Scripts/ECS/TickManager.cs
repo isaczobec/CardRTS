@@ -851,6 +851,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(RespawnSystem.Instance);
         ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
+        ecs.RegisterSystem(PlayerEliminationSystem.Instance);
         ecs.RegisterSystem(ResourceProductionOnDeathSystem.Instance);
         ecs.RegisterSystem(OnKillScheduleSystem.Instance);
         ecs.RegisterSystem(OnHitScheduleSystem.Instance);

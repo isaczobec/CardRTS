@@ -32,11 +32,18 @@ public static class InputBuffer
     // already-sent remote clients' inputs and must not be affected by our own local UI
     // state. Ignored while the game hasn't started (there's no tick to attach it to yet)
     // or while the dev console is open (typing a command shouldn't also move troops/spawn
-    // things underneath it).
+    // things underneath it) — or once the local player's own base has died (see
+    // PlayerEliminationSystem/PlayerEliminationQuery): ECS.GetInputsForTick would drop it
+    // anyway, but stopping the enqueue here gives instant local feedback and skips the wasted
+    // network round-trip instead of silently discarding it later.
     private static bool ShouldAcceptLocalInput()
     {
         if (TickManager.instance == null || !TickManager.instance.IsGameStarted) return false;
         if (DevConsole.IsOpen) return false;
+
+        ushort localPlayerId = NetworkManager.instance?.LocalPlayerId ?? 0;
+        if (PlayerEliminationQuery.IsEliminated(TickManager.instance.ActiveECS, localPlayerId)) return false;
+
         return true;
     }
 

@@ -9,10 +9,11 @@ using UnityEngine;
 //
 // Each key is dual-purpose, decided by whether it's CURRENTLY bound or not:
 //   - Unbound + held + cursor within _assignRadius of a friendly troop — binds this key to
-//     that troop (see Update/IsHoveringTroop). An already-bound key is locked against this —
-//     hovering a different troop while holding it does nothing, it does NOT rebind — so a
-//     binding can only ever change via an explicit clear (Alt + the key, or the troop's own
-//     death) followed by a fresh assign.
+//     that troop (see Update/IsHoveringTroop). An already-bound KEY is locked against this —
+//     hovering a different troop while holding it does nothing, it does NOT rebind. A troop
+//     that already has a DIFFERENT key bound to it is instead MOVED to the new key (its old
+//     key is freed via RemoveMarkersFor first) — a troop may only ever be bound to at most one
+//     key at a time, the same way a key may only ever be bound to at most one troop.
 //   - Bound + held — "follow" mode regardless of where the cursor is: TryGetFollowPosition
 //     returns the bound troop's current position every frame, read by
 //     CameraController.HandleFollowMarker to re-center the camera exactly the way held Space
@@ -97,8 +98,17 @@ public class TroopMarkerManager : Singleton<TroopMarkerManager>
         if (IsHoveringTroop(out ulong hoveredTroopId))
         {
             foreach (KeyCode key in MarkerKeys)
-                if (Input.GetKey(key) && !_markers.ContainsKey(key))
-                    _markers[key] = hoveredTroopId;
+            {
+                if (!Input.GetKey(key) || _markers.ContainsKey(key)) continue;
+
+                // Free this troop's own previous key (if any) before binding the new one, so
+                // a troop can only ever be bound to a single key at a time — without this, a
+                // troop already bound to one key would simply gain a second (third, ...)
+                // binding whenever a different unbound key was held over it, rather than the
+                // binding moving to the new key.
+                RemoveMarkersFor(hoveredTroopId);
+                _markers[key] = hoveredTroopId;
+            }
         }
 
         // Edge-triggered: Alt+key clears that key's binding; two plain presses in quick

@@ -28,7 +28,7 @@ public class GoblinSnatcherCard : SpawnAtPointCard
 
     // Unchanged from BasicMeleeTroopCard.
     // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 48f;
+    private const float DetectionRangeMultiplier = 12f;
     private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 4f;
     private const float CooldownMultiplier = 2f;

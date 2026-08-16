@@ -26,7 +26,7 @@ public class MoveMarkerManager : Singleton<MoveMarkerManager>
     // be to this marker's point to still count as "still walking here" — not 0, since
     // MoveTroopInput can nudge an individual troop's destination slightly off the exact
     // click point for formation spacing (see SelectionManager.SendMoveCommand's own
-    // ClampFormationDestination), so an exact-equality check would immediately (and
+    // SnapToWalkable), so an exact-equality check would immediately (and
     // incorrectly) read as "already done" for every troop but the very first.
     private const float DestinationMatchEpsilon = 2f;
 

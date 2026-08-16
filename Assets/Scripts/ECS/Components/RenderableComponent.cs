@@ -58,6 +58,10 @@ public enum RenderableType : byte
     // instance against this in the Inspector, same as every other pooled seeking-projectile
     // kind (IceProjectile, FireProjectile, ...).
     VengefulSpirit = 52,
+    // Neutral gold crate (see EntitySpawnAction.SpawnGoldCrate/GoldCrateFeature) — register a
+    // renderer (e.g. RespawnableBuildingRenderer, same as the SoulstoneNode/Gem entries) with
+    // its own crate prefab in the Inspector.
+    GoldCrate = 53,
 }
 
 public struct RenderableComponent : IComponent

@@ -591,9 +591,9 @@ public class SelectionManager : Singleton<SelectionManager>
     // rest of the selection, and is just sent straight to the click point instead.
     private const float MaxFormationOffsetFromCentroid = 15f;
 
-    // Step size (world/tile units) used to ray-march a formation offset destination out
-    // from the click point, to find where (if anywhere) it first crosses a non-walkable tile.
-    private const float FormationClampStep = 0.5f;
+    // How far (tiles) SnapToWalkable will expand its search for the nearest walkable ground
+    // before giving up on an unwalkable click/formation point — see that method.
+    private const int SnapToWalkableSearchRadius = 24;
 
     // Sends each selected troop to its own destination, offset from the click point by the
     // same offset it currently has from the selection's centroid — so a multi-troop move
@@ -604,20 +604,18 @@ public class SelectionManager : Singleton<SelectionManager>
     {
         if (_selectedEntityIds.Count == 0) return;
 
-        Vector2 rawClickPoint = new Vector2(tx, ty);
         Vector2 centroid = ComputeSelectionCentroid();
 
-        // Clamp the click itself to walkable ground before it's used as anyone's
-        // destination or shown as a marker — previously only each troop's per-formation
-        // OFFSET from the click was clamped (and only when >1 troop was selected), so a
-        // single troop (or the shared base point every formation offset is measured from)
-        // could be sent straight at a non-walkable tile: PathfindingSystem would then
-        // correctly refuse to move it, but MoveMarkerManager had already shown a marker
-        // there with nothing to ever resolve it. Reuses the same "march from a known-good
-        // point toward the target, stop at the last walkable step" logic formation offsets
-        // already use, so a click past the edge of an island now just walks to the shore
-        // closest to where you clicked instead of silently doing nothing.
-        Vector2 clickPoint = ClampFormationDestination(centroid, rawClickPoint - centroid);
+        // Snap the click itself onto walkable ground before it's used as anyone's
+        // destination or shown as a marker — a raw click past the edge of an island (into
+        // water/void) would otherwise send a troop at a point PathfindingSystem can only
+        // ever reject outright, while MoveMarkerManager had already shown a marker there
+        // with nothing to ever resolve it. This only ever adjusts a destination that isn't
+        // walkable AT ALL; see SnapToWalkable's own doc comment for why it must never be
+        // used to "walk around" an obstacle that merely sits between the troop and an
+        // otherwise perfectly reachable destination — that's Pathfinding.PathFindNavMesh's
+        // job, once it's actually handed the real click point.
+        Vector2 clickPoint = SnapToWalkable(new Vector2(tx, ty));
 
         List<MoveTroopInput.EntityDestination> moves = new List<MoveTroopInput.EntityDestination>();
         foreach (ulong entityId in _selectedEntityIds)
@@ -630,7 +628,7 @@ public class SelectionManager : Singleton<SelectionManager>
                 Vector2 offset = new Vector2(pos.X, pos.Y) - centroid;
 
                 if (offset.sqrMagnitude <= MaxFormationOffsetFromCentroid * MaxFormationOffsetFromCentroid)
-                    destination = ClampFormationDestination(clickPoint, offset);
+                    destination = SnapToWalkable(clickPoint + offset);
             }
 
             moves.Add(new MoveTroopInput.EntityDestination
@@ -659,28 +657,36 @@ public class SelectionManager : Singleton<SelectionManager>
         return count > 0 ? sum / count : Vector2.zero;
     }
 
-    // Marches outward from center toward center+offset in FormationClampStep increments,
-    // stopping at the last tile confirmed walkable before (if anywhere) the ray first
-    // crosses a non-walkable one — so a troop's formation slot never sends it into a
-    // mountain/water tile just because that's where its relative position happened to land.
-    private static Vector2 ClampFormationDestination(Vector2 center, Vector2 offset)
+    // Returns point unchanged if it's already walkable. Otherwise snaps it to the nearest
+    // walkable ground TO THAT POINT ITSELF (an expanding-ring tile search — see
+    // NavMeshHandler.GetNearestNodeAt), so a click into open water/void still resolves to
+    // roughly where it landed instead of being rejected outright.
+    //
+    // Deliberately NOT a march/raycast from some other reference point (a troop's position,
+    // a selection centroid, an already-clamped click point, etc.) toward this one, stopping
+    // at the first non-walkable tile crossed along the way — that used to be exactly this
+    // method's behavior, and it silently truncated destinations that were themselves
+    // perfectly walkable and reachable (by a route that goes around whatever obstacle the
+    // straight line happened to cross — a wall, a lake, an entire separate island only
+    // reachable via a bridge) down to wherever that straight line first went unwalkable.
+    // Pathfinding.PathFindNavMesh already routes around obstacles correctly on its own once
+    // it's actually given the real destination; this must only ever touch a destination that
+    // isn't walkable at all.
+    private static Vector2 SnapToWalkable(Vector2 point)
     {
-        float distance = offset.magnitude;
-        if (distance <= 0f) return center;
+        if (IsWalkable(point)) return point;
 
-        Vector2 direction = offset / distance;
-        Vector2 lastWalkable = center;
+        NavMeshHandler handler = NavMeshHandler.instance;
+        if (handler == null) return point;
 
-        int steps = Mathf.CeilToInt(distance / FormationClampStep);
-        for (int i = 1; i <= steps; i++)
-        {
-            float d = Mathf.Min(i * FormationClampStep, distance);
-            Vector2 candidate = center + direction * d;
-            if (!IsWalkable(candidate)) break;
-            lastWalkable = candidate;
-        }
+        ushort tileX = (ushort)Mathf.FloorToInt(point.x);
+        ushort tileY = (ushort)Mathf.FloorToInt(point.y);
+        NavMeshNode nearest = handler.GetNearestNodeAt(tileX, tileY, SnapToWalkableSearchRadius);
+        if (nearest == null) return point;
 
-        return lastWalkable;
+        float clampedX = Mathf.Clamp(point.x, nearest.x1, nearest.x2 + 1f);
+        float clampedY = Mathf.Clamp(point.y, nearest.y1, nearest.y2 + 1f);
+        return new Vector2(clampedX, clampedY);
     }
 
     private static bool IsWalkable(Vector2 point)

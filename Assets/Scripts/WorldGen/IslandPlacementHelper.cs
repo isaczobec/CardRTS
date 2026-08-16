@@ -30,13 +30,20 @@ public static class IslandPlacementHelper
 
         public readonly float RotationDegrees;
 
-        public PlacedIsland(ushort originX, ushort originY, IslandFootprint footprint, RotatedIslandFootprint rotatedFootprint, float rotationDegrees)
+        // This placement's coarse island-graph region id (see IslandGraphBuilder) — -1 for a
+        // hypothetical/candidate placement that was never actually stamped (e.g.
+        // WedgeIslandFeature's own candidateIsland, built purely to evaluate a bridge
+        // connection before anything is committed).
+        public readonly int RegionId;
+
+        public PlacedIsland(ushort originX, ushort originY, IslandFootprint footprint, RotatedIslandFootprint rotatedFootprint, float rotationDegrees, int regionId = -1)
         {
             OriginX = originX;
             OriginY = originY;
             Footprint = footprint;
             RotatedFootprint = rotatedFootprint;
             RotationDegrees = rotationDegrees;
+            RegionId = regionId;
         }
 
         // Approximate world-space center of the footprint's bounding box — used by
@@ -77,20 +84,25 @@ public static class IslandPlacementHelper
         int originX = clampedCenterX - rotated.Width / 2;
         int originY = clampedCenterY - rotated.Height / 2;
 
-        StampFootprint(handler, rotated, originX, originY, worldSize);
+        ushort clampedOriginX = (ushort)Mathf.Clamp(originX, 0, worldSize - 1);
+        ushort clampedOriginY = (ushort)Mathf.Clamp(originY, 0, worldSize - 1);
+
+        // Registered (and every occupied cell tagged, see StampFootprint) before this
+        // island's own BridgeAnchors ever get used to build a connecting bridge, so a bridge
+        // committed right after this returns (see BridgeConnectionBuilder.Commit) always
+        // names an already-valid island region on that end.
+        int regionId = handler.IslandGraph.BeginIsland(new Vector2(clampedOriginX + rotated.Width / 2f, clampedOriginY + rotated.Height / 2f));
+        StampFootprint(handler, rotated, originX, originY, worldSize, regionId);
 
         Vector3 worldPosition = WorldManager.instance.TileToWorldPosition((ushort)clampedCenterX, (ushort)clampedCenterY, center: true);
         worldPosition.y += footprint.HeightOffset;
         Quaternion rotationQuat = Quaternion.Euler(0f, rotationDegrees, 0f);
         handler.EnqueueAction(new IslandSpawnAction { Prefab = prefab, WorldPosition = worldPosition, Rotation = rotationQuat });
 
-        ushort clampedOriginX = (ushort)Mathf.Clamp(originX, 0, worldSize - 1);
-        ushort clampedOriginY = (ushort)Mathf.Clamp(originY, 0, worldSize - 1);
-
-        return new PlacedIsland(clampedOriginX, clampedOriginY, footprint, rotated, rotationDegrees);
+        return new PlacedIsland(clampedOriginX, clampedOriginY, footprint, rotated, rotationDegrees, regionId);
     }
 
-    private static void StampFootprint(WorldGenHandler handler, RotatedIslandFootprint footprint, int originX, int originY, ushort worldSize)
+    private static void StampFootprint(WorldGenHandler handler, RotatedIslandFootprint footprint, int originX, int originY, ushort worldSize, int regionId)
     {
         foreach (Vector2Int cell in footprint.OccupiedCells())
         {
@@ -98,6 +110,7 @@ public static class IslandPlacementHelper
             int ty = originY + cell.y;
             if (tx < 0 || ty < 0 || tx >= worldSize || ty >= worldSize) continue;
             handler.SetTileType((ushort)tx, (ushort)ty, TileType.Island);
+            handler.IslandGraph.MarkTile(regionId, tx, ty);
         }
     }
 }

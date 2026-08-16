@@ -32,7 +32,7 @@ public class OrcsCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from BasicMeleeTroopCard.
-    private const float DetectionRangeMultiplier = 48f;
+    private const float DetectionRangeMultiplier = 12f;
     private const float ChaseRangeMultiplier = 96f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;

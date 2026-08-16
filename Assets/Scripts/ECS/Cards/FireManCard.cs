@@ -23,7 +23,7 @@ public class FireManCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 12f;
+    private const float DetectionRangeMultiplier = 3f;
     private const float ChaseRangeMultiplier = 20f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;

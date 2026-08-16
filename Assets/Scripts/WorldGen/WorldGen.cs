@@ -34,6 +34,14 @@ public class WorldGenHandler
     public int Seed;
     public Random Random { get; private set; }
 
+    // Accumulates the coarse island/bridge region graph as this handler's own features place
+    // islands and commit bridges (see IslandPlacementHelper.TryPlaceIsland/
+    // BridgeConnectionBuilder.Commit, the only two places that ever call into it). Read once
+    // generation finishes by NavMeshHandler.CreateNavMesh (see WorldManager.GenerateAndRender)
+    // to build Pathfinding's hierarchical search corridor. Always non-null — simply stays
+    // empty for a world whose features never place an island (see IslandGraphBuilder.GetRegionId).
+    public IslandGraphBuilder IslandGraph { get; } = new IslandGraphBuilder((ushort)(CHUNK_SIZE_TILES * WorldSizeChunks));
+
     private int _currentFeatureIndex = 0;
     private WorldGenFeature _currentFeature => features[_currentFeatureIndex];
     private int _currentFeatureLastChildIndex = 0;

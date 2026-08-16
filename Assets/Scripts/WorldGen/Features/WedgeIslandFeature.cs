@@ -298,7 +298,7 @@ public class WedgeIslandFeature : WorldGenFeature
             IslandPlacementHelper.PlacedIsland? placed = IslandPlacementHelper.TryPlaceIsland(handler, prefab, centerTileX, centerTileY, worldSize);
             if (!placed.HasValue) continue; // footprint was already confirmed non-null above, so this shouldn't happen
 
-            BridgeConnectionBuilder.Commit(handler, bridgeCandidate, bridgePrefab, bridgeSegmentInfo, BridgePaddingTiles, worldSize);
+            BridgeConnectionBuilder.Commit(handler, bridgeCandidate, bridgePrefab, bridgeSegmentInfo, BridgePaddingTiles, worldSize, placed.Value.RegionId, connectedTo.RegionId);
             allIslands.Add(placed.Value);
             _placedIslands.Add(placed.Value);
 
@@ -315,7 +315,7 @@ public class WedgeIslandFeature : WorldGenFeature
                         out IslandPlacementHelper.PlacedIsland extraTarget))
                     break;
 
-                BridgeConnectionBuilder.Commit(handler, extraBridge, extraPrefab, extraSegmentInfo, BridgePaddingTiles, worldSize);
+                BridgeConnectionBuilder.Commit(handler, extraBridge, extraPrefab, extraSegmentInfo, BridgePaddingTiles, worldSize, placed.Value.RegionId, extraTarget.RegionId);
                 connectedTargets.Add(extraTarget);
             }
 

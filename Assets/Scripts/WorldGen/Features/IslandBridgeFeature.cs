@@ -286,6 +286,6 @@ public class IslandBridgeFeature : WorldGenFeature
                 allowOverlapFallback: true, out BridgeConnectionBuilder.BridgeCandidate chosen))
             return;
 
-        BridgeConnectionBuilder.Commit(handler, chosen, prefab, segmentInfo, BridgePaddingTiles, worldSize);
+        BridgeConnectionBuilder.Commit(handler, chosen, prefab, segmentInfo, BridgePaddingTiles, worldSize, from.RegionId, to.RegionId);
     }
 }

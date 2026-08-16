@@ -198,9 +198,22 @@ public class ECS
         return null;
     }
 
-    // Returns inputs of type T for the given tick, or CurrentSimulationTick if omitted.
+    // Returns inputs of type T for the given tick, or CurrentSimulationTick if omitted. Every
+    // input whose ClientId belongs to an eliminated player (see PlayerEliminationSystem/
+    // PlayerEliminationQuery) is silently dropped here — the single chokepoint every input-
+    // consuming system already reads through, so this covers every current and future input
+    // type with no per-system changes. Applies identically on the authoritative ECS (this
+    // instance's own PlayerComponent store is the authoritative one) and on each client's own
+    // ClientLocalECS (its own, locally-predicted copy — see PlayerComponent.IsEliminated's own
+    // doc comment for why that stays correct even for a late-observing client).
     public List<T> GetInputsForTick<T>(ulong? tick = null) where T : InputBase
-        => InputBuffer.GetInputsForTick<T>(tick ?? CurrentSimulationTick);
+    {
+        List<T> inputs = InputBuffer.GetInputsForTick<T>(tick ?? CurrentSimulationTick);
+        if (inputs == null || inputs.Count == 0) return inputs;
+
+        inputs.RemoveAll(input => PlayerEliminationQuery.IsEliminated(this, input.ClientId));
+        return inputs;
+    }
 
     // Resets all entity and component state. Delta buffers are unaffected (harmless on local ECS).
     public void Clear()

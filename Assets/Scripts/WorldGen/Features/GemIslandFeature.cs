@@ -63,6 +63,14 @@ public class GemIslandFeature : WorldGenFeature
 
     private GameObject[] _bridgePrefabs;
 
+    // Every gem island this feature successfully placed — read by IslandObstacleFeature (via
+    // GetPreviousFeature) so it knows gem islands are eligible for scattered mountain
+    // obstacle patches too, alongside IslandBridgeFeature.WaypointIslands/
+    // WedgeIslandFeature.PlacedIslands.
+    public IReadOnlyList<IslandPlacementHelper.PlacedIsland> PlacedIslands { get; private set; } = new List<IslandPlacementHelper.PlacedIsland>();
+
+    private readonly List<IslandPlacementHelper.PlacedIsland> _placedIslands = new List<IslandPlacementHelper.PlacedIsland>();
+
     public override void Generate(WorldGenHandler handler)
     {
         var basesFeature = handler.GetPreviousFeature<IslandPlayerBaseFeature>();
@@ -120,11 +128,14 @@ public class GemIslandFeature : WorldGenFeature
             IslandPlacementHelper.PlacedIsland? placed = PlaceClearOfMid(handler, prefab, rotatedFootprint, facingDegrees, mapCenter, direction, worldSize);
             if (!placed.HasValue) continue;
 
+            _placedIslands.Add(placed.Value);
             ConnectToMid(handler, placed.Value, mid, worldSize);
 
             int entityCount = i < smallClusterCount ? SmallClusterEntityCount : LargeClusterEntityCount;
             PlaceGemCluster(handler, placed.Value, entityCount, maxCoord);
         }
+
+        PlacedIslands = _placedIslands;
     }
 
     private GameObject[] ResolveBridgePrefabs()
@@ -208,7 +219,7 @@ public class GemIslandFeature : WorldGenFeature
                 allowOverlapFallback: true, out BridgeConnectionBuilder.BridgeCandidate chosen))
             return;
 
-        BridgeConnectionBuilder.Commit(handler, chosen, bridgePrefab, segmentInfo, BridgePaddingTiles, worldSize);
+        BridgeConnectionBuilder.Commit(handler, chosen, bridgePrefab, segmentInfo, BridgePaddingTiles, worldSize, island.RegionId, mid.RegionId);
     }
 
     private void PlaceGemCluster(WorldGenHandler handler, IslandPlacementHelper.PlacedIsland island, int entityCount, float maxCoord)

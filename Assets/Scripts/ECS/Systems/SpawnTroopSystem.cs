@@ -23,7 +23,7 @@ public static class SpawnTroopSystem
 
     // 4x — explicit design ask (matches every card's own DetectionRangeMultiplier/
     // ChaseRangeMultiplier bump).
-    private const float DefaultDetectionRangeMultiplier = 12f;
+    private const float DefaultDetectionRangeMultiplier = 3f;
     private const float DefaultChaseRangeMultiplier = 20f;
     private const float DefaultAttackRangeMultiplier = 1.5f;
     private const float DefaultCooldownMultiplier = 3f;

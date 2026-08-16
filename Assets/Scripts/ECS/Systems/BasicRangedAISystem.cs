@@ -58,6 +58,15 @@ public class BasicRangedAISystem : ISystem
     // arriving there is itself the problem when chasing a still-fleeing target.
     private const float NearArrivalRangeRatio = 0.5f;
 
+    // An enemy BUILDING (a real enemy player's structure — see IsEnemyBuilding, not a
+    // neutral resource node, which is also non-physical but isn't what this is about) is
+    // only auto-acquired within this fraction of the troop's own (already much smaller)
+    // DetectionRangeMultiplier-derived radius — explicit design ask: buildings sit still and
+    // don't threaten anything on their own, so an Aggressive-mode troop shouldn't break off
+    // and cross half the map to go pick a fight with one just because it wandered into a
+    // huge detection circle. Enemy TROOPS are unaffected by this — see AcquireTargets.
+    private const float BuildingDetectionRangeFactor = 0.4f;
+
     private readonly List<ulong> _queryBuffer = new List<ulong>();
     private readonly HashSet<ulong> _movedThisTick = new HashSet<ulong>();
     private readonly List<ulong> _clearScratch = new List<ulong>();
@@ -170,7 +179,10 @@ public class BasicRangedAISystem : ISystem
         AIMode mode = GetMode(id);
 
         if (mode != AIMode.Passive && !mov.playerDestinationSet)
-            AcquireTargets(id, troop.OwnerPlayerId, myPos, range * ai.DetectionRangeMultiplier);
+        {
+            float detectionRange = range * ai.DetectionRangeMultiplier;
+            AcquireTargets(id, troop.OwnerPlayerId, myPos, detectionRange, detectionRange * BuildingDetectionRangeFactor);
+        }
 
         ulong activeTarget;
         if (mode == AIMode.Aggressive)
@@ -299,7 +311,10 @@ public class BasicRangedAISystem : ISystem
         _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
     }
 
-    private void AcquireTargets(ulong id, ushort myOwnerId, Vector2 myPos, float detectionRange)
+    // detectionRange gates every candidate (the query radius itself); buildingDetectionRange
+    // additionally gates one that turns out to be an enemy BUILDING (see IsEnemyBuilding) —
+    // always <= detectionRange, so the single ChunkTracker query above already covers both.
+    private void AcquireTargets(ulong id, ushort myOwnerId, Vector2 myPos, float detectionRange, float buildingDetectionRange)
     {
         _queryBuffer.Clear();
         _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, detectionRange, _queryBuffer);
@@ -308,6 +323,7 @@ public class BasicRangedAISystem : ISystem
         {
             if (candidateId == id) continue;
             if (!IsEnemy(candidateId, myOwnerId)) continue;
+            if (IsEnemyBuilding(candidateId) && DistanceTo(candidateId, myPos) > buildingDetectionRange) continue;
             _targeting.SetAutomaticTarget(id, candidateId);
         }
     }
@@ -320,6 +336,16 @@ public class BasicRangedAISystem : ISystem
         TroopComponent other = _troopStore.GetComponent(entityId);
         if (other.OwnerPlayerId == myOwnerId) return false;
         return ActivationQuery.IsActivated(_ecs, entityId);
+    }
+
+    // A real enemy PLAYER's building — as opposed to a neutral resource node (tree/rock/ore/
+    // gem/soulstone), which also has IsPhysicalTroop false but isn't owned by anyone and
+    // isn't what "shorter aggro range for buildings" is about. entityId reaching here is
+    // already confirmed non-owned-by-me and a valid IsEnemy candidate.
+    private bool IsEnemyBuilding(ulong entityId)
+    {
+        TroopComponent other = _troopStore.GetComponent(entityId);
+        return !other.IsPhysicalTroop && other.OwnerPlayerId != TroopComponent.NEUTRAL_OWNER_PLAYER_ID;
     }
 
     // A target is still worth chasing/attacking if it still exists, still has a

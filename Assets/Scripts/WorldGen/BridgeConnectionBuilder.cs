@@ -116,9 +116,14 @@ public static class BridgeConnectionBuilder
     // BridgeSegmentSpawnAction per BridgeSegmentFootprint.SegmentLength step along it —
     // chaining a straight modular prefab along a sampled curve rather than deforming its
     // mesh. Call only once TryFindConnection has actually returned true for this candidate.
-    public static void Commit(WorldGenHandler handler, BridgeCandidate chosen, GameObject prefab, BridgeSegmentFootprint segmentInfo, float paddingTiles, ushort worldSize)
+    // islandARegionId/islandBRegionId (see IslandPlacementHelper.PlacedIsland.RegionId) are
+    // the two islands this connection joins — registered as a new bridge region in the
+    // coarse island graph (see IslandGraphBuilder.BeginBridge) before its tiles are tagged.
+    public static void Commit(WorldGenHandler handler, BridgeCandidate chosen, GameObject prefab, BridgeSegmentFootprint segmentInfo, float paddingTiles, ushort worldSize,
+        int islandARegionId, int islandBRegionId)
     {
-        StampTiles(handler, chosen, segmentInfo.SegmentWidth, paddingTiles, worldSize);
+        int bridgeRegionId = handler.IslandGraph.BeginBridge(islandARegionId, islandBRegionId, (chosen.Start + chosen.End) * 0.5f, chosen.Length);
+        StampTiles(handler, chosen, segmentInfo.SegmentWidth, paddingTiles, worldSize, bridgeRegionId);
         PlaceSegments(handler, chosen, prefab, segmentInfo, paddingTiles, worldSize);
     }
 
@@ -198,12 +203,13 @@ public static class BridgeConnectionBuilder
     // effect, but the padded overshoot into each island's own footprint (see PaddedTRange)
     // would otherwise visibly bite a strip of Bridge color into what should read as solid
     // island on a minimap that colors tiles by type.
-    private static void StampTiles(WorldGenHandler handler, BridgeCandidate curve, float width, float paddingTiles, ushort worldSize)
+    private static void StampTiles(WorldGenHandler handler, BridgeCandidate curve, float width, float paddingTiles, ushort worldSize, int regionId)
     {
         foreach ((int tx, int ty) in IterateCurveTiles(curve, width, paddingTiles, worldSize))
         {
             if (handler.GetTileType((ushort)tx, (ushort)ty) == TileType.Island) continue;
             handler.SetTileType((ushort)tx, (ushort)ty, TileType.Bridge);
+            handler.IslandGraph.MarkTile(regionId, tx, ty);
         }
     }
 

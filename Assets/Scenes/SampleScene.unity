@@ -1874,6 +1874,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d01920675677b3842891ff4c8bab96ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoverEventForwarder
+--- !u!1 &172762312
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 338661033}
+  - component: {fileID: 527467852}
+  m_Layer: 0
+  m_Name: RecallProgressManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &172801064
 GameObject:
   m_ObjectHideFlags: 0
@@ -3461,6 +3478,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d01920675677b3842891ff4c8bab96ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoverEventForwarder
+--- !u!4 &338661033
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172762312}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1889187866}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &340632595
 GameObject:
   m_ObjectHideFlags: 0
@@ -5534,6 +5566,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AreaEffectRadiusModifierRenderer
   _prefab: {fileID: 7953956060509625171, guid: 5a0e202aa5170d54691d485b5040a859, type: 3}
   _heightOffset: 0.01
+--- !u!114 &527467852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172762312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56537bd45fbd45b19bd178066516b07d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecallProgressIndicatorManager
+  _indicatorPrefab: {fileID: 1685226708195409191, guid: 610aa88f647940819d8a8a0dd70112d8, type: 3}
 --- !u!1 &529117641
 GameObject:
   m_ObjectHideFlags: 0
@@ -6473,6 +6518,60 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &639872972
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 639872973}
+  - component: {fileID: 639872974}
+  m_Layer: 0
+  m_Name: GoldCrateRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &639872973
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639872972}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &639872974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639872972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca7dba02c032810449824a90d3770060, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RespawnableBuildingRenderer
+  _alivePrefab: {fileID: 9030713940054835064, guid: abe04b531c6be6144bfa32874e8aab91, type: 3}
+  _respawningPrefab: {fileID: 9030713940054835064, guid: 29ee68eeb2c2f3b46b3b182c997a8683, type: 3}
+  _aliveVariants: []
+  _respawningVariants: []
+  _randomRotation: 1
+  _minScale: 0.9
+  _maxScale: 1.1
+  _takeDamageSoundName: WoodTakeDamage
+  _diedSoundName: DefaultDeath
+  _respawnedSoundName: Revive
 --- !u!1 &647002437
 GameObject:
   m_ObjectHideFlags: 0
@@ -7456,6 +7555,8 @@ MonoBehaviour:
     renderer: {fileID: 1389977677}
   - type: 52
     renderer: {fileID: 1214863063}
+  - type: 53
+    renderer: {fileID: 639872974}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -12936,51 +13037,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeployProgressIndicatorManager
   _indicatorPrefab: {fileID: 1685226708195409191, guid: 658b0017df8b25a4692a6e552dcbb0d6, type: 3}
---- !u!1 &172762312
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 338661033}
-  - component: {fileID: 527467852}
-  m_Layer: 0
-  m_Name: RecallProgressManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &338661033
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 172762312}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1889187866}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &527467852
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 172762312}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56537bd45fbd45b19bd178066516b07d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::RecallProgressIndicatorManager
-  _indicatorPrefab: {fileID: 1685226708195409191, guid: 610aa88f647940819d8a8a0dd70112d8, type: 3}
 --- !u!1 &1143649049
 GameObject:
   m_ObjectHideFlags: 0
@@ -16496,6 +16552,7 @@ Transform:
   - {fileID: 893038368}
   - {fileID: 1822299834}
   - {fileID: 1439762914}
+  - {fileID: 639872973}
   - {fileID: 868344196}
   - {fileID: 1661341881}
   - {fileID: 251304929}
@@ -23368,6 +23425,7 @@ Transform:
   - {fileID: 782628376}
   - {fileID: 942132773}
   - {fileID: 862506986}
+  - {fileID: 338661033}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1890897681

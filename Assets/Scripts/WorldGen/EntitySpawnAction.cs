@@ -56,7 +56,15 @@ public class EntitySpawnAction : IWorldGenAction
     private const float GemBlockRadius    = 1f;
     private const float GemRespawnSeconds = 3f * 60f + 30f; // 3:30
     private const float GemSelectionScale = 2f;
-    private const int   GemDropAmount     = 6; // explicit design ask
+    private const int   GemDropAmount     = 8; // +35% (explicit design ask) from 6
+
+    // Neutral gold crate (see GoldCrateFeature) — spawned alive (like Tree/Rock/Ore/Gem, not
+    // dead-on-spawn like Soulstone), respawning in place after RespawnCooldown.
+    private const int   GoldCrateMaxHealth      = 200;
+    private const float GoldCrateBlockRadius    = 1f;
+    private const float GoldCrateRespawnSeconds = 6f * 60f; // explicit design ask
+    private const float GoldCrateSelectionScale = 2f;
+    private const int   GoldCrateGoldAmount     = 35; // explicit design ask
 
     public float X;
     public float Y;
@@ -84,7 +92,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Wood = 7, // cut by 45% (explicit design ask) from 12
+            Wood = 9, // +35% (explicit design ask) from 7
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -120,7 +128,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = RockBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Stone = 7, // cut by 45% (explicit design ask) from 12
+            Stone = 9, // +35% (explicit design ask) from 7
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -156,7 +164,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = OreBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Metal = 7, // cut by 45% (explicit design ask) from 12
+            Metal = 9, // +35% (explicit design ask) from 7
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -252,6 +260,38 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(GemRespawnSeconds),
+            ShowTimer = true,
+        });
+    };
+
+    // Neutral gold crate (see GoldCrateFeature): spawns alive/instantly-lootable (active on
+    // the first tick, same as Tree/Rock/Ore/Gem), then respawns in place
+    // GoldCrateRespawnSeconds after being destroyed. Drops a flat Gold amount to whichever
+    // player's troop lands the killing blow.
+    public static readonly Action<ulong, ECS> SpawnGoldCrate = (id, ecs) =>
+    {
+        ecs.AddComponent(id, new TroopComponent
+        {
+            OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            IsPhysicalTroop = false,
+        });
+        ecs.AddComponent(id, new ActivatableComponent
+        {
+            _ticksUntilActive       = 1,
+            InitialTicksUntilActive = 1,
+        });
+        ecs.AddComponent(id, new RenderableComponent { Type = RenderableType.GoldCrate });
+        ecs.AddComponent(id, new SelectableComponent { OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID, Scale = GoldCrateSelectionScale });
+        ecs.AddComponent(id, new StatsComponent { MaxHealth = GoldCrateMaxHealth });
+        ecs.AddComponent(id, new HealthComponent { CurrentHealth = GoldCrateMaxHealth });
+        ecs.AddComponent(id, new BuildingComponent { BlockRadius = GoldCrateBlockRadius, CardPlayRangeMultiplier = 1f });
+        ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
+        {
+            Gold = GoldCrateGoldAmount,
+        } } );
+        ecs.AddComponent(id, new RespawnableInPlaceComponent
+        {
+            CooldownTicks = (ulong)TickManager.SecondsToTicks(GoldCrateRespawnSeconds),
             ShowTimer = true,
         });
     };

@@ -22,8 +22,6 @@ public static class Pathfinding
         if (navMeshHandler == null)
             return null;
 
-        _currentPathfindingIteration++;
-
         // convert world coordinates to tile coordinates with floor
         ushort tileX = (ushort)Mathf.FloorToInt(worldX);
         ushort tileY = (ushort)Mathf.FloorToInt(worldY);
@@ -40,7 +38,47 @@ public static class Pathfinding
         if (startNode == null || endNode == null)
             return null;
 
+        Vector2 startPos = new Vector2(worldX, worldY);
         Vector2 goalPos = new Vector2(desX, desY);
+
+        // Hierarchical first pass: islands/bridges form a coarse graph (see
+        // IslandGraphBuilder) built alongside them at world-gen time. A cheap Dijkstra over
+        // that handful of regions (see NavMeshHandler.TryGetRegionCorridor) picks out which
+        // islands/bridges the trip actually needs to cross, so the expensive fine-grained
+        // NavMeshNode search below only has to consider nodes belonging to one of them
+        // instead of every node on the entire map — the more islands a map has, the more
+        // this prunes away. Skipped for the overwhelmingly common case of moving around
+        // within a single island (same region, or either endpoint has no region at all —
+        // e.g. a legacy/non-island map), where it wouldn't narrow anything down anyway.
+        //
+        // The corridor is only ever a performance hint, never a correctness requirement: if
+        // node tagging is imprecise at some region boundary (see NavMeshNode.RegionId) and
+        // the restricted search fails to actually reach the goal, this falls back to a fully
+        // unrestricted search rather than incorrectly reporting the destination unreachable.
+        int startRegion = navMeshHandler.GetTileRegionId(tileX, tileY);
+        int endRegion = navMeshHandler.GetTileRegionId(desTileX, desTileY);
+
+        if (startRegion >= 0 && endRegion >= 0 && startRegion != endRegion &&
+            navMeshHandler.TryGetRegionCorridor(startRegion, endRegion, out HashSet<int> corridor))
+        {
+            List<NavMeshNode> restricted = RunSearch(navMeshHandler, startNode, endNode, startPos, goalPos, corridor);
+            if (restricted != null)
+                return restricted;
+        }
+
+        return RunSearch(navMeshHandler, startNode, endNode, startPos, goalPos, null);
+    }
+
+    // Runs one full A* search from startNode to endNode. When allowedRegions is non-null,
+    // expansion never crosses into a node tagged with a region outside that set (except
+    // endNode itself, always allowed regardless of its own tag — see the region-corridor
+    // comment above) — this is the ONLY difference between the hierarchical first attempt
+    // and the unrestricted fallback in PathFindNavMesh, so both go through exactly the same
+    // well-tested search/tie-breaking/funnel-input logic.
+    private static List<NavMeshNode> RunSearch(NavMeshHandler navMeshHandler, NavMeshNode startNode, NavMeshNode endNode,
+        Vector2 startPos, Vector2 goalPos, HashSet<int> allowedRegions)
+    {
+        _currentPathfindingIteration++;
 
         // Closest point on the portal segment to the goal, rather than always the
         // portal's midpoint. A wide doorway crossed dead-center forces a detour when
@@ -72,7 +110,7 @@ public static class Pathfinding
         startNode.EnsurePathFindingIterationCorrectness(_currentPathfindingIteration);
         startNode.gCost = 0f;
         startNode.fCost = 0f;
-        startNode.entryPoint = new Vector2(worldX, worldY);
+        startNode.entryPoint = startPos;
         nodes.Enqueue((startNode.fCost, startNode));
 
         // Safety valve: with well-behaved (non-negative, strictly-relaxed) edges this loop
@@ -132,6 +170,15 @@ public static class Pathfinding
             foreach (NeighborInfo neighborInfo in current.Neighbors)
             {
                 NavMeshNode neighborNode = neighborInfo.node;
+
+                // Outside the hierarchical corridor for this search — never expanded into,
+                // regardless of cost. endNode itself is always allowed even if its own
+                // (approximate, origin-tile-based — see NavMeshNode.RegionId) region tag
+                // doesn't match, since PathFindNavMesh already resolved the corridor from
+                // the exact destination TILE's region, not this node's.
+                if (allowedRegions != null && neighborNode != endNode && !allowedRegions.Contains(neighborNode.RegionId))
+                    continue;
+
                 neighborNode.EnsurePathFindingIterationCorrectness(_currentPathfindingIteration);
 
                 Vector2 crossingPoint = ClosestPointOnPortal(neighborInfo);

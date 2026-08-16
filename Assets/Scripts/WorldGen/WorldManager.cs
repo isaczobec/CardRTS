@@ -153,7 +153,7 @@ public class WorldManager : Singleton<WorldManager>
         BuildTileSettingsLookup();
         SetupWorldGen(Handler);
         Handler.Generate();
-        NavMeshHandler.instance.CreateNavMesh(this);
+        NavMeshHandler.instance.CreateNavMesh(this, Handler.IslandGraph);
         Renderer.Render(Handler);
 
         // Render-side only (see WorldChunkVisibilityManager's own doc comment) — safe to run
@@ -262,6 +262,11 @@ public class WorldManager : Singleton<WorldManager>
         // the bridge/wedge network built below.
         handler.features.Add(new SoulstoneClusterFeature());
 
+        // Neutral gold crates scattered across the mid island, scaled by player count — after
+        // SoulstoneClusterFeature so crates spawn clear of its three nodes (see
+        // GoldCrateFeature.MinDistanceToOtherEntities).
+        handler.features.Add(new GoldCrateFeature());
+
         handler.features.Add(new IslandBridgeFeature
         {
             BridgeTypeName = _mainBridgeTypeName,
@@ -300,6 +305,12 @@ public class WorldManager : Singleton<WorldManager>
             MaxExtraConnections = _wedgeMaxExtraConnections,
             CenterBiasSamples = _wedgeCenterBiasSamples,
         });
+
+        // Mountain obstacle patches scattered across the mid island and every gem/waypoint/
+        // wedge island placed above (never player bases) — after every island/bridge this
+        // needs to know about already exists, and before IslandResourceClusterFeature below so
+        // its tree/stone/ore clusters scatter around the new obstacles instead of through them.
+        handler.features.Add(new IslandObstacleFeature());
 
         // Tree/stone/ore clusters scattered across every ring/spoke waypoint island and wedge
         // filler island placed above — see IslandResourceClusterFeature's own doc comment for

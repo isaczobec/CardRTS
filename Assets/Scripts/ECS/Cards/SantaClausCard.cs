@@ -35,7 +35,7 @@ public class SantaClausCard : SpawnAtPointCard
 
     // 4x every troop's own base value — explicit design ask (see every other card's own
     // DetectionRangeMultiplier/ChaseRangeMultiplier for the same 4x bump).
-    private const float DetectionRangeMultiplier = 12f;
+    private const float DetectionRangeMultiplier = 3f;
     private const float ChaseRangeMultiplier = 20f;
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 2f;
@@ -223,7 +223,7 @@ public class SantaClausCard : SpawnAtPointCard
             // including its own 4x DetectionRangeMultiplier/ChaseRangeMultiplier bump.
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
-                DetectionRangeMultiplier = 48f,
+                DetectionRangeMultiplier = 12f,
                 ChaseRangeMultiplier     = 96f,
                 AttackRangeMultiplier    = 1.5f,
                 CooldownMultiplier       = 2f,
