@@ -268,6 +268,7 @@ public class TickManager : Singleton<TickManager>
         _componentTypeRegistry.Register<AbilityBarComponent>(76);
         _componentTypeRegistry.Register<SpawnedByCardComponent>(77);
         _componentTypeRegistry.Register<RecallingComponent>(78);
+        _componentTypeRegistry.Register<CapturableBuildingComponent>(79);
 
         _inputTypeRegistry.Register<SpawnEntityInput>(0);
         _inputTypeRegistry.Register<MoveInput>(1);
@@ -466,6 +467,8 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<SpawnedByCardComponent>>(177);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<RecallingComponent>>(178);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<RecallingComponent>>(179);
+        _flagEventTypeRegistry.Register<ComponentAddedEvent<CapturableBuildingComponent>>(180);
+        _flagEventTypeRegistry.Register<ComponentRemovedEvent<CapturableBuildingComponent>>(181);
 
         ECS = CreateSimulationECS();
     }
@@ -755,6 +758,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CripplingStrikesSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<SpawnedByCardComponent>());
         ecs.AddComponentStore(new ComponentStore<RecallingComponent>());
+        ecs.AddComponentStore(new ComponentStore<CapturableBuildingComponent>());
         // ecs.RegisterSystem(SpawnEntitySystem.Instance);
         ecs.RegisterSystem(SpawnTroopSystem.Instance);
         ecs.RegisterSystem(ActivationSystem.Instance);
@@ -852,6 +856,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(RespawnCooldownRampSystem.Instance);
         ecs.RegisterSystem(OnDeathResourceDropSystem.Instance);
         ecs.RegisterSystem(PlayerEliminationSystem.Instance);
+        ecs.RegisterSystem(CapturableBuildingSystem.Instance);
         ecs.RegisterSystem(ResourceProductionOnDeathSystem.Instance);
         ecs.RegisterSystem(OnKillScheduleSystem.Instance);
         ecs.RegisterSystem(OnHitScheduleSystem.Instance);
@@ -973,6 +978,7 @@ public class TickManager : Singleton<TickManager>
         ecs.AddComponentStore(new ComponentStore<CripplingStrikesSourceComponent>());
         ecs.AddComponentStore(new ComponentStore<SpawnedByCardComponent>());
         ecs.AddComponentStore(new ComponentStore<RecallingComponent>());
+        ecs.AddComponentStore(new ComponentStore<CapturableBuildingComponent>());
 
         return ecs;
     }

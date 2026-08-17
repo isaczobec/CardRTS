@@ -296,6 +296,22 @@ public class EntitySpawnAction : IWorldGenAction
         });
     };
 
+    // Neutral capturable objective building (see CapturableBuildingFeature/
+    // CapturableBuildingSystem) — 150 HP, explicit design ask. Unlike every Spawner above,
+    // this one needs a per-placement value (which island it's on — see
+    // CapturableBuildingComponent.IslandRegionId), so it isn't a shared static Action like the
+    // rest; CapturableBuildingFeature builds a small closure per island that calls this
+    // instead, the same shape SkeletonsCard/OrcsCard/EphemeralSkeletonsCard already use to
+    // thread a per-spawn cardEntityId through their own extraComponents lambdas.
+    public const int CapturableBuildingMaxHealth = 150; // explicit design ask
+
+    public static void AddCapturableBuildingComponents(ulong id, ECS ecs, int islandRegionId)
+    {
+        BuildingSpawnHelper.AddBuildingComponents(ecs, id, TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
+            RenderableType.CapturableBuilding, CapturableBuildingMaxHealth, ticksUntilActive: 1);
+        ecs.AddComponent(id, new CapturableBuildingComponent { IslandRegionId = islandRegionId });
+    }
+
     public void Execute(ECS ecs)
     {
         // Server-only: the entity created here is included in the initial ECS snapshot

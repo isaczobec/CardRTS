@@ -24,6 +24,7 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
     private ComponentStore<SelectableComponent> _selectableStore;
     private ComponentStore<PositionComponent> _positionStore;
     private ComponentStore<MovableComponent> _movableStore;
+    private ComponentStore<CapturableBuildingComponent> _capturableStore;
 
     private readonly Dictionary<ulong, RangeIndicatorPrefab> _buildingIndicators = new();
     private readonly Dictionary<ulong, RangeIndicatorPrefab> _troopIndicators = new();
@@ -42,6 +43,7 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
         _selectableStore = _ecs.GetComponentStore<SelectableComponent>();
         _positionStore = _ecs.GetComponentStore<PositionComponent>();
         _movableStore = _ecs.GetComponentStore<MovableComponent>();
+        _capturableStore = _ecs.GetComponentStore<CapturableBuildingComponent>();
     }
 
     void Update()
@@ -57,7 +59,13 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
             ulong buildingId = kvp.Key;
             RangeIndicatorPrefab indicator = kvp.Value;
 
-            if (!showBuildings || !_buildingStore.HasComponent(buildingId))
+            // Re-checked live every frame, not just once at setup — a CapturableBuildingComponent
+            // building's owner can change mid-match (see SetupBuildingIndicator's own doc
+            // comment); for every other building this is always true once true, so the extra
+            // check is a no-op for them.
+            bool isMine = _selectableStore.HasComponent(buildingId) && _selectableStore.GetComponent(buildingId).OwnerPlayerId == LocalPlayerId();
+
+            if (!showBuildings || !isMine || !_buildingStore.HasComponent(buildingId))
             {
                 indicator.gameObject.SetActive(false);
                 continue;
@@ -113,7 +121,15 @@ public class CardRangeIndicatorManager : Singleton<CardRangeIndicatorManager>
         if (_buildingIndicators.ContainsKey(entityId)) return;
         if (_buildingStore == null || !_buildingStore.HasComponent(entityId)) return;
         if (_selectableStore == null || !_selectableStore.HasComponent(entityId)) return;
-        if (_selectableStore.GetComponent(entityId).OwnerPlayerId != LocalPlayerId()) return;
+
+        // A CapturableBuildingComponent building's owner can change later (see
+        // CapturableBuildingSystem's instant-capture-on-death) — it's tracked regardless of
+        // who owns it right now, with the live check in Update() deciding visibility every
+        // frame instead. Every other building's ownership is fixed for life, so skipping one
+        // that isn't currently mine here (never revisited later) remains correct for them.
+        bool isCapturable = _capturableStore != null && _capturableStore.HasComponent(entityId);
+        if (!isCapturable && _selectableStore.GetComponent(entityId).OwnerPlayerId != LocalPlayerId()) return;
+
         if (_positionStore == null || !_positionStore.HasComponent(entityId)) return;
         if (_indicatorPrefab == null) return;
 

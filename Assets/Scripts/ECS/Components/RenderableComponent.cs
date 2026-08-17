@@ -62,6 +62,13 @@ public enum RenderableType : byte
     // renderer (e.g. RespawnableBuildingRenderer, same as the SoulstoneNode/Gem entries) with
     // its own crate prefab in the Inspector.
     GoldCrate = 53,
+    // Capturable objective building (see EntitySpawnAction.AddCapturableBuildingComponents/
+    // CapturableBuildingFeature/CapturableBuildingSystem) — register a renderer with its own
+    // prefab in the Inspector. TroopComponent/SelectableComponent.OwnerPlayerId flips from
+    // neutral to whoever captures it, read live (not cached) by every ownership-aware
+    // renderer/UI element already in the codebase, so the neutral -> owned transition needs
+    // no special-casing on the rendering side.
+    CapturableBuilding = 54,
 }
 
 public struct RenderableComponent : IComponent

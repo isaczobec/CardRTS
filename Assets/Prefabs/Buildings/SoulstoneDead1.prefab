@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4173034768692982964}
   m_Layer: 0
-  m_Name: Soulstone
+  m_Name: SoulstoneDead1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -102,7 +102,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 4414797eac187294a96ca6395fc0b030, type: 2}
+  - {fileID: 2100000, guid: aee6fbfd3a68d3b4d928a32ebdfcc466, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -211,7 +211,7 @@ PrefabInstance:
     - target: {fileID: 2300000, guid: 00a5cbcfb1094154887b3093afb2b508, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4414797eac187294a96ca6395fc0b030, type: 2}
+      objectReference: {fileID: 2100000, guid: aee6fbfd3a68d3b4d928a32ebdfcc466, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -293,7 +293,7 @@ PrefabInstance:
     - target: {fileID: 2300000, guid: 29005a846b22b4449962bc27e77ef924, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4414797eac187294a96ca6395fc0b030, type: 2}
+      objectReference: {fileID: 2100000, guid: aee6fbfd3a68d3b4d928a32ebdfcc466, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -375,7 +375,7 @@ PrefabInstance:
     - target: {fileID: 2300000, guid: 00a5cbcfb1094154887b3093afb2b508, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4414797eac187294a96ca6395fc0b030, type: 2}
+      objectReference: {fileID: 2100000, guid: aee6fbfd3a68d3b4d928a32ebdfcc466, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

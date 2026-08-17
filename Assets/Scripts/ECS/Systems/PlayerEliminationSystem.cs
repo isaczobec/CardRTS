@@ -62,14 +62,26 @@ public static class PlayerEliminationSystem
         // deliberately excluded — DeathRequest.Execute deletes it right after this callback
         // returns (see ecs.NotifyRequestExecuted's own ordering), so deleting it a second time
         // here would just log a harmless-but-noisy "entity did not exist" error.
+        //
+        // A captured CapturableBuildingComponent building is excluded from deletion too —
+        // otherwise the map's total supply of capturable objectives would permanently shrink
+        // every time a player got eliminated. It reverts to neutral (full health) instead, via
+        // RevertCapturedBuildingsToNeutral below, so it stays up for grabs for whoever's left.
+        ComponentStore<CapturableBuildingComponent> capturableStore = ecs.GetComponentStore<CapturableBuildingComponent>();
+
         var toDelete = new List<ulong>();
         troopStore.ForEach((ulong id) =>
         {
             if (id == dyingBaseEntityId) return;
-            if (troopStore.GetComponent(id).OwnerPlayerId == playerId) toDelete.Add(id);
+            if (troopStore.GetComponent(id).OwnerPlayerId != playerId) return;
+            if (capturableStore != null && capturableStore.HasComponent(id)) return;
+            toDelete.Add(id);
         });
         foreach (ulong id in toDelete)
             ecs.DeleteEntity(id);
+
+        if (capturableStore != null)
+            RevertCapturedBuildingsToNeutral(ecs, playerId, capturableStore, troopStore);
 
         // TornadoProjectileComponent carries its own OwnerPlayerId directly (it isn't a troop
         // — a one-off spell-effect hitbox, see that component's own doc comment) so it needs
@@ -84,6 +96,43 @@ public static class PlayerEliminationSystem
             });
             foreach (ulong id in toDeleteTornadoes)
                 ecs.DeleteEntity(id);
+        }
+    }
+
+    // Resets every capturable building this eliminated player still owned back to neutral,
+    // full health — the same "revert to neutral" shape CapturableBuildingSystem.OnDeathExecuted
+    // uses for a plain combat capture, just triggered by the owner's elimination instead of the
+    // building's own death.
+    private static void RevertCapturedBuildingsToNeutral(ECS ecs, ushort playerId,
+        ComponentStore<CapturableBuildingComponent> capturableStore, ComponentStore<TroopComponent> troopStore)
+    {
+        ComponentStore<SelectableComponent> selectableStore = ecs.GetComponentStore<SelectableComponent>();
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        ComponentStore<StatsComponent> statsStore = ecs.GetComponentStore<StatsComponent>();
+        if (selectableStore == null || healthStore == null || statsStore == null) return;
+
+        var toRevert = new List<ulong>();
+        capturableStore.ForEach((ulong id) =>
+        {
+            if (troopStore.HasComponent(id) && troopStore.GetComponent(id).OwnerPlayerId == playerId)
+                toRevert.Add(id);
+        });
+
+        foreach (ulong id in toRevert)
+        {
+            if (!selectableStore.HasComponent(id) || !healthStore.HasComponent(id) || !statsStore.HasComponent(id)) continue;
+
+            ref TroopComponent troop = ref troopStore.GetComponent(id);
+            troop.OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID;
+            ecs.Delta.MarkComponentDirty(id, typeof(TroopComponent));
+
+            ref SelectableComponent selectable = ref selectableStore.GetComponent(id);
+            selectable.OwnerPlayerId = TroopComponent.NEUTRAL_OWNER_PLAYER_ID;
+            ecs.Delta.MarkComponentDirty(id, typeof(SelectableComponent));
+
+            ref HealthComponent health = ref healthStore.GetComponent(id);
+            health.CurrentHealth = statsStore.GetComponent(id).MaxHealth;
+            ecs.Delta.MarkComponentDirty(id, typeof(HealthComponent));
         }
     }
 }

@@ -194,6 +194,28 @@ public class NavMeshHandler : Singleton<NavMeshHandler>
     // tile itself was never stamped as part of any island/bridge.
     public int GetTileRegionId(ushort x, ushort y) => _islandGraph?.GetRegionId(x, y) ?? -1;
 
+    // Every island region one bridge hop away from islandRegionId — every neighbor of an
+    // island region in the coarse graph is itself a bridge region (islands are never wired
+    // directly to each other, only island<->bridge<->island — see IslandGraphBuilder.
+    // BeginBridge), so this walks out one extra hop through each such bridge to land back on
+    // solid ground. Empty if there's no island graph for this world, or islandRegionId has no
+    // registered adjacency at all. Used by CapturableBuildingQuery for its "adjacent capturable
+    // building" / "adjacent to a player's base" rules — the same notion of "one hop apart" the
+    // hierarchical pathfinding corridor below is built from.
+    public IEnumerable<int> GetAdjacentIslandRegions(int islandRegionId)
+    {
+        if (_islandGraph == null) yield break;
+        if (!_islandGraph.Adjacency.TryGetValue(islandRegionId, out List<(int neighbor, float cost)> bridgeNeighbors)) yield break;
+
+        foreach ((int bridgeRegionId, float _) in bridgeNeighbors)
+        {
+            if (!_islandGraph.Adjacency.TryGetValue(bridgeRegionId, out List<(int neighbor, float cost)> islandNeighbors)) continue;
+            foreach ((int otherIslandId, float _2) in islandNeighbors)
+                if (otherIslandId != islandRegionId)
+                    yield return otherIslandId;
+        }
+    }
+
     // Cheap Dijkstra over the coarse island/bridge region graph (see IslandGraphBuilder) —
     // typically a few dozen regions even on a large map, several orders of magnitude smaller
     // than the fine NavMeshNode graph it's meant to prune. Returns false (corridor left null)

@@ -228,7 +228,7 @@ public class BasicMeleeAISystem : ISystem
         // run and clear it, permanently stranding the troop chasing a target it was told to
         // abandon (with no targeting indicator, since _targets really is empty).
         if (activeTarget == 0 && !mov.playerDestinationSet && !_movedThisTick.Contains(id)
-            && ai.LastPathTargetId != 0 && IsValidTarget(ai.LastPathTargetId))
+            && ai.LastPathTargetId != 0 && IsValidTarget(ai.LastPathTargetId, troop.OwnerPlayerId))
             activeTarget = ai.LastPathTargetId;
 
         if (activeTarget == 0)
@@ -291,8 +291,9 @@ public class BasicMeleeAISystem : ISystem
         // Finishing the attack (landing the hit) needs its own CanPerform check — a
         // silence landing mid-windup should whiff the swing, same as the target having
         // stepped out of range, rather than still connecting because the windup already
-        // started.
-        if (IsValidTarget(targetId) && DistanceTo(targetId, myPos) <= range * ai.AttackRangeMultiplier
+        // started. IsValidTarget's own owner re-check is what makes a mid-windup swing
+        // whiff too if the target got captured onto my own side in the meantime.
+        if (IsValidTarget(targetId, _troopStore.GetComponent(id).OwnerPlayerId) && DistanceTo(targetId, myPos) <= range * ai.AttackRangeMultiplier
             && ActivationQuery.CanPerform(_ecs, id))
         {
             int damage = StatsQuery.GetDamage(_ecs, id, DefaultDamage);
@@ -354,16 +355,28 @@ public class BasicMeleeAISystem : ISystem
     }
 
     // A target is still worth chasing/attacking if it still exists, still has a
-    // position, and (when trackable) isn't dead. Every entityId reaching this is already
-    // guaranteed non-owned (added via IsEnemy's own owner check, or a player's right-click
-    // order — see ShadowCloakSystem.IsCloaked's own doc comment), so a cloaked target can
-    // simply be rejected outright here, same as an IsDead one, with no owner check needed.
-    private bool IsValidTarget(ulong entityId)
+    // position, and (when trackable) isn't dead — and, unlike when it was originally
+    // acquired/assigned, doesn't now share myOwnerId. Every entityId reaching this WAS
+    // guaranteed non-owned at acquisition time (via IsEnemy's own owner check, or a
+    // player's right-click order), but ownership itself used to be fixed for the lifetime
+    // of every entity — the one exception is a CapturableBuildingComponent building (see
+    // CapturableBuildingSystem's instant-capture-on-death), which can flip to MY OWN side
+    // mid-fight without ever dying/being removed. Without this re-check here, a troop
+    // already mid-windup, mid-cooldown-chase, or holding a stale LastPathTargetId against
+    // one at the moment it's captured would keep right on attacking its own new building —
+    // a fresh targeting attempt already correctly refuses via IsEnemy, but nothing
+    // previously re-validated an ALREADY-held target against a later ownership change.
+    private bool IsValidTarget(ulong entityId, ushort myOwnerId)
     {
         if (!_ecs.HasEntity(entityId)) return false;
         if (!_posStore.HasComponent(entityId)) return false;
         if (_healthStore.HasComponent(entityId) && _healthStore.GetComponent(entityId).CurrentHealth <= 0) return false;
-        if (_troopStore.HasComponent(entityId) && _troopStore.GetComponent(entityId).IsDead) return false;
+        if (_troopStore.HasComponent(entityId))
+        {
+            TroopComponent target = _troopStore.GetComponent(entityId);
+            if (target.IsDead) return false;
+            if (target.OwnerPlayerId == myOwnerId) return false;
+        }
         if (ShadowCloakSystem.IsCloaked(_ecs, entityId, out _)) return false;
         return true;
     }
@@ -376,11 +389,14 @@ public class BasicMeleeAISystem : ISystem
     {
         ulong bestId = 0;
         float bestDist = float.MaxValue;
+        ushort myOwnerId = _troopStore.HasComponent(friendlyId)
+            ? _troopStore.GetComponent(friendlyId).OwnerPlayerId
+            : TroopComponent.NEUTRAL_OWNER_PLAYER_ID;
 
         foreach (ulong targetId in _targeting.GetTargets(friendlyId))
         {
             if (_targeting.GetTargetKind(friendlyId, targetId) != kind) continue;
-            if (!IsValidTarget(targetId)) continue;
+            if (!IsValidTarget(targetId, myOwnerId)) continue;
             if (neutralOnly.HasValue && IsNeutralTarget(targetId) != neutralOnly.Value) continue;
 
             float dist = DistanceTo(targetId, myPos);
@@ -546,7 +562,7 @@ public class BasicMeleeAISystem : ISystem
     private void ChaseWhileOnCooldown(ulong id, ref BasicMeleeAIComponent ai, ref MovableComponent mov, Vector2 myPos)
     {
         ulong targetId = ai.CooldownTargetId;
-        if (targetId == 0 || !IsValidTarget(targetId))
+        if (targetId == 0 || !IsValidTarget(targetId, _troopStore.GetComponent(id).OwnerPlayerId))
         {
             if (targetId != 0)
             {

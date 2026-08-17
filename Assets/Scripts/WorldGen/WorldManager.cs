@@ -280,6 +280,10 @@ public class WorldManager : Singleton<WorldManager>
             BridgePaddingTiles = _bridgePaddingTiles,
         });
 
+        // Neutral capturable objective building on every ring/spoke waypoint island placed
+        // above — see CapturableBuildingFeature/CapturableBuildingSystem.
+        handler.features.Add(new CapturableBuildingFeature());
+
         // One gem-deposit island per base, close to the mid island and bridged to it — must run
         // after IslandBridgeFeature (so the guaranteed ring/spoke network claims its space
         // first) and before WedgeIslandFeature (so wedge filler islands correctly route around
