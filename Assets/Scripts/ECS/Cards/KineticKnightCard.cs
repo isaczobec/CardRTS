@@ -20,10 +20,11 @@ public class KineticKnightCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 60% more than BasicMeleeTroopCard.MaxHealth (250) — explicit design ask.
-    private const int MaxHealth = 400;
-    // 40% more than BasicMeleeTroopCard.Damage (34), rounded — explicit design ask.
-    private const int Damage = 48;
+    // Flat 320 HP — explicit design ask (previously 400, derived as 60% more than
+    // BasicMeleeTroopCard.MaxHealth of 250; no longer scaled off that baseline).
+    private const int MaxHealth = 320;
+    // -25% (explicit design ask) from the prior balance pass's 48.
+    private const int Damage = 36;
 
     // Unchanged from BasicMeleeTroopCard.
     private const float DetectionRangeMultiplier = 12f;

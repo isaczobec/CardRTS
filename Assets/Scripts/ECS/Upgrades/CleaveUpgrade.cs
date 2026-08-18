@@ -8,7 +8,8 @@ using System;
 public class CleaveUpgrade : CardUpgrade
 {
     private const float SplashRatio = 0.3f;
-    private const float SplashRadius = 7f;
+    // +65% (explicit design ask) from 7.
+    private const float SplashRadius = 11.55f;
 
     public override UpgradeType Type => UpgradeType.Cleave;
     public override string Title => "Cleave";

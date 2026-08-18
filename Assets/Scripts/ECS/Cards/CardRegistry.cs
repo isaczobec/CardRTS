@@ -43,6 +43,7 @@ public static class CardRegistry
         { CardType.Orcs, new OrcsCard() },
         { CardType.KineticKnight, new KineticKnightCard() },
         { CardType.Slowness, new SlownessCard() },
+        { CardType.PurpleWizard, new PurpleWizardCard() },
     };
 
     public static bool TryGet(CardType type, out Card card) => _cards.TryGetValue(type, out card);

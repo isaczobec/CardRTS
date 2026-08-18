@@ -27,6 +27,10 @@ public static class ProjectileOnHitSystem
     // reallocated per hit.
     private static readonly List<ulong> _burnSplashBuffer = new List<ulong>();
 
+    // Scratch for ApplySlow's splash query, reused across every slow hit rather than
+    // reallocated per hit.
+    private static readonly List<ulong> _slowSplashBuffer = new List<ulong>();
+
     // Scratch for ApplyAoe's blast-radius query, reused across every hit rather than
     // reallocated per hit.
     private static readonly List<ulong> _aoeBuffer = new List<ulong>();
@@ -50,19 +54,62 @@ public static class ProjectileOnHitSystem
             effect(ecs, onHit, request.OwnerId, request.TargetId);
     }
 
+    // Applies the primary hit's Chilled slow, then — if the shooter's ProjectileOnHitComponent
+    // carries a nonzero SlowSplashRangeMultiplier (e.g. IceManCard) — splashes the same
+    // treatment onto every other enemy troop within that multiple of the shooter's own Range
+    // stat of the hit point, mirroring ApplyBurn's own splash query exactly (just centered on
+    // the impact rather than the caster, same as Burn).
+    private static void ApplySlow(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
+    {
+        ApplySlowSingle(ecs, onHit, targetId);
+
+        if (onHit.SlowSplashRangeMultiplier <= 0f) return;
+
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        if (posStore == null || troopStore == null || healthStore == null) return;
+        if (!posStore.HasComponent(targetId) || !troopStore.HasComponent(ownerId)) return;
+
+        PositionComponent targetPos = posStore.GetComponent(targetId);
+        ushort casterOwnerId = troopStore.GetComponent(ownerId).OwnerPlayerId;
+        float radius = StatsQuery.GetRange(ecs, ownerId, SlowFallbackRange) * onHit.SlowSplashRangeMultiplier;
+
+        _slowSplashBuffer.Clear();
+        ecs.ChunkTracker.GetEntitiesNear(targetPos.X, targetPos.Y, radius, _slowSplashBuffer);
+
+        foreach (ulong splashTargetId in _slowSplashBuffer)
+        {
+            if (splashTargetId == targetId || splashTargetId == ownerId) continue;
+            if (!troopStore.HasComponent(splashTargetId)) continue;
+            if (troopStore.GetComponent(splashTargetId).OwnerPlayerId == casterOwnerId) continue;
+            if (!healthStore.HasComponent(splashTargetId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, splashTargetId)) continue;
+
+            ApplySlowSingle(ecs, onHit, splashTargetId);
+        }
+    }
+
+    // Shared by ApplySlow's primary hit and its splash targets, same as ApplyBurn/
+    // ApplyScorch's own split.
+    private static void ApplySlowSingle(ECS ecs, ProjectileOnHitComponent onHit, ulong targetId)
+        => ApplyChilledSlow(ecs, targetId, onHit.SlowRatio, onHit.DurationSeconds);
+
     // Unlike most stat modifiers in this codebase (e.g. SpeedBoostCard), Chilled
     // deliberately does NOT stack — a target already chilled just has its existing
     // modifier's duration reset back to full instead of a hit adding its own separate
     // modifier entity (which StatModifierSystem would otherwise sum, stacking the slow
-    // indefinitely on a target hit repeatedly).
-    private static void ApplySlow(ECS ecs, ProjectileOnHitComponent onHit, ulong ownerId, ulong targetId)
+    // indefinitely on a target hit repeatedly). Public so anything else that wants this same
+    // non-stacking Chilled slow (e.g. AbilityManager's Gravity Well) can reuse it instead of
+    // duplicating the refresh-vs-create logic.
+    public static void ApplyChilledSlow(ECS ecs, ulong targetId, float slowRatio, float durationSeconds)
     {
         ulong existingModifierId = FindActiveModifierId(ecs, targetId, ModifierID.Chilled);
         if (existingModifierId != 0)
         {
             ComponentStore<ModifierComponent> modifierStore = ecs.GetComponentStore<ModifierComponent>();
             ref ModifierComponent existing = ref modifierStore.GetComponent(existingModifierId);
-            existing.TicksRemaining = TickManager.SecondsToTicks(onHit.DurationSeconds);
+            existing.TicksRemaining = TickManager.SecondsToTicks(durationSeconds);
             ecs.Delta.MarkComponentDirty(existingModifierId, typeof(ModifierComponent));
             return;
         }
@@ -71,12 +118,12 @@ public static class ProjectileOnHitSystem
         ecs.AddComponent(modifier.Id, new ModifierComponent
         {
             TargetEntityId = targetId,
-            TicksRemaining = TickManager.SecondsToTicks(onHit.DurationSeconds),
+            TicksRemaining = TickManager.SecondsToTicks(durationSeconds),
             ModifierID     = ModifierID.Chilled,
         });
         ecs.AddComponent(modifier.Id, new StatModifierComponent
         {
-            SpeedRatioBonus = onHit.SlowRatio,
+            SpeedRatioBonus = slowRatio,
         });
         ecs.AddComponent(modifier.Id, new RenderableModifierComponent
         {
@@ -315,6 +362,10 @@ public static class ProjectileOnHitSystem
     // convention rather than 0.
     private const int BurnFallbackRange = 10;
     private const int BurnFallbackDamage = 10;
+
+    // Fallback for StatsQuery.GetRange when the shooter somehow has no StatsComponent —
+    // matches BurnFallbackRange's own convention.
+    private const int SlowFallbackRange = 10;
 
     private static readonly List<ulong> _removalScratch = new List<ulong>();
 }

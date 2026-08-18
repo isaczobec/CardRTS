@@ -17,6 +17,12 @@ public struct ProjectileOnHitComponent : IComponent
     // 30% slower.
     public float SlowRatio;
 
+    // Slow-specific — see ProjectileOnHitSystem.ApplySlow. Multiple of the shooter's own
+    // Range stat, applied around the hit target to also chill nearby enemies; 0 (default)
+    // means single-target only, matching every Slow-effect projectile that predates this
+    // field. Mirrors BurnSplashRangeMultiplier's own shape.
+    public float SlowSplashRangeMultiplier;
+
     // Burn-specific — see ProjectileOnHitSystem.ApplyBurn/ApplyScorch. Damage per proc is
     // BurnBaseDamagePerProc + Stacks * BurnDamagePerStackRatio * (shooter's own Damage
     // stat), Stacks capped at BurnMaxStacks. BurnSplashRangeMultiplier is a multiple of the

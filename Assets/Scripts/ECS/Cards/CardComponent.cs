@@ -37,6 +37,7 @@ public enum CardType : byte
     Orcs = 34,
     KineticKnight = 35,
     Slowness = 36,
+    PurpleWizard = 37,
 }
 
 public enum CardLocation : byte

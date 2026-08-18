@@ -38,8 +38,8 @@ public static class CapturableBuildingSystem
         ushort attackerPlayerId = troopStore.GetComponent(request.DealerEntityId).OwnerPlayerId;
         if (attackerPlayerId == TroopComponent.NEUTRAL_OWNER_PLAYER_ID) return;
 
-        int targetIslandRegionId = capturableStore.GetComponent(request.EntityId).IslandRegionId;
-        float multiplier = CapturableBuildingQuery.GetDamageMultiplier(ecs, attackerPlayerId, targetIslandRegionId);
+        CapturableBuildingComponent capturable = capturableStore.GetComponent(request.EntityId);
+        float multiplier = CapturableBuildingQuery.GetDamageMultiplier(ecs, attackerPlayerId, capturable.IslandRegionId, capturable.IsMidBridge);
 
         if (multiplier <= 0f)
         {
@@ -101,5 +101,16 @@ public static class CapturableBuildingSystem
         ref HealthComponent health = ref healthStore.GetComponent(request.EntityId);
         health.CurrentHealth = statsStore.GetComponent(request.EntityId).MaxHealth;
         ecs.Delta.MarkComponentDirty(request.EntityId, typeof(HealthComponent));
+
+        // This building's HealthComponent was just reset directly (no DamageRequest/
+        // HealRequest involved), so anything that only refreshes off those — HealthBarManager
+        // above all, which otherwise keeps showing the 0 HP the killing blow last set it to —
+        // never hears about it. Firing the same event RespawnSystem.Execute fires after ITS
+        // own equivalent reset is what every one of those listeners already reacts to (health
+        // bar refresh, selection ring/minimap dot un-hide, etc.); every listener no-ops
+        // gracefully for an entity that isn't actually RespawnableInPlaceComponent-based
+        // (see e.g. HealthBarManager.OnRespawnableEntityRespawned), so this is safe here too.
+        PositionQuery.TryGet(ecs, request.EntityId, out float x, out float y);
+        ecs.FlagEvents.Add(new RespawnableEntityRespawnedEvent { EntityId = request.EntityId, X = x, Y = y });
     }
 }

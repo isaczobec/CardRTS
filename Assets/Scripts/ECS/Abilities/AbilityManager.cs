@@ -74,6 +74,14 @@ public static class AbilityManager
     // equips this.
     public const int KineticShieldAbilityId = 11;
 
+    // Target location — conjures a gravity well telegraph at the point (same
+    // ActivatableComponent+LifetimeComponent+ScheduledCallSystem telegraph shape
+    // AoeRootCard/MassiveSleepingDraughtCard use), which collapses
+    // GravityWellCollapseDelaySeconds later, pulling every enemy troop within
+    // GravityWellRadiusMultiplier x the caster's own Range stat toward its center via
+    // DisplacementSystem. See PurpleWizardCard, the only troop that currently equips this.
+    public const int GravityWellAbilityId = 12;
+
     private const int RingProjectileCount = 8;
     private const float AoeSpellCloneRange = 8f;
     // The shot always travels the caster's second projectile pool's own Range (see
@@ -225,7 +233,41 @@ public static class AbilityManager
     // I let go" cue — explicit design ask, mirrors ShadowCloakCastIndicatorRadius.
     private const float KineticShieldCastIndicatorRadius = 3f;
 
-    // Scratch, reused across every Ice Nova cast rather than reallocated per cast.
+    // How far from the caster the player may drop a Gravity Well. +100% (explicit design ask)
+    // from 20.
+    private const float GravityWellCastRange = 40f;
+    // Radius (as a multiple of the caster's own Range stat) the well's pull affects once it
+    // collapses — see BuildGravityWellAbility/ResolveGravityWell. Explicit design ask: scales
+    // with the caster's own Range stat, so RangeBoostUpgrade stacks widen it. Computed once at
+    // cast time (not re-read at resolve time) so the telegraph's own visible radius always
+    // exactly matches the radius that actually resolves. +40% (explicit design ask) from 0.8.
+    private const float GravityWellRadiusMultiplier = 1.12f;
+    private const int GravityWellFallbackRange = 10;
+    // Short windup before the telegraph actually appears — see BuildGravityWellAbility.
+    // Mirrors BuildIceNovaAbility's own IceNovaCastTimeSeconds: an ActionWindupComponent
+    // blocks the caster's own CanMove/CanPerform for the duration only, and
+    // ResolveGravityWellCast (spawning the telegraph) is deferred via ScheduledCallSystem to
+    // fire on the windup's very last tick — explicit design ask, the caster must be free to
+    // act again as soon as the cast itself finishes.
+    private const float GravityWellCastTimeSeconds = 1f;
+    // How long after the telegraph appears the well collapses and pulls everything caught
+    // inside toward its center — explicit design ask.
+    private const float GravityWellCollapseDelaySeconds = 4f;
+    // How long the pull itself takes once the well collapses — every enemy caught inside
+    // lands on the center at (about) the same moment, same "solve velocity for exact arrival"
+    // approach as ProjectileOnHitSystem.ApplyHook's own pull-to-a-point math.
+    private const float GravityWellPullDurationSeconds = 0.5f;
+    // Chilled slow applied to every enemy troop caught in the well when it collapses — same
+    // non-stacking Chilled modifier IceManCard's own on-hit slow applies (see
+    // ProjectileOnHitSystem.ApplyChilledSlow, shared by both) — explicit design ask.
+    private const float GravityWellSlowRatio = -0.35f;
+    private const float GravityWellSlowDurationSeconds = 5f;
+    // See Ability.CasterSelectionRadius — a single closest Purple Wizard triggers it, same
+    // single-caster reasoning as every other targeted ability here. Comfortably exceeds
+    // GravityWellCastRange itself, matching every other ability's own CasterSelectionRadius.
+    private const float GravityWellCasterSelectionRadius = 60f;
+
+    // Scratch, reused across every Ice Nova/Gravity Well cast rather than reallocated per cast.
     private static readonly List<ulong> _queryBuffer = new List<ulong>();
 
     private static readonly Dictionary<int, Ability> _abilities = new Dictionary<int, Ability>
@@ -241,6 +283,7 @@ public static class AbilityManager
         { HookAbilityId, BuildHookAbility() },
         { KineticPullAbilityId, BuildKineticPullAbility() },
         { KineticShieldAbilityId, BuildKineticShieldAbility() },
+        { GravityWellAbilityId, BuildGravityWellAbility() },
     };
 
     // Runs after the field initializers above (C# guarantees static field initializers run
@@ -256,6 +299,8 @@ public static class AbilityManager
         ScheduledCallSystem.RegisterCall(ScheduledCallType.IceNovaResolve, ResolveIceNova);
         ScheduledCallSystem.RegisterCall(ScheduledCallType.GroundSlamResolve, ResolveGroundSlam);
         ScheduledCallSystem.RegisterCall(ScheduledCallType.KineticPullResolve, ResolveKineticPull);
+        ScheduledCallSystem.RegisterCall(ScheduledCallType.GravityWellCastResolve, ResolveGravityWellCast);
+        ScheduledCallSystem.RegisterCall(ScheduledCallType.GravityWellResolve, ResolveGravityWell);
     }
 
     public static bool TryGet(int abilityId, out Ability ability) => _abilities.TryGetValue(abilityId, out ability);
@@ -713,6 +758,155 @@ public static class AbilityManager
             });
         },
     };
+
+    // Target location — winds up for GravityWellCastTimeSeconds first (ActionWindupComponent
+    // blocks the caster's own CanMove/CanPerform for the duration only, mirroring
+    // BuildIceNovaAbility's own IceNovaCastTimeSeconds exactly — the caster is free to act
+    // again the instant the windup ends), then ResolveGravityWellCast spawns a telegraph
+    // entity at the point (same ActivatableComponent+LifetimeComponent+ScheduledCallSystem
+    // shape AoeRootCard/MassiveSleepingDraughtCard use for their own telegraphs), which itself
+    // collapses GravityWellCollapseDelaySeconds later, resolving via ResolveGravityWell.
+    private static Ability BuildGravityWellAbility() => new Ability
+    {
+        Type = AbilityType.TargetLocation,
+        Name = "Gravity Well",
+        Description = "Conjures a gravity well at the target point. After a delay, it collapses, pulling every enemy caught inside toward its center and slowing them.",
+        Range = GravityWellCastRange,
+        ImageName = "GravityWell",
+        ShowRangeCircle = true,
+        CasterSelectionRadius = GravityWellCasterSelectionRadius,
+        MaxSimultaneousCasters = 1,
+        ExecuteAtLocation = (ecs, input) =>
+        {
+            ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+            if (posStore == null || !posStore.HasComponent(input.CastingEntityId)) return;
+
+            int windupTicks = Mathf.Max(1, TickManager.SecondsToTicks(GravityWellCastTimeSeconds));
+
+            EntityHandle modifier = ecs.CreateEntity();
+            ecs.AddComponent(modifier.Id, new ModifierComponent
+            {
+                TargetEntityId = input.CastingEntityId,
+                TicksRemaining = windupTicks,
+            });
+            ecs.AddComponent(modifier.Id, new ActionWindupComponent());
+
+            // param0 = caster (its live Range stat is read at resolve time, once the windup
+            // ends — see ResolveGravityWellCast), param1/param2 = the cast point, captured
+            // here so the telegraph lands exactly where the player aimed regardless of
+            // whether the caster moves during the windup.
+            ScheduledCallSystem.Schedule(ecs, ScheduledCallType.GravityWellCastResolve, windupTicks,
+                input.CastingEntityId, param1: input.X, param2: input.Y);
+
+            PositionQuery.TryGet(ecs, input.CastingEntityId, out float castX, out float castY);
+            ecs.FlagEvents.Add(new AttackWindupBeganEvent { EntityId = input.CastingEntityId, X = castX, Y = castY });
+        },
+    };
+
+    // Fires once GravityWellCastTimeSeconds' windup ends — registered against
+    // ScheduledCallType.GravityWellCastResolve in the static constructor above. call.Param0 is
+    // the caster (still needs to exist here; if it died mid-windup this simply doesn't spawn
+    // the well, same limitation ResolveIceNova already has), call.Param1/Param2 the cast
+    // point. Spawns the telegraph and schedules the actual collapse — see ResolveGravityWell.
+    private static void ResolveGravityWellCast(ECS ecs, ScheduledCallComponent call)
+    {
+        ulong casterId = call.Param0;
+        float x = call.Param1;
+        float y = call.Param2;
+
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        if (troopStore == null || !troopStore.HasComponent(casterId)) return;
+
+        ushort casterOwnerId = troopStore.GetComponent(casterId).OwnerPlayerId;
+
+        // Read now (not captured at the original cast time) so the telegraph's own visible
+        // radius always exactly matches the radius that actually resolves — see
+        // GravityWellRadiusMultiplier's own comment.
+        int radius = Mathf.RoundToInt(StatsQuery.GetRange(ecs, casterId, GravityWellFallbackRange) * GravityWellRadiusMultiplier);
+        int collapseTicks = Mathf.Max(1, TickManager.SecondsToTicks(GravityWellCollapseDelaySeconds));
+
+        EntityHandle telegraph = ecs.CreateEntity();
+        ecs.AddComponent(telegraph.Id, new PositionComponent(x, y));
+        ecs.AddComponent(telegraph.Id, new RenderableComponent { Type = RenderableType.GravityWell });
+        // MaxHealth/Speed/Armor/Damage/AttackSpeed/SpellResist are STAT_NA — this entity
+        // has no HealthComponent/MovableComponent and deals no direct damage itself;
+        // Range is real purely so a renderer (e.g. AoeSpellRenderer) can size the ground
+        // disc — mirrors AoeRootCard's own BuildStats.
+        ecs.AddComponent(telegraph.Id, new StatsComponent
+        {
+            MaxHealth   = StatsComponent.STAT_NA,
+            Speed       = StatsComponent.STAT_NA,
+            Range       = radius,
+            Armor       = StatsComponent.STAT_NA,
+            Damage      = StatsComponent.STAT_NA,
+            AttackSpeed = StatsComponent.STAT_NA,
+            SpellResist = StatsComponent.STAT_NA,
+        });
+        // Not a troop in any gameplay sense — added purely so ownership is available
+        // wherever it needs to be resolved, mirrors AoeRootCard's own TroopComponent.
+        ecs.AddComponent(telegraph.Id, new TroopComponent { OwnerPlayerId = casterOwnerId, IsPhysicalTroop = false });
+        ecs.AddComponent(telegraph.Id, new ActivatableComponent { _ticksUntilActive = 1, InitialTicksUntilActive = 1 });
+        // The telegraph entity itself disappears right around when the well collapses.
+        ecs.AddComponent(telegraph.Id, new LifetimeComponent
+        {
+            TicksRemaining        = collapseTicks,
+            InitialTicksRemaining = collapseTicks,
+            ShowTimer             = true,
+        });
+
+        // Cast point (Param1/Param2), caster's owner id (Param0), and the radius (Param3) are
+        // all captured here rather than re-read off the telegraph entity at resolve time,
+        // since LifetimeComponent means it may already be gone by the moment the call fires —
+        // mirrors AoeRootCard.OnPlayed's own reasoning exactly.
+        ScheduledCallSystem.Schedule(ecs, ScheduledCallType.GravityWellResolve, collapseTicks,
+            param0: casterOwnerId, param1: x, param2: y, param3: (ulong)radius);
+    }
+
+    // The actual collapse effect — registered against ScheduledCallType.GravityWellResolve in
+    // the static constructor above. call.Param0 is the casting player's own id, call.Param1/
+    // Param2 the well's center point, call.Param3 the radius — all captured at
+    // ResolveGravityWellCast time, not re-read off the telegraph entity, which may already be
+    // gone by now. Every enemy troop caught inside is pulled to land exactly on the center
+    // point after GravityWellPullDurationSeconds, via the same "solve velocity for exact
+    // arrival" approach ProjectileOnHitSystem.ApplyHook uses, and chilled (same non-stacking
+    // slow IceManCard's own on-hit effect applies — see ProjectileOnHitSystem.
+    // ApplyChilledSlow) for GravityWellSlowDurationSeconds.
+    private static void ResolveGravityWell(ECS ecs, ScheduledCallComponent call)
+    {
+        ushort casterOwnerId = (ushort)call.Param0;
+        float centerX = call.Param1;
+        float centerY = call.Param2;
+        float radius = call.Param3;
+
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        ComponentStore<PositionComponent> posStore = ecs.GetComponentStore<PositionComponent>();
+        ComponentStore<MovableComponent> movStore = ecs.GetComponentStore<MovableComponent>();
+        ComponentStore<HealthComponent> healthStore = ecs.GetComponentStore<HealthComponent>();
+        if (troopStore == null || posStore == null || movStore == null || healthStore == null) return;
+
+        _queryBuffer.Clear();
+        ecs.ChunkTracker.GetEntitiesNear(centerX, centerY, radius, _queryBuffer);
+
+        foreach (ulong targetId in _queryBuffer)
+        {
+            if (!troopStore.HasComponent(targetId)) continue;
+            if (troopStore.GetComponent(targetId).OwnerPlayerId == casterOwnerId) continue;
+            if (!healthStore.HasComponent(targetId)) continue;
+            if (!movStore.HasComponent(targetId)) continue; // nothing to displace (e.g. a building)
+            if (!posStore.HasComponent(targetId)) continue;
+            if (!ActivationQuery.IsActivated(ecs, targetId)) continue;
+
+            PositionComponent targetPos = posStore.GetComponent(targetId);
+            Vector2 toCenter = new Vector2(centerX - targetPos.X, centerY - targetPos.Y);
+
+            float duration = Mathf.Max(0.01f, GravityWellPullDurationSeconds);
+            Vector2 velocity = toCenter / duration;
+            int ticks = Mathf.Max(1, TickManager.SecondsToTicks(duration));
+
+            DisplacementSystem.BeginDisplacement(ecs, targetId, velocity.x, velocity.y, ticks);
+            ProjectileOnHitSystem.ApplyChilledSlow(ecs, targetId, GravityWellSlowRatio, GravityWellSlowDurationSeconds);
+        }
+    }
 
     // Instant, self-targeted, deterministic and side-effect-free like RingOfProjectilesAbility
     // (spawns a modifier entity acting through ModifierComponent.TargetEntityId, not the

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Places one neutral CapturableBuildingComponent building at the center of every intermittent
@@ -19,6 +20,13 @@ public class CapturableBuildingFeature : WorldGenFeature
         var bridgeFeature = handler.GetPreviousFeature<IslandBridgeFeature>();
         if (bridgeFeature == null) return;
 
+        // Region ids of every SPOKE (base-to-mid-island) waypoint island — the "mid bridge"
+        // half of WaypointIslands — so the building placed on each one below can be tagged
+        // IsMidBridge accordingly. See CapturableBuildingComponent.IsMidBridge's own comment.
+        var spokeRegionIds = new HashSet<int>();
+        foreach (IslandPlacementHelper.PlacedIsland spokeIsland in bridgeFeature.SpokeWaypointIslands)
+            spokeRegionIds.Add(spokeIsland.RegionId);
+
         foreach (IslandPlacementHelper.PlacedIsland island in bridgeFeature.WaypointIslands)
         {
             Vector2Int anchor = island.RotatedFootprint.BaseAnchorOrDefault();
@@ -26,11 +34,12 @@ public class CapturableBuildingFeature : WorldGenFeature
             float y = island.OriginY + anchor.y + 0.5f;
 
             int regionId = island.RegionId;
+            bool isMidBridge = spokeRegionIds.Contains(regionId);
             handler.EnqueueAction(new EntitySpawnAction
             {
                 X = x,
                 Y = y,
-                Spawner = (id, ecs) => EntitySpawnAction.AddCapturableBuildingComponents(id, ecs, regionId),
+                Spawner = (id, ecs) => EntitySpawnAction.AddCapturableBuildingComponents(id, ecs, regionId, isMidBridge),
             });
         }
     }

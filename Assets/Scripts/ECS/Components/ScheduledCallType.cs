@@ -16,4 +16,6 @@ public enum ScheduledCallType : byte
     BallisticMissileImpactResolve = 10,
     MassiveSleepingDraughtResolve = 11,
     KineticPullResolve = 12,
+    GravityWellResolve = 13,
+    GravityWellCastResolve = 14,
 }

@@ -1,29 +1,30 @@
 using System;
 using System.Collections.Generic;
 
-// Ranged troop modeled off SkillshotRangedTroopCard's own baseline stats, but simpler: a
-// single seeking/homing pool (BasicRangedAISystem auto-attack only, same shape as
-// SkillshotRangedTroopCard's own primary pool). Its projectiles carry a
-// ProjectileOnHitComponent (EffectType = Slow), so every hit also applies a Chilled
-// modifier (ModifierComponent + StatModifierComponent, ModifierID.Chilled — see
-// ProjectileOnHitSystem.ApplySlow) to the target AND every other enemy troop within
-// SlowSplashRangeMultiplier x this troop's own Range stat of the impact, alongside the
-// normal DamageRequest. Also equips AbilityManager's Ice Nova ability (damages every
-// chilled enemy within range), which pairs with the slow this troop already applies on hit.
-public class IceManCard : SpawnAtPointCard
+// Ranged troop modeled directly off IceManCard's own shape — same single seeking/homing
+// pool (BasicRangedAISystem auto-attack only) with the same on-hit Chilled slow (including
+// its AOE splash — see ProjectileOnHitSystem.ApplySlow), just at 60% of IceManCard's own
+// MaxHealth/Damage (explicit design ask). The one real departure: instead of equipping Ice
+// Nova, this equips AbilityManager's Gravity Well ability — a point-targeted AOE telegraph
+// (mirrors AoeRootCard/MassiveSleepingDraughtCard's own telegraph-then-delayed-resolve
+// shape) that collapses 4 seconds after being cast, pulling every enemy caught inside toward
+// its center. See AbilityManager.BuildGravityWellAbility/ResolveGravityWell for the ability
+// itself.
+public class PurpleWizardCard : SpawnAtPointCard
 {
-    // See BasicMeleeTroopCard for the rebalance baseline this is scaled from — mirrors
-    // SkillshotRangedTroopCard's own current values.
-    private const int MaxHealth = 220;
+    // 60% of IceManCard's own MaxHealth (220) — explicit design ask.
+    private const int MaxHealth = 132;
+    // 60% of IceManCard's own Damage (24), rounded — explicit design ask.
+    private const int Damage = 14;
+
+    // Unchanged from IceManCard.
     private const int Speed = 40;
     private const int Range = 13;
     private const int Armor = 20;
-    private const int Damage = 24;
     private const float AttackSpeedMilliseconds = 450f;
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
     private const float DetectionRangeMultiplier = 3f;
     private const float ChaseRangeMultiplier = 20f;
     private const float AttackRangeMultiplier = 1.5f;
@@ -32,29 +33,27 @@ public class IceManCard : SpawnAtPointCard
     private const int ProjectilePoolSize = 32;
     private const int ProjectileSpeedMilliTilesPerSecond = 20000; // 20 tiles/sec
 
-    // Chilled slow applied on every hit (see ProjectileOnHitSystem.ApplySlow) — judgment
-    // calls, easy to retune.
+    // Chilled slow applied on every hit (see ProjectileOnHitSystem.ApplySlow) — unchanged
+    // from IceManCard, including its AOE splash.
     private const float SlowRatio = -0.35f;
     private const float SlowDurationSeconds = 6f;
-    // How far (as a multiple of this troop's own Range stat) the slow splashes from the
-    // impact point onto other nearby enemies — matches FireManCard's own (post-buff)
-    // ScorchSplashRangeMultiplier, explicit design ask ("same AOE application... with the
-    // same range").
     private const float SlowSplashRangeMultiplier = 0.48f;
 
     // Cooldown length lives on AbilityComponent rather than on Ability itself, so different
-    // troops could equip the same ability with different cooldowns.
-    private const float IceNovaCooldownSeconds = 13f;
+    // troops could equip the same ability with different cooldowns. Slightly longer than
+    // IceManCard's own IceNovaCooldownSeconds (13s) — Gravity Well is a stronger CC/utility
+    // effect than Ice Nova's damage-only nova.
+    private const float GravityWellCooldownSeconds = 16f;
 
     private const float MaxDistanceFromBuilding = 20f;
 
     public override int ShopGoldCost => 100;
 
-    public override CardType Type => CardType.IceMan;
-    public override string Title => "Ice Man";
-    public override string ImageName => "IceMan";
-    public override string Description => "A ranged troop whose homing shots chill enemies, slowing their movement.";
-    public override string IndicatorPrefabName => "IceMan";
+    public override CardType Type => CardType.PurpleWizard;
+    public override string Title => "Purple Wizard";
+    public override string ImageName => "PurpleWizard";
+    public override string Description => "A ranged troop whose homing shots chill enemies. Can conjure a gravity well that pulls nearby enemies together.";
+    public override string IndicatorPrefabName => "PurpleWizard";
 
     public override StatsComponent DefaultStats => BuildStats();
     public override ResourceCost Cost => new ResourceCost
@@ -64,7 +63,7 @@ public class IceManCard : SpawnAtPointCard
             Gems = 10,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
-    public override int[] GrantedAbilityIds => new[] { AbilityManager.IceNovaAbilityId };
+    public override int[] GrantedAbilityIds => new[] { AbilityManager.GravityWellAbilityId };
 
     private static StatsComponent BuildStats() => new StatsComponent
     {
@@ -81,7 +80,7 @@ public class IceManCard : SpawnAtPointCard
     {
         StatsComponent stats = BuildStats();
 
-        return TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.IceMan, stats, new List<Action<ECS, ulong>>
+        return TroopCardHelper.SpawnTroop(ecs, ownerPlayerId, x, y, RenderableType.PurpleWizard, stats, new List<Action<ECS, ulong>>
         {
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
@@ -97,9 +96,9 @@ public class IceManCard : SpawnAtPointCard
                     RenderableType.IceProjectile,
                     new ProjectileOnHitComponent
                     {
-                        EffectType               = ProjectileOnHitEffectType.Slow,
-                        SlowRatio                = SlowRatio,
-                        DurationSeconds          = SlowDurationSeconds,
+                        EffectType                = ProjectileOnHitEffectType.Slow,
+                        SlowRatio                 = SlowRatio,
+                        DurationSeconds           = SlowDurationSeconds,
                         SlowSplashRangeMultiplier = SlowSplashRangeMultiplier,
                     });
                 e.AddComponent(id, new ProjectileOwnerComponent
@@ -108,11 +107,10 @@ public class IceManCard : SpawnAtPointCard
                     NextProjectileId = firstProjectileId,
                 });
             },
-            // Test ability (Q) — see AbilityManager. Slots 2-4 (W/E/R) are left empty (0).
             (e, id) => e.AddComponent(id, new AbilityComponent
             {
-                Ability1Id = AbilityManager.IceNovaAbilityId,
-                Ability1CooldownTicks = TickManager.SecondsToTicks(IceNovaCooldownSeconds),
+                Ability1Id = AbilityManager.GravityWellAbilityId,
+                Ability1CooldownTicks = TickManager.SecondsToTicks(GravityWellCooldownSeconds),
             }),
         });
     }

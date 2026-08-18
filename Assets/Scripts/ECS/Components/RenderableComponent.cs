@@ -69,6 +69,14 @@ public enum RenderableType : byte
     // renderer/UI element already in the codebase, so the neutral -> owned transition needs
     // no special-casing on the rendering side.
     CapturableBuilding = 54,
+    // PurpleWizardCard's own troop — register a renderer with its own prefab in the
+    // Inspector, same as every other troop card's RenderableType entry.
+    PurpleWizard = 55,
+    // PurpleWizardCard's Gravity Well ability telegraph (see AbilityManager.
+    // BuildGravityWellAbility) — a ground disc sized from StatsComponent.Range, same shape
+    // as AoeRoot/MassiveSleepingDraught; register AoeSpellRenderer (or a copy) with its own
+    // prefab/material in the Inspector.
+    GravityWell = 56,
 }
 
 public struct RenderableComponent : IComponent

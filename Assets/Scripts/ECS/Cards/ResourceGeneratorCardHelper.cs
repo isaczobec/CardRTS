@@ -10,9 +10,10 @@ using UnityEngine;
 // actually round to a visible nonzero integer (see ProcPeriodSeconds).
 public static class ResourceGeneratorCardHelper
 {
-    // Both cut by 45% (explicit design ask) from the original 30/100.
-    private const float MinRatePerMinute = 16.5f;
-    private const float MaxRatePerMinute = 55f;
+    // Cut by 45% from the original 30/100, then raised +30% (both explicit design asks) to
+    // the current 21.45/71.5.
+    private const float MinRatePerMinute = 21.45f;
+    private const float MaxRatePerMinute = 71.5f;
 
     // How often a generator procs a chunk of its own total per-minute rate — a period of a
     // few seconds reads better as floating "+N" feedback than either a single once-a-minute

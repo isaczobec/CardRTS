@@ -27,11 +27,12 @@ using System.Collections.Generic;
 public class ShadowAngelCard : SpawnAtPointCard
 {
     // Explicit design ask — vs. Healer Guardian's own MaxHealth 90 / AttackSpeed 900ms /
-    // Speed 36 / Damage 5.
-    private const int MaxHealth = 150;
+    // Speed 36 / Damage 5. MaxHealth/Damage cut by 20%/30% (explicit design ask) from the
+    // prior balance pass's 150/80.
+    private const int MaxHealth = 120;
     private const float AttackSpeedMilliseconds = 600f;
     private const int Speed = 40;
-    private const int Damage = 80;
+    private const int Damage = 56;
 
     // Unchanged from HealerGuardianCard.
     private const int Armor = 20;

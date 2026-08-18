@@ -1,0 +1,1 @@
+net-start-server -relay region=europe-north1

@@ -44,8 +44,8 @@ public class FireManCard : SpawnAtPointCard
     // hits before capping out — see StackingBurnDebuffComponent.
     private const int ScorchMaxStacks = 5;
     // How far (as a multiple of this troop's own Range stat) the burn splashes from the
-    // impact point onto other nearby enemies.
-    private const float ScorchSplashRangeMultiplier = 0.3f;
+    // impact point onto other nearby enemies. +60% (explicit design ask) from 0.3.
+    private const float ScorchSplashRangeMultiplier = 0.48f;
 
     private const float MaxDistanceFromBuilding = 20f;
 

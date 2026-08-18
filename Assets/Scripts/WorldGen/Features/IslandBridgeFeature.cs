@@ -78,6 +78,11 @@ public class IslandBridgeFeature : WorldGenFeature
     // too, not just to a base or the mid island.
     public IReadOnlyList<IslandPlacementHelper.PlacedIsland> WaypointIslands { get; private set; } = new List<IslandPlacementHelper.PlacedIsland>();
 
+    // Subset of WaypointIslands placed along a SPOKE (base-to-mid-island) connection only —
+    // read by CapturableBuildingFeature to tag those buildings CapturableBuildingComponent.
+    // IsMidBridge = true, distinct from the RING ("side", base-to-base) ones.
+    public IReadOnlyList<IslandPlacementHelper.PlacedIsland> SpokeWaypointIslands { get; private set; } = new List<IslandPlacementHelper.PlacedIsland>();
+
     // Resolved once per Generate() call from BridgeTypeName — see ResolveBridgePrefabs.
     private GameObject[] _bridgePrefabs;
 
@@ -115,15 +120,17 @@ public class IslandBridgeFeature : WorldGenFeature
 
         // Spoke: every base -> the mid island. Both the macro layout and every individual
         // hop use SpokeBowDistance (0 by default) — see that field's own doc comment.
+        var spokeWaypoints = new List<IslandPlacementHelper.PlacedIsland>();
         var midFeature = handler.GetPreviousFeature<MidIslandFeature>();
         if (midFeature != null && midFeature.MidIsland.HasValue)
         {
             IslandPlacementHelper.PlacedIsland mid = midFeature.MidIsland.Value;
             foreach (IslandPlayerBaseFeature.IslandPlacement b in bases)
-                BuildMultiHopBridge(handler, b.Island, mid, SpokeIntermittentCount, SpokeBowDistance, SpokeBowDistance, intermittentPrefabs, waypoints, worldSize);
+                BuildMultiHopBridge(handler, b.Island, mid, SpokeIntermittentCount, SpokeBowDistance, SpokeBowDistance, intermittentPrefabs, waypoints, worldSize, spokeWaypoints);
         }
 
         WaypointIslands = waypoints;
+        SpokeWaypointIslands = spokeWaypoints;
     }
 
     private GameObject[] ResolveBridgePrefabs()
@@ -232,7 +239,8 @@ public class IslandBridgeFeature : WorldGenFeature
     // deviate from it.
     private void BuildMultiHopBridge(WorldGenHandler handler, IslandPlacementHelper.PlacedIsland from, IslandPlacementHelper.PlacedIsland to,
         int intermittentCount, float macroBowDistance, float hopBowDistance, List<GameObject> intermittentPrefabs,
-        List<IslandPlacementHelper.PlacedIsland> waypointsOut, ushort worldSize)
+        List<IslandPlacementHelper.PlacedIsland> waypointsOut, ushort worldSize,
+        List<IslandPlacementHelper.PlacedIsland> additionalOut = null)
     {
         var chain = new List<IslandPlacementHelper.PlacedIsland> { from };
 
@@ -252,6 +260,7 @@ public class IslandBridgeFeature : WorldGenFeature
                 {
                     chain.Add(placed.Value);
                     waypointsOut.Add(placed.Value);
+                    additionalOut?.Add(placed.Value);
                 }
                 else
                     Debug.LogWarning($"[IslandBridgeFeature] Prefab '{(prefab != null ? prefab.name : "null")}' has no IslandFootprint component — skipping this waypoint island.");

@@ -9,4 +9,13 @@
 public struct CapturableBuildingComponent : IComponent
 {
     public int IslandRegionId;
+
+    // True for a building placed on a SPOKE waypoint island (base-to-mid-island bridge —
+    // see IslandBridgeFeature.SpokeWaypointIslands/CapturableBuildingFeature), false for a
+    // RING ("side", base-to-base) one. Read by CapturableBuildingQuery: owning ANY mid-bridge
+    // building lets a player attack every OTHER mid-bridge building at (at least) half
+    // damage, regardless of the normal one-hop island-graph adjacency requirement — explicit
+    // design ask, so contesting the buildings around the shared mid island isn't gated by
+    // which single spoke chain a player originally expanded up.
+    public bool IsMidBridge;
 }

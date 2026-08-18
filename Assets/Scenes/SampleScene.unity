@@ -2980,6 +2980,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 1
   m_VerticalFit: 0
+--- !u!1 &285323811
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 285323813}
+  - component: {fileID: 285323812}
+  m_Layer: 0
+  m_Name: GravityWellRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &285323812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 285323811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc7dd912389450e43b1928ae9f159631, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AoeSpellRenderer
+  _prefab: {fileID: 4309100484666204601, guid: 15e01d44662f91344a4d378ef0f6b08b, type: 3}
+  _loopCrossfadeDuration: 1.5
+  _stopFadeOutDuration: 1
+  _loopSoundName: BloodSpellLoop
+  _damageSoundName: BloodSpellDamage
+--- !u!4 &285323813
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 285323811}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &297002025
 GameObject:
   m_ObjectHideFlags: 0
@@ -7560,6 +7609,10 @@ MonoBehaviour:
     renderer: {fileID: 639872974}
   - type: 54
     renderer: {fileID: 1216227733}
+  - type: 55
+    renderer: {fileID: 1607125406}
+  - type: 56
+    renderer: {fileID: 285323812}
 --- !u!1 &700742496
 GameObject:
   m_ObjectHideFlags: 0
@@ -14005,6 +14058,8 @@ MonoBehaviour:
     prefab: {fileID: 6472282922783299243, guid: edc38d70a55b2f8418cedc9c5ce4bb09, type: 3}
   - name: Orcs
     prefab: {fileID: 6472282922783299243, guid: 1afce2bc24b0b464c95a5f8d5cd9eaf4, type: 3}
+  - name: PurpleWizard
+    prefab: {fileID: 6472282922783299243, guid: 5089424612d900d448f29e47a59c8114, type: 3}
 --- !u!1 &1216227732
 GameObject:
   m_ObjectHideFlags: 0
@@ -16588,6 +16643,7 @@ Transform:
   - {fileID: 1633224622}
   - {fileID: 2122440088}
   - {fileID: 1934511542}
+  - {fileID: 1607125405}
   - {fileID: 1640101355}
   - {fileID: 509328319}
   - {fileID: 982359450}
@@ -16614,6 +16670,7 @@ Transform:
   - {fileID: 1449116595}
   - {fileID: 73635955}
   - {fileID: 1291139277}
+  - {fileID: 285323813}
   - {fileID: 1944790032}
   - {fileID: 1664291889}
   - {fileID: 700742497}
@@ -17182,6 +17239,10 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: a75085037fd278148ab9bc1455cf53dc, type: 3}
   - name: Slowness
     sprite: {fileID: 21300000, guid: 4c2d00409c0b3494f9802468f35fd9b5, type: 3}
+  - name: PurpleWizard
+    sprite: {fileID: 21300000, guid: 416b13381882ae94696688b2ff5a86c6, type: 3}
+  - name: GravityWell
+    sprite: {fileID: 21300000, guid: 18cad343a47749f419d4099461ecfc19, type: 3}
 --- !u!1 &1459217983
 GameObject:
   m_ObjectHideFlags: 0
@@ -19784,6 +19845,78 @@ MonoBehaviour:
   _groundOffset: 2
   _launchSoundName: 
   _impactSoundName: Explosion
+--- !u!1 &1607125404
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1607125405}
+  - component: {fileID: 1607125406}
+  m_Layer: 0
+  m_Name: PurpleWizardRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1607125405
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1607125404}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1428959134}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1607125406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1607125404}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e9ae3ca391c714dba13bfa54e8486b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VariedAttackTroopRenderer
+  _prefab: {fileID: 9082625173468486924, guid: 5089424612d900d448f29e47a59c8114, type: 3}
+  _rotationDegreesPerSecond: 540
+  _attackAnimations:
+  - TriggerName: Attack1
+    Duration: 1.167
+    TimeUntilImpact: 0.4
+  - TriggerName: Attack2
+    Duration: 1.167
+    TimeUntilImpact: 0.4
+  _selectionMode: 0
+  _abilityAnimationTriggers:
+  - AbilitySlot: 0
+    TriggerName: Ability0
+    SpeedParam: Ability0Speed
+    SpeedMultiplier: 1
+    RotateTowardPosition: 0
+    SoundName: FreezeBegin
+  _attackWindupSoundName: DefaultTroopWindup
+  _attackWindupFinishedSoundName: MagicCast
+  _abilityWindupSoundName: 
+  _dealDamageSoundName: 
+  _takeDamageSoundName: DefaultTroopTakeDamage
+  _deathSoundName: DefaultDeath
+  _activationSoundName: 
+  _walkSoundName: 
+  _walkSoundCrossfadeDuration: 0.2
+  _runAnimationSpeedStat: 40
+  _speedParamUpdateInterval: 0.1
 --- !u!1 &1608050853
 GameObject:
   m_ObjectHideFlags: 0

@@ -92,7 +92,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Wood = 9, // +35% (explicit design ask) from 7
+            Wood = 11, // +20% (explicit design ask) from 9
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -128,7 +128,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = RockBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Stone = 9, // +35% (explicit design ask) from 7
+            Stone = 11, // +20% (explicit design ask) from 9
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -164,7 +164,7 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = OreBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Metal = 9, // +35% (explicit design ask) from 7
+            Metal = 11, // +20% (explicit design ask) from 9
             Gold = DefaultResourceGoldDrop,
         } } );
         ecs.AddComponent(id, new ResourceProductionOnDeathComponent
@@ -305,11 +305,11 @@ public class EntitySpawnAction : IWorldGenAction
     // thread a per-spawn cardEntityId through their own extraComponents lambdas.
     public const int CapturableBuildingMaxHealth = 150; // explicit design ask
 
-    public static void AddCapturableBuildingComponents(ulong id, ECS ecs, int islandRegionId)
+    public static void AddCapturableBuildingComponents(ulong id, ECS ecs, int islandRegionId, bool isMidBridge)
     {
         BuildingSpawnHelper.AddBuildingComponents(ecs, id, TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
             RenderableType.CapturableBuilding, CapturableBuildingMaxHealth, ticksUntilActive: 1);
-        ecs.AddComponent(id, new CapturableBuildingComponent { IslandRegionId = islandRegionId });
+        ecs.AddComponent(id, new CapturableBuildingComponent { IslandRegionId = islandRegionId, IsMidBridge = isMidBridge });
     }
 
     public void Execute(ECS ecs)

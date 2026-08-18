@@ -19,8 +19,15 @@ public static class CapturableBuildingQuery
     // - Otherwise, the attacker must already OWN some other capturable building adjacent to
     //   this one to be allowed to damage it at all (0% multiplier — fully blocked — if not:
     //   "so that a player has to 'expand' from their base"), and even then only at half
-    //   damage, since it still isn't adjacent to their own base.
-    public static float GetDamageMultiplier(ECS ecs, ushort attackerPlayerId, int targetIslandRegionId)
+    //   damage, since it still isn't adjacent to their own base — UNLESS the target is itself
+    //   a mid-bridge building (targetIsMidBridge) and the attacker already owns ANY OTHER
+    //   mid-bridge building (regardless of island-graph adjacency to this specific one) —
+    //   explicit design ask: "if I own one of the mid bridge conquerable buildings, I should
+    //   be able to attack all other mid bridge conquerable buildings", so contesting the
+    //   cluster around the shared mid island isn't gated by which single spoke a player
+    //   originally expanded up. That first mid-bridge building still has to be captured via
+    //   the normal adjacency expansion above — this only loosens mid-bridge-to-mid-bridge.
+    public static float GetDamageMultiplier(ECS ecs, ushort attackerPlayerId, int targetIslandRegionId, bool targetIsMidBridge)
     {
         NavMeshHandler handler = NavMeshHandler.instance;
         // No region graph for this world (e.g. a legacy/non-island map) — fail open rather
@@ -33,7 +40,10 @@ public static class CapturableBuildingQuery
         if (attackerBaseRegionId >= 0 && adjacentRegions.Contains(attackerBaseRegionId))
             return 1f;
 
-        return OwnsAdjacentCapturableBuilding(ecs, attackerPlayerId, adjacentRegions) ? NonAdjacentDamageMultiplier : 0f;
+        bool unlocked = OwnsAdjacentCapturableBuilding(ecs, attackerPlayerId, adjacentRegions)
+            || (targetIsMidBridge && OwnsAnyMidBridgeCapturableBuilding(ecs, attackerPlayerId));
+
+        return unlocked ? NonAdjacentDamageMultiplier : 0f;
     }
 
     private static int GetPlayerBaseRegionId(ECS ecs, NavMeshHandler handler, ushort playerId)
@@ -55,6 +65,25 @@ public static class CapturableBuildingQuery
         {
             if (owns) return;
             if (!adjacentRegions.Contains(capturableStore.GetComponent(id).IslandRegionId)) return;
+            if (!troopStore.HasComponent(id)) return;
+            if (troopStore.GetComponent(id).OwnerPlayerId == attackerPlayerId) owns = true;
+        });
+        return owns;
+    }
+
+    // Ignores island-graph adjacency entirely — any mid-bridge building the attacker owns,
+    // anywhere on the map, satisfies this. See GetDamageMultiplier's own comment.
+    private static bool OwnsAnyMidBridgeCapturableBuilding(ECS ecs, ushort attackerPlayerId)
+    {
+        ComponentStore<CapturableBuildingComponent> capturableStore = ecs.GetComponentStore<CapturableBuildingComponent>();
+        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
+        if (capturableStore == null || troopStore == null) return false;
+
+        bool owns = false;
+        capturableStore.ForEach((ulong id) =>
+        {
+            if (owns) return;
+            if (!capturableStore.GetComponent(id).IsMidBridge) return;
             if (!troopStore.HasComponent(id)) return;
             if (troopStore.GetComponent(id).OwnerPlayerId == attackerPlayerId) owns = true;
         });
