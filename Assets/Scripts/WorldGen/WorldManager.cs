@@ -69,7 +69,8 @@ public class WorldManager : Singleton<WorldManager>
     // base-to-mid-island spoke connection — see IslandBridgeFeature.RingIntermittentCount /
     // SpokeIntermittentCount.
     [SerializeField] int _ringIntermittentCount = 3;
-    [SerializeField] int _spokeIntermittentCount = 1;
+    // Two intermittent islands per spoke (base-to-mid) connection — explicit design ask.
+    [SerializeField] int _spokeIntermittentCount = 2;
 
     // See IslandBridgeFeature.RingBowEdgeMargin / RingBowChordMultiplier.
     [SerializeField] float _ringBowEdgeMargin = 10f;
@@ -86,12 +87,16 @@ public class WorldManager : Singleton<WorldManager>
 
     // How many filler islands WedgeIslandFeature places in each wedge-shaped gap between the
     // mid and side bridges — see WedgeIslandFeature.MinIslandsPerWedge / MaxIslandsPerWedge.
-    [SerializeField] int _minIslandsPerWedge = 1;
-    [SerializeField] int _maxIslandsPerWedge = 2;
+    // Reduced from 1/2 — explicit design ask.
+    [SerializeField] int _minIslandsPerWedge = 0;
+    [SerializeField] int _maxIslandsPerWedge = 1;
 
     // See WedgeIslandFeature.WedgeAngularInset / WedgeRadialMargin.
     [SerializeField] float _wedgeAngularInset = 0.12f;
     [SerializeField] float _wedgeRadialMargin = 8f;
+
+    // See WedgeIslandFeature.MaxConnectionDistance.
+    [SerializeField] float _wedgeMaxConnectionDistance = 50f;
 
     // See WedgeIslandFeature.ExtraConnectionChance / MaxExtraConnections.
     [SerializeField] float _wedgeExtraConnectionChance = 0.3f;
@@ -273,6 +278,10 @@ public class WorldManager : Singleton<WorldManager>
             BowDistance = _bridgeBowDistance,
             SpokeBowDistance = _spokeBowDistance,
             IntermittentIslandNames = _intermittentIslandNames,
+            // No more base-to-base "side" bridges — explicit design ask ("remove the side
+            // bridges between the islands of the players"). Every base now only connects to
+            // others by routing through the mid island via its own spoke.
+            BuildRingConnections = false,
             RingIntermittentCount = _ringIntermittentCount,
             SpokeIntermittentCount = _spokeIntermittentCount,
             RingBowEdgeMargin = _ringBowEdgeMargin,
@@ -305,6 +314,7 @@ public class WorldManager : Singleton<WorldManager>
             BridgePaddingTiles = _bridgePaddingTiles,
             WedgeAngularInset = _wedgeAngularInset,
             WedgeRadialMargin = _wedgeRadialMargin,
+            MaxConnectionDistance = _wedgeMaxConnectionDistance,
             ExtraConnectionChance = _wedgeExtraConnectionChance,
             MaxExtraConnections = _wedgeMaxExtraConnections,
             CenterBiasSamples = _wedgeCenterBiasSamples,

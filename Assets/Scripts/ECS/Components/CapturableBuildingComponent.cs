@@ -1,21 +1,21 @@
-// Tags a neutral/capturable objective building (see CapturableBuildingFeature/
-// EntitySpawnAction.AddCapturableBuildingComponents) — placed on every ring/spoke waypoint
-// island. Spawns neutral; destroying one instantly revives it owned by whoever landed the
+// Tags a "spawn crystal" objective building (see CapturableBuildingFeature/
+// EntitySpawnAction.AddCapturableBuildingComponents) — one inner + one outer placed on every
+// player's own spoke bridge to the mid island. Starts owned by HomePlayerId (the player
+// whose bridge this is); destroying one instantly re-captures it for whoever landed the
 // killing blow (see CapturableBuildingSystem), which is what actually lets a player use it as
-// a friendly building (BuildingRangeHelper) to spawn troops near it. IslandRegionId is this
-// building's own island's coarse region id (see IslandGraphBuilder/NavMeshHandler) — read by
-// CapturableBuildingQuery to determine which OTHER capturable buildings (and which player
-// base) count as "adjacent" to it for the attack-range damage reduction rules.
+// a friendly building (BuildingRangeHelper) to spawn troops near it.
+//
+// HomePlayerId/IsOuter are fixed at world-gen time and never change, independent of whoever
+// CURRENTLY owns the crystal (TroopComponent.OwnerPlayerId, which does change on capture) —
+// CapturableBuildingQuery keys almost every rule off this fixed "whose bridge is this"
+// identity rather than off current ownership, since the whole point is to gate attacking a
+// bridge (or the base behind it) on how much of THAT SPECIFIC bridge someone currently holds.
 public struct CapturableBuildingComponent : IComponent
 {
-    public int IslandRegionId;
+    // Which player's spoke bridge this crystal was placed on.
+    public ushort HomePlayerId;
 
-    // True for a building placed on a SPOKE waypoint island (base-to-mid-island bridge —
-    // see IslandBridgeFeature.SpokeWaypointIslands/CapturableBuildingFeature), false for a
-    // RING ("side", base-to-base) one. Read by CapturableBuildingQuery: owning ANY mid-bridge
-    // building lets a player attack every OTHER mid-bridge building at (at least) half
-    // damage, regardless of the normal one-hop island-graph adjacency requirement — explicit
-    // design ask, so contesting the buildings around the shared mid island isn't gated by
-    // which single spoke chain a player originally expanded up.
-    public bool IsMidBridge;
+    // True for the crystal closer to the mid island (further from HomePlayerId's own base);
+    // false for the one closer to HomePlayerId's own base.
+    public bool IsOuter;
 }

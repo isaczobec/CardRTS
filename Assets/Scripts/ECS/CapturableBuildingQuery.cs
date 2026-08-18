@@ -1,92 +1,72 @@
-using System.Collections.Generic;
-using UnityEngine;
-
-// Combat-range rules for CapturableBuildingComponent buildings (see CapturableBuildingSystem,
-// the only caller) — "adjacent" is always in terms of the coarse island/bridge region graph
-// (see IslandGraphBuilder/NavMeshHandler.GetAdjacentIslandRegions), i.e. one bridge hop away,
-// the same graph Pathfinding's own hierarchical search uses.
+// Combat rules for "spawn crystal" CapturableBuildingComponent buildings and the player base
+// behind them (see CapturableBuildingSystem, the only caller). Every rule below is keyed off
+// CapturableBuildingComponent.HomePlayerId/IsOuter (fixed at world-gen time — whose bridge a
+// crystal structurally belongs to, and where along it) rather than off current ownership,
+// which is what lets "recapture your own bridge" and "invade someone else's" read as
+// different, deliberately asymmetric rules instead of one generic adjacency check:
+//
+//  - Outer-protects-inner (foreign attackers only): once a player has qualified to attack a
+//    bridge that isn't their own (see the cross-bridge gate below), that bridge's inner
+//    crystal is untouchable while its current owner also owns that same bridge's outer one —
+//    the outer crystal is always the front line for an outside invader.
+//  - Cross-bridge gate: a player can't damage ANY crystal on a bridge that isn't their own
+//    unless they currently own BOTH crystals on their own home bridge — "if a player has lost
+//    a spawn crystal on their own bridge, they should not be able to attack the spawn
+//    crystals of others before recapturing their own one."
+//  - Home-bridge reclaim (a bridge's own home player attacking their own bridge): the
+//    opposite order from the rule above — inner is always attackable, and outer only becomes
+//    attackable once the home player already owns their own inner, mirroring "expand from
+//    your base" ("they should have to conquer the one closest to their base before retaking
+//    the one closest to mid").
+//  - Base invulnerability: a player's base takes 0 damage while that player still owns AT
+//    LEAST ONE of the two crystals on their own home bridge.
 public static class CapturableBuildingQuery
 {
-    // 50% damage reduction once a player is allowed to attack a building at all but hasn't
-    // reached it yet (see GetDamageMultiplier) — explicit design ask.
-    private const float NonAdjacentDamageMultiplier = 0.5f;
-
-    // 1f = full damage, NonAdjacentDamageMultiplier = half damage, 0f = fully blocked.
-    //
-    // - A building directly adjacent to the attacker's OWN base always takes full damage —
-    //   explicit design ask ("the buildings closest to the player's base should never have
-    //   this damage reduction"), otherwise nobody could ever start capturing anything.
-    // - Otherwise, the attacker must already OWN some other capturable building adjacent to
-    //   this one to be allowed to damage it at all (0% multiplier — fully blocked — if not:
-    //   "so that a player has to 'expand' from their base"), and even then only at half
-    //   damage, since it still isn't adjacent to their own base — UNLESS the target is itself
-    //   a mid-bridge building (targetIsMidBridge) and the attacker already owns ANY OTHER
-    //   mid-bridge building (regardless of island-graph adjacency to this specific one) —
-    //   explicit design ask: "if I own one of the mid bridge conquerable buildings, I should
-    //   be able to attack all other mid bridge conquerable buildings", so contesting the
-    //   cluster around the shared mid island isn't gated by which single spoke a player
-    //   originally expanded up. That first mid-bridge building still has to be captured via
-    //   the normal adjacency expansion above — this only loosens mid-bridge-to-mid-bridge.
-    public static float GetDamageMultiplier(ECS ecs, ushort attackerPlayerId, int targetIslandRegionId, bool targetIsMidBridge)
+    public static bool CanDamageCrystal(ECS ecs, ushort attackerPlayerId, CapturableBuildingComponent target)
     {
-        NavMeshHandler handler = NavMeshHandler.instance;
-        // No region graph for this world (e.g. a legacy/non-island map) — fail open rather
-        // than making every capturable building unkillable by accident.
-        if (handler == null || targetIslandRegionId < 0) return 1f;
-
-        List<int> adjacentRegions = new List<int>(handler.GetAdjacentIslandRegions(targetIslandRegionId));
-
-        int attackerBaseRegionId = GetPlayerBaseRegionId(ecs, handler, attackerPlayerId);
-        if (attackerBaseRegionId >= 0 && adjacentRegions.Contains(attackerBaseRegionId))
-            return 1f;
-
-        bool unlocked = OwnsAdjacentCapturableBuilding(ecs, attackerPlayerId, adjacentRegions)
-            || (targetIsMidBridge && OwnsAnyMidBridgeCapturableBuilding(ecs, attackerPlayerId));
-
-        return unlocked ? NonAdjacentDamageMultiplier : 0f;
-    }
-
-    private static int GetPlayerBaseRegionId(ECS ecs, NavMeshHandler handler, ushort playerId)
-    {
-        if (!PlayerBaseQuery.TryFindPosition(ecs, playerId, out float x, out float y)) return -1;
-        return handler.GetTileRegionId((ushort)Mathf.FloorToInt(x), (ushort)Mathf.FloorToInt(y));
-    }
-
-    private static bool OwnsAdjacentCapturableBuilding(ECS ecs, ushort attackerPlayerId, List<int> adjacentRegions)
-    {
-        if (adjacentRegions.Count == 0) return false;
-
-        ComponentStore<CapturableBuildingComponent> capturableStore = ecs.GetComponentStore<CapturableBuildingComponent>();
-        ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
-        if (capturableStore == null || troopStore == null) return false;
-
-        bool owns = false;
-        capturableStore.ForEach((ulong id) =>
+        if (attackerPlayerId == target.HomePlayerId)
         {
-            if (owns) return;
-            if (!adjacentRegions.Contains(capturableStore.GetComponent(id).IslandRegionId)) return;
-            if (!troopStore.HasComponent(id)) return;
-            if (troopStore.GetComponent(id).OwnerPlayerId == attackerPlayerId) owns = true;
-        });
-        return owns;
+            // Reclaiming your own lost bridge: inner is always fair game; outer only opens up
+            // once you already hold inner again.
+            if (!target.IsOuter) return true;
+            return OwnsCrystal(ecs, target.HomePlayerId, isOuter: false) == attackerPlayerId;
+        }
+
+        // Invading someone else's bridge: must fully hold your own first.
+        if (OwnsCrystal(ecs, attackerPlayerId, isOuter: true) != attackerPlayerId) return false;
+        if (OwnsCrystal(ecs, attackerPlayerId, isOuter: false) != attackerPlayerId) return false;
+
+        if (target.IsOuter) return true;
+
+        // Inner is protected only while its own current owner also holds this bridge's outer.
+        ushort? innerOwner = OwnsCrystal(ecs, target.HomePlayerId, isOuter: false);
+        ushort? outerOwner = OwnsCrystal(ecs, target.HomePlayerId, isOuter: true);
+        return innerOwner == null || innerOwner != outerOwner;
     }
 
-    // Ignores island-graph adjacency entirely — any mid-bridge building the attacker owns,
-    // anywhere on the map, satisfies this. See GetDamageMultiplier's own comment.
-    private static bool OwnsAnyMidBridgeCapturableBuilding(ECS ecs, ushort attackerPlayerId)
+    // True if playerId currently owns at least one of the two crystals on their OWN home
+    // bridge — see CapturableBuildingSystem's base-invulnerability rule.
+    public static bool OwnsAnyOwnBridgeCrystal(ECS ecs, ushort playerId)
+        => OwnsCrystal(ecs, playerId, isOuter: true) == playerId || OwnsCrystal(ecs, playerId, isOuter: false) == playerId;
+
+    // Current owner of the (unique) inner/outer crystal on homePlayerId's own bridge, or null
+    // if no such crystal exists (shouldn't normally happen — every player's spoke places
+    // exactly one of each).
+    private static ushort? OwnsCrystal(ECS ecs, ushort homePlayerId, bool isOuter)
     {
         ComponentStore<CapturableBuildingComponent> capturableStore = ecs.GetComponentStore<CapturableBuildingComponent>();
         ComponentStore<TroopComponent> troopStore = ecs.GetComponentStore<TroopComponent>();
-        if (capturableStore == null || troopStore == null) return false;
+        if (capturableStore == null || troopStore == null) return null;
 
-        bool owns = false;
+        ushort? found = null;
         capturableStore.ForEach((ulong id) =>
         {
-            if (owns) return;
-            if (!capturableStore.GetComponent(id).IsMidBridge) return;
+            if (found != null) return;
+            CapturableBuildingComponent c = capturableStore.GetComponent(id);
+            if (c.HomePlayerId != homePlayerId || c.IsOuter != isOuter) return;
             if (!troopStore.HasComponent(id)) return;
-            if (troopStore.GetComponent(id).OwnerPlayerId == attackerPlayerId) owns = true;
+            found = troopStore.GetComponent(id).OwnerPlayerId;
         });
-        return owns;
+        return found;
     }
 }

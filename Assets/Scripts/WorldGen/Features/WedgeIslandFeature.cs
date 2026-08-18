@@ -60,6 +60,16 @@ public class WedgeIslandFeature : WorldGenFeature
     public float BowDistance = 6f;
     public float BridgePaddingTiles = 1f;
 
+    // Caps how far a filler island's required (and any extra) bridge connection is allowed to
+    // reach — TryFindConnectableIsland already searches nearest-first, but with no cap
+    // whatever ends up closest could still be a long way off. The search list is sorted by
+    // distance ascending, so once a candidate exceeds this the rest are skipped too (nothing
+    // further along the list can be closer) — a candidate position with nothing reachable
+    // within range simply isn't placed, same fallback WedgeIslandFeature already uses for an
+    // overlap failure. Explicit design ask ("reduce the distance from [wedge islands] to
+    // their 'parent' islands").
+    public float MaxConnectionDistance = 50f;
+
     // Chance (per potential extra connection, rolled independently up to MaxExtraConnections
     // times) that an already-placed wedge island also bridges to another nearby island beyond
     // its required first one. 0 disables extra connections entirely.
@@ -372,6 +382,7 @@ public class WedgeIslandFeature : WorldGenFeature
             if (searched >= MaxNearbyIslandSearch) break;
             if (candidate.Equals(other)) continue;
             if (exclude != null && exclude.Contains(other)) continue;
+            if (Vector2.Distance(other.CenterWorldPosition, candidateCenter) > MaxConnectionDistance) break;
             searched++;
 
             if (BridgeConnectionBuilder.TryFindConnection(handler, candidate, other, BowDistance, bridgeSegmentInfo.SegmentWidth, BridgePaddingTiles, worldSize,

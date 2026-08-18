@@ -296,20 +296,25 @@ public class EntitySpawnAction : IWorldGenAction
         });
     };
 
-    // Neutral capturable objective building (see CapturableBuildingFeature/
-    // CapturableBuildingSystem) — 150 HP, explicit design ask. Unlike every Spawner above,
-    // this one needs a per-placement value (which island it's on — see
-    // CapturableBuildingComponent.IslandRegionId), so it isn't a shared static Action like the
-    // rest; CapturableBuildingFeature builds a small closure per island that calls this
-    // instead, the same shape SkeletonsCard/OrcsCard/EphemeralSkeletonsCard already use to
-    // thread a per-spawn cardEntityId through their own extraComponents lambdas.
-    public const int CapturableBuildingMaxHealth = 150; // explicit design ask
+    // "Spawn crystal" objective building (see CapturableBuildingFeature/
+    // CapturableBuildingSystem) — one inner + one outer per player's own spoke bridge, both
+    // explicit design asks. Unlike every Spawner above, this one needs per-placement values
+    // (whose bridge it's on, and where along it — see CapturableBuildingComponent), so it
+    // isn't a shared static Action like the rest; CapturableBuildingFeature builds a small
+    // closure per crystal that calls this instead, the same shape SkeletonsCard/OrcsCard/
+    // EphemeralSkeletonsCard already use to thread a per-spawn cardEntityId through their own
+    // extraComponents lambdas.
+    public const int CapturableBuildingInnerMaxHealth = 1500; // closer to the home base — explicit design ask
+    public const int CapturableBuildingOuterMaxHealth = 1000; // closer to mid — explicit design ask
 
-    public static void AddCapturableBuildingComponents(ulong id, ECS ecs, int islandRegionId, bool isMidBridge)
+    public static void AddCapturableBuildingComponents(ulong id, ECS ecs, ushort homePlayerId, bool isOuter)
     {
-        BuildingSpawnHelper.AddBuildingComponents(ecs, id, TroopComponent.NEUTRAL_OWNER_PLAYER_ID,
-            RenderableType.CapturableBuilding, CapturableBuildingMaxHealth, ticksUntilActive: 1);
-        ecs.AddComponent(id, new CapturableBuildingComponent { IslandRegionId = islandRegionId, IsMidBridge = isMidBridge });
+        int maxHealth = isOuter ? CapturableBuildingOuterMaxHealth : CapturableBuildingInnerMaxHealth;
+        // Starts owned by the player whose bridge this is, not neutral — explicit design ask
+        // ("the spawn crystals begin as friendly to the player whose base they are closest to").
+        BuildingSpawnHelper.AddBuildingComponents(ecs, id, homePlayerId,
+            RenderableType.CapturableBuilding, maxHealth, ticksUntilActive: 1);
+        ecs.AddComponent(id, new CapturableBuildingComponent { HomePlayerId = homePlayerId, IsOuter = isOuter });
     }
 
     public void Execute(ECS ecs)

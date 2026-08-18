@@ -9,7 +9,9 @@ using UnityEngine;
 ///
 /// - RING: each player base island to the next one in placement order (island i to island
 ///   (i+1) % count — "the base to its right"), with RingIntermittentCount waypoint islands
-///   threaded along each one. For 3+ players this forms one connected ring; for exactly 2,
+///   threaded along each one — skipped entirely when BuildRingConnections is false (see that
+///   field's own comment; currently disabled by WorldManager, so the live map is pure
+///   hub-and-spoke). For 3+ players this forms one connected ring; for exactly 2,
 ///   both islands end up pointed at each other, which is why the curve's bow direction is
 ///   always derived consistently from its own direction of travel (see
 ///   BridgeConnectionBuilder.TryBuildCandidate) — the two resulting connections bow to
@@ -43,6 +45,13 @@ public class IslandBridgeFeature : WorldGenFeature
     // islands for that kind of connection (a direct bridge is still built).
     public int RingIntermittentCount = 3;
     public int SpokeIntermittentCount = 1;
+
+    // False skips the ring loop entirely — no base-to-base connections at all, only spokes
+    // (every base only reaches another base by routing through the mid island). Unlike
+    // RingIntermittentCount = 0 (which still builds a direct ring bridge, just without
+    // waypoint islands along it), this omits the ring connections themselves — explicit
+    // design ask ("remove the side bridges between the islands of the players").
+    public bool BuildRingConnections = true;
 
     // Perpendicular distance (world/tile units) a single ring hop's own curve is bowed by —
     // used for every individual hop within a ring connection's chain (between its own
@@ -78,10 +87,24 @@ public class IslandBridgeFeature : WorldGenFeature
     // too, not just to a base or the mid island.
     public IReadOnlyList<IslandPlacementHelper.PlacedIsland> WaypointIslands { get; private set; } = new List<IslandPlacementHelper.PlacedIsland>();
 
-    // Subset of WaypointIslands placed along a SPOKE (base-to-mid-island) connection only —
-    // read by CapturableBuildingFeature to tag those buildings CapturableBuildingComponent.
-    // IsMidBridge = true, distinct from the RING ("side", base-to-base) ones.
-    public IReadOnlyList<IslandPlacementHelper.PlacedIsland> SpokeWaypointIslands { get; private set; } = new List<IslandPlacementHelper.PlacedIsland>();
+    // One entry per player base, each carrying that base's own spoke waypoint islands in
+    // base-to-mid order (index 0 = closest to the base, last = closest to the mid island) —
+    // read by CapturableBuildingFeature to tag each spoke's spawn crystals with a
+    // HomePlayerId and an inner/outer position along that specific player's own bridge. See
+    // CapturableBuildingComponent's own doc comment for why "home" identity (fixed at
+    // world-gen time) matters independently of whoever currently owns a given crystal.
+    public readonly struct SpokeConnection
+    {
+        public readonly ushort HomePlayerId;
+        public readonly IReadOnlyList<IslandPlacementHelper.PlacedIsland> OrderedWaypoints;
+
+        public SpokeConnection(ushort homePlayerId, IReadOnlyList<IslandPlacementHelper.PlacedIsland> orderedWaypoints)
+        {
+            HomePlayerId = homePlayerId;
+            OrderedWaypoints = orderedWaypoints;
+        }
+    }
+    public IReadOnlyList<SpokeConnection> SpokeConnections { get; private set; } = new List<SpokeConnection>();
 
     // Resolved once per Generate() call from BridgeTypeName — see ResolveBridgePrefabs.
     private GameObject[] _bridgePrefabs;
@@ -107,7 +130,7 @@ public class IslandBridgeFeature : WorldGenFeature
         // Ring: base i -> base (i+1) % count. Macro layout (where the waypoint islands go)
         // uses ComputeRingBowDistance's map-edge-aware bow; each individual hop between
         // consecutive islands in the resulting chain uses the plain, modest BowDistance.
-        if (bases.Count >= 2)
+        if (BuildRingConnections && bases.Count >= 2)
         {
             for (int i = 0; i < bases.Count; i++)
             {
@@ -119,18 +142,24 @@ public class IslandBridgeFeature : WorldGenFeature
         }
 
         // Spoke: every base -> the mid island. Both the macro layout and every individual
-        // hop use SpokeBowDistance (0 by default) — see that field's own doc comment.
-        var spokeWaypoints = new List<IslandPlacementHelper.PlacedIsland>();
+        // hop use SpokeBowDistance (0 by default) — see that field's own doc comment. Each
+        // base's own waypoints are also tracked separately (in base-to-mid order) into
+        // SpokeConnections, keyed by that base's ClientId — see that property's own comment.
+        var spokeConnections = new List<SpokeConnection>();
         var midFeature = handler.GetPreviousFeature<MidIslandFeature>();
         if (midFeature != null && midFeature.MidIsland.HasValue)
         {
             IslandPlacementHelper.PlacedIsland mid = midFeature.MidIsland.Value;
             foreach (IslandPlayerBaseFeature.IslandPlacement b in bases)
-                BuildMultiHopBridge(handler, b.Island, mid, SpokeIntermittentCount, SpokeBowDistance, SpokeBowDistance, intermittentPrefabs, waypoints, worldSize, spokeWaypoints);
+            {
+                var ownWaypoints = new List<IslandPlacementHelper.PlacedIsland>();
+                BuildMultiHopBridge(handler, b.Island, mid, SpokeIntermittentCount, SpokeBowDistance, SpokeBowDistance, intermittentPrefabs, waypoints, worldSize, ownWaypoints);
+                spokeConnections.Add(new SpokeConnection(b.ClientId, ownWaypoints));
+            }
         }
 
         WaypointIslands = waypoints;
-        SpokeWaypointIslands = spokeWaypoints;
+        SpokeConnections = spokeConnections;
     }
 
     private GameObject[] ResolveBridgePrefabs()

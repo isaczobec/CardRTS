@@ -18784,7 +18784,7 @@ MonoBehaviour:
   _intermittentIslandNames:
   - BridgeIsland
   _ringIntermittentCount: 3
-  _spokeIntermittentCount: 1
+  _spokeIntermittentCount: 2
   _ringBowEdgeMargin: 20
   _ringBowChordMultiplier: 20
   _bridgePaddingTiles: 10
@@ -18798,10 +18798,10 @@ MonoBehaviour:
   _minIslandsPerWedge: 1
   _maxIslandsPerWedge: 4
   _wedgeAngularInset: 0.12
-  _wedgeRadialMargin: 8
-  _wedgeExtraConnectionChance: 0.3
-  _wedgeMaxExtraConnections: 2
-  _wedgeCenterBiasSamples: 3
+  _wedgeRadialMargin: 2
+  _wedgeExtraConnectionChance: 0
+  _wedgeMaxExtraConnections: 0
+  _wedgeCenterBiasSamples: 1
 --- !u!114 &1537083959
 MonoBehaviour:
   m_ObjectHideFlags: 0
