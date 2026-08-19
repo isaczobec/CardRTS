@@ -1,8 +1,19 @@
 public struct BasicRangedAIComponent : IComponent
 {
-    // How far (as a multiple of the troop's Range stat) it will notice and
-    // automatically target nearby enemies.
+    // How far (as a multiple of the troop's Range stat) it will notice and automatically
+    // target nearby NEUTRAL entities (resource nodes) — see BasicRangedAISystem.AcquireTargets.
     public float DetectionRangeMultiplier;
+
+    // Same, but for real ENEMY entities (troops/buildings) specifically — kept separate from
+    // DetectionRangeMultiplier so a troop can be tuned to notice nearby resources from much
+    // further away than it aggros onto enemies (Guard mode always prefers ANY tracked enemy
+    // over ANY tracked neutral, regardless of which is actually closer — see
+    // BasicRangedAISystem.ResolveGuardTarget — so a huge shared detection range let a troop
+    // beeline for a distant enemy well past a much closer tree/rock it could've been
+    // harvesting instead). 0 (the default, every card except SkillshotRangedTroopCard) falls
+    // back to DetectionRangeMultiplier — set this explicitly only when a card wants a
+    // genuinely different enemy-aggro range than its own resource-detection range.
+    public float EnemyDetectionRangeMultiplier;
 
     // In Guard mode (AIModeComponent): how far (as a multiple of Range, larger than
     // DetectionRangeMultiplier) THIS TROOP may stray from its leash point while chasing an

@@ -26,9 +26,15 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Kept back down at the pre-6x-bump value (explicit design ask — under Guard mode, ANY
+    // tracked enemy always wins over ANY tracked neutral regardless of relative distance, see
+    // BasicRangedAISystem.ResolveGuardTarget, so the same 6x bump that's good for finding
+    // resources from far away also meant this troop would beeline past a much closer tree/
+    // rock to go fight a distant enemy). DetectionRangeMultiplier above still governs how far
+    // it notices neutral resource nodes.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -80,10 +86,12 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "Ranger";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone, sum unchanged (150) — lower MaxHealth (150) than most
+    // troops, so lean wood.
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 120,
-            Wood = 30
+            Wood = 100,
+            Stone = 50
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override int[] GrantedAbilityIds => new[] { AbilityManager.SkillshotAbilityId };
@@ -107,10 +115,11 @@ public class SkillshotRangedTroopCard : SpawnAtPointCard
         {
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
-                DetectionRangeMultiplier = DetectionRangeMultiplier,
-                ChaseRangeMultiplier     = ChaseRangeMultiplier,
-                AttackRangeMultiplier    = AttackRangeMultiplier,
-                WindDownMultiplier       = WindDownMultiplier,
+                DetectionRangeMultiplier      = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
+                ChaseRangeMultiplier          = ChaseRangeMultiplier,
+                AttackRangeMultiplier         = AttackRangeMultiplier,
+                WindDownMultiplier            = WindDownMultiplier,
             }),
             // Primary pool — the troop's ordinary homing auto-attack (BasicRangedAISystem).
             (e, id) =>

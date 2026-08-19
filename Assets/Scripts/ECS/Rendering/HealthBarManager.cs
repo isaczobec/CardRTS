@@ -120,9 +120,15 @@ public class HealthBarManager : Singleton<HealthBarManager>
         bar.SetHealth(currentHealth, maxHealth);
     }
 
-    // Called once, right when the bar is created — ownership never changes after a troop
-    // spawns, so this never needs revisiting the way ApplyHealth/ApplyPosition do every tick/
-    // frame. Mirrors SelectionManager.GetUnselectedColor's own friendly/neutral/enemy split.
+    // Called when the bar is first created, and again on OnRespawnableEntityRespawned —
+    // ownership normally never changes after a troop spawns, but a CapturableBuildingComponent
+    // "spawn crystal" is the one exception (see CapturableBuildingSystem.OnDeathExecuted/
+    // PlayerEliminationSystem.RevertCapturedBuildingsToNeutral, both of which flip
+    // TroopComponent.OwnerPlayerId and fire that same event to signal it — explicit bug fix,
+    // this used to only ever run once at spawn, so a captured crystal's bar kept showing
+    // whichever color it was born with). A harmless no-op recompute for every other
+    // respawnable (Tree/Rock/Ore/...), which is always neutral both before and after.
+    // Mirrors SelectionManager.GetUnselectedColor's own friendly/neutral/enemy split.
     private void ApplyOwnerColor(ulong entityId, HealthBarPrefab bar)
     {
         if (_troopStore == null || !_troopStore.HasComponent(entityId)) return;
@@ -182,6 +188,7 @@ public class HealthBarManager : Singleton<HealthBarManager>
         if (!_healthBars.TryGetValue(e.EntityId, out HealthBarPrefab bar)) return;
         bar.gameObject.SetActive(true);
         ApplyHealth(e.EntityId, bar);
+        ApplyOwnerColor(e.EntityId, bar);
     }
 
     private void DestroyHealthBar(ulong entityId)

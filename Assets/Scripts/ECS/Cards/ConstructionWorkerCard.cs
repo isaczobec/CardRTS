@@ -22,8 +22,11 @@ public class ConstructionWorkerCard : SpawnAtPointCard
     private const int Damage = 15;
 
     // Unchanged from BasicMeleeTroopCard.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -49,11 +52,11 @@ public class ConstructionWorkerCard : SpawnAtPointCard
     public override StatsComponent DefaultStats => BuildStats();
 
     // More expensive than BasicMeleeTroopCard (Wood 120 / Stone 30) — explicit design ask.
+    // Metal folded into Wood/Stone, sum unchanged (265).
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood  = 165,
-            Stone = 60,
-            Metal = 40,
+            Wood  = 185,
+            Stone = 80,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -77,6 +80,7 @@ public class ConstructionWorkerCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

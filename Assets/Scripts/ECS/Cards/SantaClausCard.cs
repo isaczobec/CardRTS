@@ -33,10 +33,11 @@ public class SantaClausCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x every troop's own base value — explicit design ask (see every other card's own
-    // DetectionRangeMultiplier/ChaseRangeMultiplier for the same 4x bump).
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 2f;
     private const int ProjectilePoolSize = 16;
@@ -86,10 +87,11 @@ public class SantaClausCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "SantaClaus";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone, sum unchanged (190) — moderate weight ranged troop.
     public override ResourceCost Cost => new ResourceCost
         {
-            Stone = 140,
-            Metal = 50
+            Wood = 110,
+            Stone = 80
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -115,6 +117,7 @@ public class SantaClausCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,
@@ -220,11 +223,11 @@ public class SantaClausCard : SpawnAtPointCard
         {
             // Matches GoblinSnatcherCard's own AI multipliers (private there, so restated
             // here — same reasoning as SnatcherReinforcementBuildingDamageBonusRatio above),
-            // including its own 4x DetectionRangeMultiplier/ChaseRangeMultiplier bump.
+            // including its own 6x-detection/+30%-chase bump.
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
-                DetectionRangeMultiplier = 12f,
-                ChaseRangeMultiplier     = 96f,
+                DetectionRangeMultiplier = 72f,
+                ChaseRangeMultiplier     = 124.8f,
                 AttackRangeMultiplier    = 1.5f,
                 CooldownMultiplier       = 2f,
             }),

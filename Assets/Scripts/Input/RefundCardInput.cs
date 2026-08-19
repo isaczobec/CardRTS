@@ -1,9 +1,9 @@
 using System.IO;
 
-// Input for discarding a card from hand back to the bottom of its owner's deck (see
-// CardHandRenderer's double-right-click gesture and DiscardCardSystem). Unlike
-// SpawnAtPointInput, there's no play point/target — just which card entity to discard.
-public class DiscardCardInput : InputBase
+// Input for selling a card back from hand — see CardHandRenderer's double-right-click
+// gesture and RefundCardSystem. Unlike SpawnAtPointInput, there's no play point/target — just
+// which card entity to refund.
+public class RefundCardInput : InputBase
 {
     public ulong CardEntityId;
 

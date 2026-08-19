@@ -284,7 +284,7 @@ public class TickManager : Singleton<TickManager>
         _inputTypeRegistry.Register<SetAIModeInput>(11);
         _inputTypeRegistry.Register<MultiPointInput>(12);
         _inputTypeRegistry.Register<BuyUpgradeInput>(13);
-        _inputTypeRegistry.Register<DiscardCardInput>(14);
+        _inputTypeRegistry.Register<RefundCardInput>(14);
         _inputTypeRegistry.Register<RecallInput>(15);
 
         _flagEventTypeRegistry.Register<EntityCreatedEvent>(0);
@@ -456,7 +456,7 @@ public class TickManager : Singleton<TickManager>
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<CorrosionComponent>>(166);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<ResourceGainDebuffComponent>>(167);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<ResourceGainDebuffComponent>>(168);
-        _flagEventTypeRegistry.Register<CardDiscardedEvent>(169);
+        _flagEventTypeRegistry.Register<CardRefundedEvent>(169);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<VengefulSpiritsSourceComponent>>(170);
         _flagEventTypeRegistry.Register<ComponentRemovedEvent<VengefulSpiritsSourceComponent>>(171);
         _flagEventTypeRegistry.Register<ComponentAddedEvent<CripplingStrikesSourceComponent>>(172);
@@ -809,7 +809,7 @@ public class TickManager : Singleton<TickManager>
         ecs.RegisterSystem(SpawnAtPointCardPlaySystem.Instance);
         ecs.RegisterSystem(TargetEntityCardPlaySystem.Instance);
         ecs.RegisterSystem(MultiPointCardPlaySystem.Instance);
-        ecs.RegisterSystem(DiscardCardSystem.Instance);
+        ecs.RegisterSystem(RefundCardSystem.Instance);
         ecs.RegisterSystem(BuyCardSystem.Instance);
         ecs.RegisterSystem(BuyUpgradeSystem.Instance);
         ecs.RegisterSystem(AbilitySystem.Instance);
@@ -876,6 +876,7 @@ public class TickManager : Singleton<TickManager>
         // doesn't flush — see RequestManager) so it needs the same ordering.
         ecs.RegisterSystem(ResourceGeneratorSystem.Instance);
         ecs.RegisterSystem(ResourceCollectorTrickleSystem.Instance);
+        ecs.RegisterSystem(ResourceSoftCapSystem.Instance);
         ecs.RegisterSystem(ResourceGenerationSystem.Instance);
         // Subscribe-only (mutates ResourcesAdded.Multiplier before Execute) — no ordering
         // dependency on anything else here, since it's the only subscriber that touches

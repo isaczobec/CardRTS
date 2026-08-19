@@ -18,6 +18,18 @@ public class TargetingPrefab : MonoBehaviour
     // persist independently of that.
     [SerializeField] private Transform _scalableTransform;
 
+    // Extra multiplier (on top of the base scale from SetScale) applied while at least one
+    // of the friendly troops currently targeting this entity is itself selected — explicit
+    // design ask ("the targeting prefabs around the entities [selected troops are]
+    // targetting are made 1.4x larger... reverts when unselected"). See SetTargeterSelected,
+    // driven every frame by SelectionManager.RefreshTargetingVisuals.
+    private const float SelectedTargeterScaleMultiplier = 1.4f;
+
+    // Base scale from SetScale (SelectableComponent.Scale) — kept so SetTargeterSelected can
+    // multiply on top of it rather than overwrite it outright.
+    private float _baseScale = 1f;
+    private bool _targeterSelected;
+
     public bool IsTargeted { get; private set; }
     public TargetKind? CurrentKind { get; private set; }
 
@@ -33,8 +45,25 @@ public class TargetingPrefab : MonoBehaviour
     // SelectableComponent.Scale.
     public void SetScale(float scale)
     {
-        if (_scalableTransform != null)
-            _scalableTransform.localScale = Vector3.one * scale;
+        _baseScale = scale;
+        ApplyScale();
+    }
+
+    // Called every frame by RefreshTargetingVisuals for every currently-targeted entity —
+    // no-ops when nothing actually changed, so redundant calls (the overwhelmingly common
+    // case, since which friendly troop is selected rarely changes tick-to-tick) are cheap.
+    public void SetTargeterSelected(bool selected)
+    {
+        if (_targeterSelected == selected) return;
+        _targeterSelected = selected;
+        ApplyScale();
+    }
+
+    private void ApplyScale()
+    {
+        if (_scalableTransform == null) return;
+        float multiplier = _targeterSelected ? SelectedTargeterScaleMultiplier : 1f;
+        _scalableTransform.localScale = Vector3.one * (_baseScale * multiplier);
     }
 
     public void SetTargeted(TargetKind kind)
@@ -50,5 +79,14 @@ public class TargetingPrefab : MonoBehaviour
         IsTargeted = false;
         CurrentKind = null;
         gameObject.SetActive(false);
+
+        // Reverts the highlight so a later re-target starts fresh rather than potentially
+        // reading as already-highlighted for a frame before RefreshTargetingVisuals catches
+        // up — see SelectedTargeterScaleMultiplier's own doc comment.
+        if (_targeterSelected)
+        {
+            _targeterSelected = false;
+            ApplyScale();
+        }
     }
 }

@@ -29,9 +29,12 @@ public class SpeedBoostCard : TargetEntityCard
         SpellResist = StatsComponent.STAT_NA,
     };
 
+    // Spells now cost only Gems (explicit design ask) — Metal folded into a single Gems
+    // price roughly proportional to the old total resource investment (~8 non-gem units
+    // per gem).
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 55
+            Gems = 7
         };
 
     // No range requirement at all — playable on any friendly troop anywhere on the map.

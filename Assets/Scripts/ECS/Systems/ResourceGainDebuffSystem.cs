@@ -1,7 +1,9 @@
 // Subscribes to ResourcesAdded and scales Multiplier down for a player currently carrying
-// an active ResourceGainDebuffComponent-carrying modifier (see DiscardCardSystem, the only
-// source of this debuff today) — only for Wood/Stone/Metal/Gold; Gems/Soulstones gains are
-// left untouched, matching the explicit "wood, metal, stone, and gold" design ask.
+// an active ResourceGainDebuffComponent-carrying modifier — only for Wood/Stone/Metal/Gold;
+// Gems/Soulstones gains are left untouched, matching the explicit "wood, metal, stone, and
+// gold" design ask. Nothing currently grants this debuff (its original source, the old
+// discard-a-card mechanic, was replaced by RefundCardSystem's sell-for-half-value gesture,
+// which has no free-cycling concern to deter) — kept wired for a future source.
 //
 // Runs via a plain Subscribe (not SubscribeExecuted), same shape as ResourceDropBoostSystem/
 // ComebackResourceBoostSystem — mutates Multiplier BEFORE ResourcesAdded.Execute applies

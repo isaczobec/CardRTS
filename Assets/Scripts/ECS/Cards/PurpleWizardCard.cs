@@ -25,8 +25,11 @@ public class PurpleWizardCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -56,11 +59,13 @@ public class PurpleWizardCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "PurpleWizard";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone, plus Gems=10 also folded in (explicit design ask —
+    // troops/buildings no longer cost Gems at all) — same split as IceManCard, which this
+    // is based off of.
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 120,
-            Wood = 30,
-            Gems = 10,
+            Wood = 110,
+            Stone = 80,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override int[] GrantedAbilityIds => new[] { AbilityManager.GravityWellAbilityId };
@@ -85,6 +90,7 @@ public class PurpleWizardCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

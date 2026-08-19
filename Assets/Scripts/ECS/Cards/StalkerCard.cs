@@ -29,9 +29,11 @@ public class StalkerCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -74,11 +76,12 @@ public class StalkerCard : SpawnAtPointCard
     public const float SelectionScale = 1.5f;
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone, sum unchanged (260) — swift and agile, so the extra
+    // goes almost entirely to wood.
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood = 200,
-            Stone = 30,
-            Metal = 30,
+            Wood = 210,
+            Stone = 50,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override int[] GrantedAbilityIds => new[] { AbilityManager.ShadowCloakAbilityId };
@@ -103,6 +106,7 @@ public class StalkerCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

@@ -23,9 +23,11 @@ public class IceManCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -57,11 +59,12 @@ public class IceManCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "IceMan";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone (150 sum), plus Gems=10 also folded in as a further +20
+    // Wood/+20 Stone (explicit design ask — troops/buildings no longer cost Gems at all).
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 120,
-            Wood = 30,
-            Gems = 10,
+            Wood = 110,
+            Stone = 80,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override int[] GrantedAbilityIds => new[] { AbilityManager.IceNovaAbilityId };
@@ -86,6 +89,7 @@ public class IceManCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

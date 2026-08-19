@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Scatters clusters of the three basic resources (trees, stone, ore/metal) across every
-// "filler" island in the world — the waypoint islands IslandBridgeFeature threads along each
-// ring (base-to-base) and spoke (base-to-mid) bridge connection, plus the extra filler islands
-// WedgeIslandFeature scatters into the pockets between the mid and side bridges. Player base
-// islands, the mid island, and GemIslandFeature's own dedicated gem islands are deliberately
-// left alone — they already have their own base/objective/gem content.
+// Scatters clusters of the basic resources (trees, stone) across every "filler" island in the
+// world — the waypoint islands IslandBridgeFeature threads along each ring (base-to-base) and
+// spoke (base-to-mid) bridge connection, plus the extra filler islands WedgeIslandFeature
+// scatters into the pockets between the mid and side bridges. Player base islands, the mid
+// island, and GemIslandFeature's own dedicated gem islands are deliberately left alone — they
+// already have their own base/objective/gem content. Ore is no longer scattered here at all
+// (explicit design ask — EntitySpawnAction.SpawnOre itself is untouched, just no longer
+// referenced by ResourceSpawners below, since ore/metal is being phased out of the map).
 //
 // Enqueue after both IslandBridgeFeature and WedgeIslandFeature (see WorldManager.SetupWorldGen)
 // — reads IslandBridgeFeature.WaypointIslands and WedgeIslandFeature.PlacedIslands via
@@ -17,8 +19,8 @@ using UnityEngine;
 // tile count * ClustersPerTile) — see RollClusterCount — so a big island averages more clusters
 // than a small one without either ever being guaranteed a hard-coded count. Each cluster's
 // resource is picked with odds weighted inversely to how much of that resource has already been
-// placed so far this generation (see PickBalancedResource) — not a flat 1/3 each, and not a
-// strict round robin either, so the map-wide totals stay roughly even across Tree/Stone/Ore
+// placed so far this generation (see PickBalancedResource) — not a flat 50/50 each, and not a
+// strict round robin either, so the map-wide totals stay roughly even across Tree/Stone
 // without ever being forced into exact equality or ever fully losing the randomness.
 public class IslandResourceClusterFeature : WorldGenFeature
 {
@@ -37,7 +39,6 @@ public class IslandResourceClusterFeature : WorldGenFeature
     {
         EntitySpawnAction.SpawnTree,
         EntitySpawnAction.SpawnRock,
-        EntitySpawnAction.SpawnOre,
     };
 
     public override void Generate(WorldGenHandler handler)

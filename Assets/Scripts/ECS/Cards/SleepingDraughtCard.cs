@@ -36,11 +36,12 @@ public class SleepingDraughtCard : TargetEntityCard
         SpellResist = StatsComponent.STAT_NA,
     };
 
+    // Spells now cost only Gems (explicit design ask) — Wood/Metal/Stone folded into a
+    // single Gems price roughly proportional to the old total resource investment (~8
+    // non-gem units per gem).
     public override ResourceCost Cost => new ResourceCost
     {
-        Wood = 50,
-        Metal = 40,
-        Stone = 40,
+        Gems = 16,
     };
 
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;

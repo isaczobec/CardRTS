@@ -331,35 +331,6 @@ public class WorldManager : Singleton<WorldManager>
         // why player bases, the mid island, and the gem islands above are excluded.
         handler.features.Add(new IslandResourceClusterFeature());
 
-        // A handful more tree/stone/ore clusters scattered directly onto TileType.Bridge tiles
-        // (the ring/spoke network plus every wedge/gem connection, all already stamped by the
-        // features above) — a modest map-wide resource bump, on top of (not instead of) the
-        // island clusters above. Reuses EntityClusterFeature's own non-biome, whole-grid-scan
-        // branch (AllowedTileTypes filters it down to just Bridge tiles) rather than a new
-        // feature — same shape the unreachable biome sections below already use for their own
-        // per-resource EntityClusterFeature triplets. Placing entities directly on a bridge's
-        // walkable tiles is safe the same way it already is within a biome: BuildingComponent.
-        // BlockRadius only relocates OTHER entities that would spawn overlapping one (see
-        // BuildingBlockingSystem) and is never baked into the navmesh, so a resource can't
-        // actually block a crossing the way an impassable Mountain tile could.
-        int bridgeResourceClusterMin = 3;
-        int bridgeResourceClusterMax = 5;
-        float bridgeResourceMinDistanceToOtherEntities = 8f;
-        foreach (Action<ulong, ECS> spawner in new[] { EntitySpawnAction.SpawnTree, EntitySpawnAction.SpawnRock, EntitySpawnAction.SpawnOre })
-        {
-            handler.features.Add(new EntityClusterFeature
-            {
-                Spawner                    = spawner,
-                ClusterCountMin            = bridgeResourceClusterMin,
-                ClusterCountMax            = bridgeResourceClusterMax,
-                EntitiesPerClusterMin      = 2,
-                EntitiesPerClusterMax      = 4,
-                ClusterRadius              = 5f,
-                MinEntitySpacing           = 1.5f,
-                MinDistanceToOtherEntities = bridgeResourceMinDistanceToOtherEntities,
-                AllowedTileTypes           = new[] { TileType.Bridge },
-            });
-        }
         return;
 #pragma warning disable CS0162 // unreachable code below — kept intact to restore later
         // Spawn player bases first, before any terrain/entity features run, so everything

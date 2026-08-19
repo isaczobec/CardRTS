@@ -29,8 +29,11 @@ public class HealerGuardianCard : SpawnAtPointCard
     private const int Range = 12;
 
     // Unchanged from SkillshotRangedTroopCard.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -85,11 +88,13 @@ public class HealerGuardianCard : SpawnAtPointCard
     public override bool CanCollectResources => false;
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone (130 sum) — very light, short-lived (60s) troop, so lean
+    // wood hard. Gems=7 also folded in as a further +14 Wood/+14 Stone (explicit design ask
+    // — troops/buildings no longer cost Gems at all).
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 100,
-            Wood = 30,
-            Gems = 7,
+            Wood = 114,
+            Stone = 44,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
@@ -121,6 +126,7 @@ public class HealerGuardianCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

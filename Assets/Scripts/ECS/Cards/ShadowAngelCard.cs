@@ -38,8 +38,11 @@ public class ShadowAngelCard : SpawnAtPointCard
     private const int Armor = 20;
     private const int SpellResist = 0;
     private const int Range = 12;
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -77,11 +80,14 @@ public class ShadowAngelCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "ShadowAngel";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone (190 sum), plus a flat +50 compensation for the dropped
+    // Soulstones=1 cost (explicit design ask — troops that used to cost Soulstones should
+    // get more expensive in the other resources instead) — a "tough" support troop, so lean
+    // stone.
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 150,
-            Wood = 40,
-            Soulstones = 1,
+            Wood = 110,
+            Stone = 130,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;
@@ -111,6 +117,7 @@ public class ShadowAngelCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

@@ -155,7 +155,7 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
         ushort localPlayerId = LocalPlayerId();
 
         if (GetAvailableGold() < ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, localPlayerId, card)) return;
-        if (ShopPricingHelper.HasReachedPurchaseLimit(Ecs, localPlayerId)) return;
+        if (ShopPricingHelper.HasReachedPurchaseLimit(Ecs, localPlayerId, card.Category)) return;
         if (AbilityBarHelper.WouldExceedCapacity(Ecs, localPlayerId, card.GrantedAbilityIds)) return;
 
         InputBuffer.EnqueueInput(new BuyCardInput { CardType = card.Type });
@@ -195,18 +195,17 @@ public class ShopUIManager : ShopWindowBase<ShopUIManager>
         int availableGold = GetAvailableGold();
         ushort localPlayerId = LocalPlayerId();
 
-        // Same for every card this refresh (a global per-player cap), so it's computed once
-        // rather than re-checked per card — unlike the ability-bar check below, which is
-        // specific to what each individual card would grant.
-        bool purchaseLimitReached = ShopPricingHelper.HasReachedPurchaseLimit(Ecs, localPlayerId);
-
         foreach (CardGameObject go in _shopCards)
         {
             if (!_shopCardDefinitions.TryGetValue(go, out Card card)) continue;
 
             go.ShopGoldCost = ShopPricingHelper.GetEffectiveShopGoldCost(Ecs, localPlayerId, card);
 
-            bool blocked = purchaseLimitReached || AbilityBarHelper.WouldExceedCapacity(Ecs, localPlayerId, card.GrantedAbilityIds);
+            // Per-category cap now (see ShopPricingHelper), so — unlike the old flat
+            // match-wide limit — this has to be re-checked per card against ITS OWN category
+            // rather than computed once for the whole refresh.
+            bool blocked = ShopPricingHelper.HasReachedPurchaseLimit(Ecs, localPlayerId, card.Category)
+                || AbilityBarHelper.WouldExceedCapacity(Ecs, localPlayerId, card.GrantedAbilityIds);
             go.RefreshShopAffordability(availableGold, blocked);
         }
     }

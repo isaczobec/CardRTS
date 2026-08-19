@@ -33,9 +33,11 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from BasicRangedTroopCard.
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -69,10 +71,12 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
     public override void OnIndicatorSpawned(GameObject indicator)
         => CircleIndicatorHelper.ArrangeInRing(indicator, SkeletonCount, SpawnRadius);
 
+    // Metal folded into Wood/Stone, sum unchanged (140) — light, short-lived summons, so
+    // lean wood.
     private static readonly ResourceCost TotalCost = new ResourceCost
     {
-        Stone = 100,
-        Metal = 40
+        Wood = 90,
+        Stone = 50
     };
 
     // Each of the 8 archers is worth an even split of the card's own cost — see
@@ -126,6 +130,7 @@ public class EphemeralSkeletonsCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

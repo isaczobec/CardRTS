@@ -6,7 +6,7 @@ public class MineCard : SpawnAtPointCard
     // Matches BuildingCard's own MaxHealth/ActivationDelaySeconds/GoldDropOnDeath.
     private const int MaxHealth = 350;
     private const float ActivationDelaySeconds = 2f;
-    private const int GoldDropOnDeath = 20;
+    private const int GoldDropOnDeath = 26; // +30% (explicit design ask) from 20
 
     private const float MaxDistanceFromBuilding = 45f;
 

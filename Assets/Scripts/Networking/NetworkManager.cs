@@ -446,11 +446,14 @@ public class NetworkManager : Singleton<NetworkManager>
         ecs.AddComponent(entity.Id, new PositionComponent());
         ecs.AddComponent(entity.Id, new PlayerComponent { PlayerId = playerId });
         ecs.AddComponent(entity.Id, new PlayerDeckComponent());
-        // Wood/Stone/Metal now come entirely from ResourceProductionOnDeathSystem (killing
-        // Tree/Rock/Ore entities) instead of a flat starting rate — only Gold keeps its
-        // baseline passive income.
+        // Flat baseline passive Wood/Stone income — explicit design ask (2.5/sec each, below
+        // ResourceSoftCapSystem's 500 soft cap; halved automatically once a player crosses
+        // it). Building-driven generators (ResourceGeneratorCardHelper) stack on top of this
+        // via their own ResourceGeneratorComponent, not by mutating these fields directly.
         ecs.AddComponent(entity.Id, new PlayerResourcesComponent() {
             GoldPerSecond = 0f,
+            WoodPerSecond = 2.5f,
+            StonePerSecond = 2.5f,
             Gold = 100,
             Wood = 200,
             Stone = 200,

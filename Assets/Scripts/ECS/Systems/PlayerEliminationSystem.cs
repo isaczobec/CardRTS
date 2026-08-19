@@ -133,6 +133,13 @@ public static class PlayerEliminationSystem
             ref HealthComponent health = ref healthStore.GetComponent(id);
             health.CurrentHealth = statsStore.GetComponent(id).MaxHealth;
             ecs.Delta.MarkComponentDirty(id, typeof(HealthComponent));
+
+            // Same "just reset, tell anything that only refreshes off this event" signal
+            // CapturableBuildingSystem.OnDeathExecuted fires for its own ownership+health
+            // reset — see that class's own doc comment (HealthBarManager above all, which
+            // otherwise keeps showing this building's old owner's color).
+            PositionQuery.TryGet(ecs, id, out float x, out float y);
+            ecs.FlagEvents.Add(new RespawnableEntityRespawnedEvent { EntityId = id, X = x, Y = y });
         }
     }
 }

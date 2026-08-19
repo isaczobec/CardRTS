@@ -68,10 +68,12 @@ public class BallisticMissileCard : SpawnAtPointCard
         SpellResist = StatsComponent.STAT_NA,
     };
 
+    // Spells now cost only Gems (explicit design ask) — Metal folded into a single Gems
+    // price roughly proportional to the old total resource investment (~8 non-gem units
+    // per gem) — the biggest single-hit nuke in the spell roster, priced accordingly.
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 100,
-            Gems  = 15,
+            Gems  = 28,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 

@@ -30,8 +30,11 @@ public class PirateCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from BasicMeleeTroopCard.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -87,6 +90,7 @@ public class PirateCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

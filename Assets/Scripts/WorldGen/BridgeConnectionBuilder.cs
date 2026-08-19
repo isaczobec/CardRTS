@@ -235,12 +235,24 @@ public static class BridgeConnectionBuilder
     // the bridge and the island it's meant to connect to. Applying the same overshoot to the
     // visual segment chain closes the matching visual gap that could otherwise show up
     // whenever an anchor was marked even slightly shy of a (typically small) island's actual
-    // mesh silhouette. Capped at 0.5 either way so a very short curve's padding can't
-    // dominate/wildly extrapolate the Bezier well past where it's actually a sensible
-    // approximation of "a bit further in this direction".
+    // mesh silhouette.
+    //
+    // Capped (rather than left unbounded) so a genuinely degenerate, near-zero-length curve
+    // can't make the Bezier extrapolate absurdly far — but raised from an original 0.5 to 4:
+    // that lower cap silently defeated a large paddingTiles value for any SHORT hop (e.g. a
+    // player base's own first waypoint connection — explicit bug fix, "slight gap between the
+    // base island and the bridge... happening even with [paddingTiles] really high" — a large
+    // paddingTiles value did nothing once curve.Length dropped below 2x it, since deltaT was
+    // clamped well short of what paddingTiles itself actually asked for). Extrapolating a
+    // quadratic Bezier well outside [0,1] only meaningfully curves away from "keep going the
+    // same direction" for a heavily bowed connection — every SPOKE connection (base-to-mid,
+    // the ones this fix targets) is dead straight (SpokeBowDistance = 0f), where even a large
+    // multiple of the curve's own length extrapolates in a perfectly straight line with zero
+    // risk; ring/wedge/gem connections do carry a real (if modest) bow, so the cap still
+    // exists for them, just loose enough to no longer bottleneck a short hop in practice.
     private static (float tStart, float tRange) PaddedTRange(BridgeCandidate curve, float paddingTiles)
     {
-        float deltaT = curve.Length > 0.0001f ? Mathf.Min(0.5f, paddingTiles / curve.Length) : 0f;
+        float deltaT = curve.Length > 0.0001f ? Mathf.Min(4f, paddingTiles / curve.Length) : 0f;
         return (-deltaT, 1f + deltaT * 2f);
     }
 

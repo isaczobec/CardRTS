@@ -33,9 +33,11 @@ public class SkeletonsCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from BasicMeleeTroopCard.
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -68,10 +70,12 @@ public class SkeletonsCard : SpawnAtPointCard
     public override void OnIndicatorSpawned(GameObject indicator)
         => CircleIndicatorHelper.ArrangeInRing(indicator, SkeletonCount, SpawnRadius);
 
+    // Flipped to wood-heavy (sum unchanged, 150) — 8 fragile 1/6-health skeletons is about
+    // as "light" as this roster gets.
     private static readonly ResourceCost TotalCost = new ResourceCost
     {
-        Wood = 50,
-        Stone = 100
+        Wood = 100,
+        Stone = 50
     };
 
     // Each of the 8 skeletons (including ones later raised by ResolveSkeletonSummon) is
@@ -131,6 +135,7 @@ public class SkeletonsCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

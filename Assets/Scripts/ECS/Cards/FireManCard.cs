@@ -22,9 +22,11 @@ public class FireManCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicRangedTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -58,11 +60,12 @@ public class FireManCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "FireMan";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone (140 sum), plus Gems=10 also folded in as a further +20
+    // Wood/+20 Stone (explicit design ask — troops/buildings no longer cost Gems at all).
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 100,
-            Wood = 40,
-            Gems = 10,
+            Wood = 105,
+            Stone = 75,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -86,6 +89,7 @@ public class FireManCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

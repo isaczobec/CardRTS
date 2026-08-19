@@ -1,8 +1,18 @@
 public struct BasicMeleeAIComponent : IComponent
 {
-    // How far (as a multiple of the troop's Range stat) it will notice and
-    // automatically target nearby enemies.
+    // How far (as a multiple of the troop's Range stat) it will notice and automatically
+    // target nearby NEUTRAL entities (resource nodes) — see BasicMeleeAISystem.AcquireTargets.
     public float DetectionRangeMultiplier;
+
+    // Same, but for real ENEMY entities (troops/buildings) specifically — kept separate from
+    // DetectionRangeMultiplier so a troop can be tuned to notice nearby resources from much
+    // further away than it aggros onto enemies (Guard mode always prefers ANY tracked enemy
+    // over ANY tracked neutral, regardless of which is actually closer — see
+    // BasicMeleeAISystem.ResolveGuardTarget). 0 (the default, every current melee card) falls
+    // back to DetectionRangeMultiplier — set this explicitly only when a card wants a
+    // genuinely different enemy-aggro range than its own resource-detection range. Mirrors
+    // BasicRangedAIComponent's own field of the same name/reasoning.
+    public float EnemyDetectionRangeMultiplier;
 
     // In Guard mode (AIModeComponent): how far (as a multiple of Range, larger than
     // DetectionRangeMultiplier) THIS TROOP may stray from its leash point while chasing an

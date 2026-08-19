@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 // Reads BuyCardInput each tick: validates the requested CardType is real, that the player
-// hasn't already hit the match-wide ShopPricingHelper.MaxCardsPurchased cap, that the card's
+// hasn't already hit that card's own category's ShopPricingHelper purchase cap, that the card's
 // own GrantedAbilityIds (if any) would still fit on the player's AbilityBarComponent (see
 // AbilityBarHelper.WouldExceedCapacity), and that the buying player can afford its
 // Card.ShopGoldCost — then deducts that cost via a ResourcesDeductedRequest. ShopUIManager
@@ -49,9 +49,9 @@ public static class BuyCardSystem
             return;
         }
 
-        if (ShopPricingHelper.HasReachedPurchaseLimit(ecs, input.ClientId))
+        if (ShopPricingHelper.HasReachedPurchaseLimit(ecs, input.ClientId, definition.Category))
         {
-            DebugLogger.LogWarning($"[BuyCardSystem] Rejected: player {input.ClientId} has already bought {ShopPricingHelper.MaxCardsPurchased} cards (the match limit).", "cards");
+            DebugLogger.LogWarning($"[BuyCardSystem] Rejected: player {input.ClientId} has already hit the {definition.Category} purchase cap.", "cards");
             return;
         }
 
@@ -95,7 +95,12 @@ public static class BuyCardSystem
         if (historyStore != null && historyStore.HasComponent(resourceEntityId))
         {
             ref ShopPurchaseHistoryComponent history = ref historyStore.GetComponent(resourceEntityId);
-            history.CardsPurchased++;
+            switch (definition.Category)
+            {
+                case CardCategory.Building: history.BuildingsPurchased++; break;
+                case CardCategory.Spell:    history.SpellsPurchased++; break;
+                default:                    history.TroopsPurchased++; break;
+            }
             ecs.Delta.MarkComponentDirty(resourceEntityId, typeof(ShopPurchaseHistoryComponent));
         }
     }

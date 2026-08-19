@@ -180,8 +180,10 @@ public class BasicRangedAISystem : ISystem
 
         if (mode != AIMode.Passive && !mov.playerDestinationSet)
         {
-            float detectionRange = range * ai.DetectionRangeMultiplier;
-            AcquireTargets(id, troop.OwnerPlayerId, myPos, detectionRange, detectionRange * BuildingDetectionRangeFactor);
+            float neutralDetectionRange = range * ai.DetectionRangeMultiplier;
+            float enemyMultiplier = ai.EnemyDetectionRangeMultiplier > 0f ? ai.EnemyDetectionRangeMultiplier : ai.DetectionRangeMultiplier;
+            float enemyDetectionRange = range * enemyMultiplier;
+            AcquireTargets(id, troop.OwnerPlayerId, myPos, neutralDetectionRange, enemyDetectionRange, enemyDetectionRange * BuildingDetectionRangeFactor);
         }
 
         ulong activeTarget;
@@ -312,19 +314,33 @@ public class BasicRangedAISystem : ISystem
         _ecs.Delta.MarkComponentDirty(id, typeof(BasicRangedAIComponent));
     }
 
-    // detectionRange gates every candidate (the query radius itself); buildingDetectionRange
-    // additionally gates one that turns out to be an enemy BUILDING (see IsEnemyBuilding) —
-    // always <= detectionRange, so the single ChunkTracker query above already covers both.
-    private void AcquireTargets(ulong id, ushort myOwnerId, Vector2 myPos, float detectionRange, float buildingDetectionRange)
+    // neutralDetectionRange/enemyDetectionRange gate a candidate by its own category (see
+    // IsNeutralTarget) — kept separate so a troop can be tuned to notice nearby resources from
+    // further away than it aggros onto enemies (see BasicRangedAIComponent.
+    // EnemyDetectionRangeMultiplier's own doc comment for why that matters under Guard mode's
+    // tiering). buildingDetectionRange additionally gates an enemy candidate that turns out to
+    // be a BUILDING (see IsEnemyBuilding) — always <= enemyDetectionRange, so the single
+    // ChunkTracker query below (at the larger of the two ranges) already covers every case.
+    private void AcquireTargets(ulong id, ushort myOwnerId, Vector2 myPos, float neutralDetectionRange, float enemyDetectionRange, float buildingDetectionRange)
     {
         _queryBuffer.Clear();
-        _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, detectionRange, _queryBuffer);
+        _ecs.ChunkTracker.GetEntitiesNear(myPos.x, myPos.y, Mathf.Max(neutralDetectionRange, enemyDetectionRange), _queryBuffer);
 
         foreach (ulong candidateId in _queryBuffer)
         {
             if (candidateId == id) continue;
             if (!IsEnemy(candidateId, myOwnerId)) continue;
-            if (IsEnemyBuilding(candidateId) && DistanceTo(candidateId, myPos) > buildingDetectionRange) continue;
+
+            float dist = DistanceTo(candidateId, myPos);
+            if (IsNeutralTarget(candidateId))
+            {
+                if (dist > neutralDetectionRange) continue;
+            }
+            else
+            {
+                if (dist > enemyDetectionRange) continue;
+                if (IsEnemyBuilding(candidateId) && dist > buildingDetectionRange) continue;
+            }
             _targeting.SetAutomaticTarget(id, candidateId);
         }
     }

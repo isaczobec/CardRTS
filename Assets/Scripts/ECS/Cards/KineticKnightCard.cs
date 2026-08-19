@@ -27,8 +27,11 @@ public class KineticKnightCard : SpawnAtPointCard
     private const int Damage = 36;
 
     // Unchanged from BasicMeleeTroopCard.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -48,11 +51,13 @@ public class KineticKnightCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "KineticKnight";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone (120 sum), plus a flat +40 compensation for the dropped
+    // Soulstones=1 cost (explicit design ask — see ShadowAngelCard's own identical
+    // reasoning) — a tougher melee troop, so lean stone.
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood  = 80,
-            Metal = 40,
-            Soulstones = 1,
+            Wood  = 70,
+            Stone = 90,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override int[] GrantedAbilityIds => new[] { AbilityManager.KineticPullAbilityId, AbilityManager.KineticShieldAbilityId };
@@ -77,6 +82,7 @@ public class KineticKnightCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

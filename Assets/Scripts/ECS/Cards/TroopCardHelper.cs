@@ -21,7 +21,7 @@ public static class TroopCardHelper
     // SEVERAL troops at once (SkeletonsCard/EphemeralSkeletonsCard) can divide this evenly
     // across them, so the whole card still only drops this much total if every one of them
     // is killed, rather than that amount N times over.
-    public const int DefaultGoldDropOnDeath = 23;
+    public const int DefaultGoldDropOnDeath = 30; // +30% (explicit design ask) from 23
 
     public static ulong SpawnTroop(
         ECS ecs,

@@ -43,10 +43,12 @@ public class MassiveSleepingDraughtCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "MassiveSleepingDraught";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Spells now cost only Gems (explicit design ask) — Wood folded into a single Gems
+    // price roughly proportional to the old total resource investment (~8 non-gem units
+    // per gem).
     public override ResourceCost Cost => new ResourceCost
         {
-            Gems = 8,
-            Wood = 100,
+            Gems = 21,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;

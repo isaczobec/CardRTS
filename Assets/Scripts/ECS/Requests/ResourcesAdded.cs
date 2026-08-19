@@ -15,6 +15,13 @@ public class ResourcesAdded : Request
     public float Amount;
     public float Multiplier;
 
+    // True for a scheduled/recurring passive-income grant (ResourceGenerationSystem's own
+    // per-player *PerSecond baseline, ResourceGeneratorSystem's building procs) — as opposed
+    // to a one-time event grant (a resource node death, the trickle catch-up system, ...).
+    // See ResourceSoftCapSystem, the only current reader: passive income stops completely
+    // once a player is at/over the soft cap, while one-time grants are merely reduced.
+    public bool IsPassive;
+
     // World/tile-space location this gain happened at (e.g. a dying tree's position for
     // OnDeathResourceDropSystem), or NO_WORLD_LOCATION if there isn't one.
     public float X = NO_WORLD_LOCATION;

@@ -9,8 +9,8 @@ public class BuildingCard : SpawnAtPointCard
     private const float ActivationDelaySeconds = 2f;
 
     // Gold dropped to whoever kills this building (see OnDeathResourceDropComponent/
-    // OnDeathResourceDropSystem).
-    private const int GoldDropOnDeath = 20;
+    // OnDeathResourceDropSystem). +30% (explicit design ask) from 20.
+    private const int GoldDropOnDeath = 26;
 
     // A bit more generous than troops — buildings are how you expand toward new
     // territory, so they shouldn't be stuck only ever hugging existing ones.

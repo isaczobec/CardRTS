@@ -3957,7 +3957,7 @@ MonoBehaviour:
   _hoverStickyMultiplier: 1.25
   _selectedAnchor: {fileID: 1185538393}
   _dragLiftThreshold: 250
-  _discardDoubleClickWindow: 0.4
+  _refundDoubleClickWindow: 0.4
 --- !u!1 &375397200
 GameObject:
   m_ObjectHideFlags: 0
@@ -6546,7 +6546,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &635448621
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6563,10 +6563,10 @@ RectTransform:
   - {fileID: 694469488}
   m_Father: {fileID: 506363031}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 31.87, y: -187.75}
+  m_SizeDelta: {x: 63.74, y: 75.1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &639872972
 GameObject:
@@ -8655,7 +8655,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &773904244
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8672,10 +8672,10 @@ RectTransform:
   - {fileID: 1512918887}
   m_Father: {fileID: 506363031}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 188.81, y: -187.75}
+  m_SizeDelta: {x: 63.74, y: 75.1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &782628375
 GameObject:
@@ -18787,7 +18787,7 @@ MonoBehaviour:
   _spokeIntermittentCount: 2
   _ringBowEdgeMargin: 20
   _ringBowChordMultiplier: 20
-  _bridgePaddingTiles: 10
+  _bridgePaddingTiles: 15
   _wedgeIslandWeights:
   - Name: IslandLarge
     Weight: 0.7
@@ -18799,6 +18799,7 @@ MonoBehaviour:
   _maxIslandsPerWedge: 4
   _wedgeAngularInset: 0.12
   _wedgeRadialMargin: 2
+  _wedgeMaxConnectionDistance: 50
   _wedgeExtraConnectionChance: 0
   _wedgeMaxExtraConnections: 0
   _wedgeCenterBiasSamples: 1
@@ -25049,6 +25050,13 @@ MonoBehaviour:
   - name: Scythe
     clips:
     - {fileID: 8300000, guid: 8a51e27fcfc0d5a45bff346b32f2e115, type: 3}
+    minPitch: 0.9
+    maxPitch: 1.1
+    defaultVolume: 0.8
+    overlaySounds: []
+  - name: CardRefund
+    clips:
+    - {fileID: 8300000, guid: abdbbfd33a46f4549987385f85c536b5, type: 3}
     minPitch: 0.9
     maxPitch: 1.1
     defaultVolume: 0.8

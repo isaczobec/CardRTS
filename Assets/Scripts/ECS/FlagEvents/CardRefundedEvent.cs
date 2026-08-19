@@ -1,8 +1,8 @@
-// Raised by DiscardCardSystem once a discard is confirmed on the server — mirrors
+// Raised by RefundCardSystem once a refund is confirmed on the server — mirrors
 // CardPlayedEvent exactly (same shape, same "server-confirmed, not predicted" contract via
 // CardHandRenderer subscribing through ServerFlagEvents rather than the local prediction
 // ECS's own FlagEvents).
-public class CardDiscardedEvent : FlagEvent
+public class CardRefundedEvent : FlagEvent
 {
     public ulong EntityId { get; set; }
 

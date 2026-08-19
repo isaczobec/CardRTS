@@ -22,9 +22,11 @@ public class StoneConstructCard : SpawnAtPointCard
     private const int SpellResist = 0;
 
     // Unchanged from IronKnightCard.
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 2.5f;
     private const float CooldownMultiplier = 1.8f;
 
@@ -47,10 +49,12 @@ public class StoneConstructCard : SpawnAtPointCard
     public const float SelectionScale = 3f;
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone, sum unchanged (350) — the heaviest, tankiest troop in
+    // the roster, so almost entirely stone.
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 70,
-            Stone = 280
+            Wood = 30,
+            Stone = 320
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override int[] GrantedAbilityIds => new[] { AbilityManager.GroundSlamAbilityId };
@@ -75,6 +79,7 @@ public class StoneConstructCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

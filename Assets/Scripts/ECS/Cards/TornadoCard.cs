@@ -57,11 +57,12 @@ public class TornadoCard : MultiPointCard
         SpellResist = StatsComponent.STAT_NA,
     };
 
+    // Spells now cost only Gems (explicit design ask) — Wood/Metal folded into a single
+    // Gems price roughly proportional to the old total resource investment (~8 non-gem
+    // units per gem).
     public override ResourceCost Cost => new ResourceCost
         {
-            Gems  = 8,
-            Wood  = 90,
-            Metal = 20,
+            Gems  = 22,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
     public override float MaxDistanceFromFriendlyTroop => MaxDistanceFromTroop;

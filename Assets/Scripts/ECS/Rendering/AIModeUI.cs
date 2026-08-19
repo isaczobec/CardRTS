@@ -84,6 +84,11 @@ public class AIModeUI : Singleton<AIModeUI>
     private void HandleModeHotkeys()
     {
         if (DevConsole.IsOpen) return;
+        // Ctrl+S is the separate "select all visible friendly troops" hotkey instead (see
+        // SelectionManager.HandleSelectVisibleTroopsInput) — without this guard, holding Ctrl
+        // while pressing S would ALSO set the current selection to Passive mode, since
+        // GetKeyDown(KeyCode.S) doesn't care about modifier keys on its own.
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) return;
         if (SelectionManager.instance == null || SelectionManager.instance.SelectedEntityIds.Count == 0) return;
 
         if (Input.GetKeyDown(KeyCode.S)) SendSetMode(AIMode.Passive);

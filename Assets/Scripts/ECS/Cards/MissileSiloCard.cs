@@ -24,10 +24,11 @@ public class MissileSiloCard : SpawnAtPointCard
     // Cut by 30% (explicit design ask) from the original 270.
     private const int MaxHealth = 189;
     // Much higher than CannonCard's own Range (14) — explicit design ask. Was 300; cut by
-    // 55% to 135, then cut a further 45% (explicit design ask, both cuts compounding) to
-    // the current value — since with MinRange below now also gating the near edge, the old
-    // value made for an enormous engagement band.
-    private const int Range = 61;
+    // 55% to 135, then cut a further 45% to 61 (both explicit design asks, compounding —
+    // since with MinRange below now also gating the near edge, the old value made for an
+    // enormous engagement band), then cut a further 40% (explicit design ask) to the
+    // current value.
+    private const int Range = 37;
     // Hard floor on engagement distance (world units, not a multiple of Range — see
     // TurretAIComponent.MinRange) — a long-range siege piece shouldn't be able to blast
     // something standing right next to it; a target has to close inside this to be safe.
@@ -35,7 +36,8 @@ public class MissileSiloCard : SpawnAtPointCard
     // flat near-edge cutoff. Roughly Cannon's own whole Range (14), so anything within a
     // Cannon's typical engagement distance is also safe from the Silo.
     private const float MinRange = 20f;
-    private const int Damage = 32;
+    // -40% (explicit design ask) from 32.
+    private const int Damage = 19;
     // Slow reload — a long-range siege piece, not a rapid-fire defense.
     private const float AttackSpeedMilliseconds = 3000f;
 
@@ -47,9 +49,8 @@ public class MissileSiloCard : SpawnAtPointCard
     private const float MissileSpeedTilesPerSecond = 50f;
 
     // Multiple of this card's own Range stat — the AOE damage radius when a missile's flight
-    // ends (see BallisticProjectileComponent.ImpactRadius/ResolveMissileImpact). Bumped up
-    // (explicit design ask, "slightly bigger blast radius") to compensate for Range's own
-    // cut above — old 135 * 0.035 = 4.73 effective radius, new 61 * 0.085 = 5.19.
+    // ends (see BallisticProjectileComponent.ImpactRadius/ResolveMissileImpact). Scales
+    // automatically with every cut to Range above, including the most recent -40%.
     private const float ImpactRadiusMultiplier = 0.085f;
 
     // Small leeway (as a multiple of Range) allowed when re-checking the target is still in
@@ -66,7 +67,8 @@ public class MissileSiloCard : SpawnAtPointCard
     private const float BuildingDamageBonusRatio = -0.3f;
 
     // Gold dropped to whoever destroys this building — mirrors CannonCard/BuildingCard's own.
-    private const int GoldDropOnDeath = 40;
+    // +30% (explicit design ask) from 40.
+    private const int GoldDropOnDeath = 52;
 
     private const float MaxDistanceFromBuilding = 30f;
 
@@ -105,10 +107,13 @@ public class MissileSiloCard : SpawnAtPointCard
         SpellResist = BuildingSpawnHelper.SpellResist,
     };
 
+    // Metal folded into Wood/Stone (220 sum) — lower MaxHealth (189) than Cannon, so less
+    // stone-heavy. Gems=25 also folded in as a further +50 Wood/+50 Stone (explicit design
+    // ask — troops/buildings no longer cost Gems at all).
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 220,
-            Gems  = 25,
+            Wood  = 150,
+            Stone = 170,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 

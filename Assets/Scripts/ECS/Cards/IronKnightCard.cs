@@ -20,9 +20,11 @@ public class IronKnightCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 2.5f;
     // Shorter than BasicMeleeTroopCard's 3x — a proportionally quicker recovery relative to
     // its doubled windup, so its swing doesn't feel even more sluggish on top of the slower
@@ -49,10 +51,12 @@ public class IronKnightCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "IronKnight";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone, sum unchanged (195) — heavily armored/tanky, so lean
+    // stone hard.
     public override ResourceCost Cost => new ResourceCost
         {
-            Metal = 150,
-            Stone = 45
+            Wood = 60,
+            Stone = 135
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -76,6 +80,7 @@ public class IronKnightCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

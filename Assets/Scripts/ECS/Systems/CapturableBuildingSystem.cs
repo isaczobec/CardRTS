@@ -16,6 +16,9 @@
 //    in the game.
 public static class CapturableBuildingSystem
 {
+    // Flat gold bounty for capturing (killing) another player's crystal — explicit design ask.
+    private const int CrystalCaptureGoldReward = 200;
+
     public static readonly GlobalSystem Instance = new GlobalSystem((ecs, flagEvents) => { }, Setup);
 
     private static void Setup(ECS ecs)
@@ -104,9 +107,24 @@ public static class CapturableBuildingSystem
             newOwnerId = troopStore.GetComponent(killerEntityId).OwnerPlayerId;
 
         ref TroopComponent troop = ref troopStore.GetComponent(request.EntityId);
+        ushort previousOwnerId = troop.OwnerPlayerId;
         troop.IsDead = false;
         troop.OwnerPlayerId = newOwnerId;
         ecs.Delta.MarkComponentDirty(request.EntityId, typeof(TroopComponent));
+
+        // Gold bounty for capturing another player's crystal — explicit design ask ("killing
+        // another player's respawn crystal should... drop 200 gold"). Only fires when it was
+        // actually held by a DIFFERENT real player at the moment of death (never neutral, and
+        // never the killer's own — CanDamageCrystal already blocks friendly fire, but the
+        // check costs nothing) and a real killer resolved above.
+        if (previousOwnerId != TroopComponent.NEUTRAL_OWNER_PLAYER_ID &&
+            previousOwnerId != newOwnerId &&
+            newOwnerId != TroopComponent.NEUTRAL_OWNER_PLAYER_ID)
+        {
+            ulong killerResourceEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, newOwnerId);
+            if (killerResourceEntityId != 0)
+                ecs.Requests.CreateRequest(new ResourcesAdded(killerResourceEntityId, ResourceType.Gold, CrystalCaptureGoldReward));
+        }
 
         ref SelectableComponent selectable = ref selectableStore.GetComponent(request.EntityId);
         selectable.OwnerPlayerId = newOwnerId;

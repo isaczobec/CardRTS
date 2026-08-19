@@ -30,6 +30,6 @@ public static class ResourceGenerationSystem
     private static void QueueGeneration(ECS ecs, ulong playerEntityId, ResourceType type, float perSecond)
     {
         if (perSecond == 0f) return;
-        ecs.Requests.CreateRequest(new ResourcesAdded(playerEntityId, type, perSecond * TickManager.TickInterval));
+        ecs.Requests.CreateRequest(new ResourcesAdded(playerEntityId, type, perSecond * TickManager.TickInterval) { IsPassive = true });
     }
 }

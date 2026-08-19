@@ -85,6 +85,12 @@ public class SelectionManager : Singleton<SelectionManager>
     private readonly Dictionary<ulong, TargetKind> _currentlyTargetedIds = new();
     private readonly Dictionary<ulong, TargetKind> _previouslyTargetedIds = new();
 
+    // Scratch set, rebuilt each frame alongside _currentlyTargetedIds: every currently-
+    // targeted entity that at least one of ITS targeters is currently selected — see
+    // TargetingPrefab.SetTargeterSelected. Independent of TargetKind/color, so this is
+    // (re)applied every frame regardless of whether _currentlyTargetedIds itself changed.
+    private readonly HashSet<ulong> _targetedBySelectedTroop = new();
+
     // Left-drag (select) state
     private Vector2 _dragStartScreen;
     private bool _isDragging;
@@ -192,6 +198,8 @@ public class SelectionManager : Singleton<SelectionManager>
         RefreshTargetingVisuals();
         HandleSelectionInput();
         HandleTargetHotkeyInput();
+        HandleSelectAllTroopsInput();
+        HandleSelectVisibleTroopsInput();
     }
 
     // Diffs which entities are currently targeted by one of the local player's troops
@@ -205,12 +213,16 @@ public class SelectionManager : Singleton<SelectionManager>
 
         ushort localId = LocalPlayerId();
         _currentlyTargetedIds.Clear();
+        _targetedBySelectedTroop.Clear();
 
         _troopStore.ForEach((ulong friendlyId) => {
             if (_troopStore.GetComponent(friendlyId).OwnerPlayerId != localId) return;
+            bool friendlySelected = _selectedEntityIds.Contains(friendlyId);
             foreach (ulong targetId in targeting.GetTargets(friendlyId))
             {
                 if (!IsEntitySelectable(targetId)) continue;
+                if (friendlySelected) _targetedBySelectedTroop.Add(targetId);
+
                 TargetKind kind = targeting.GetTargetKind(friendlyId, targetId) ?? TargetKind.Automatic;
                 if (_currentlyTargetedIds.TryGetValue(targetId, out TargetKind existing) && existing == TargetKind.PlayerAssigned)
                     continue;
@@ -222,9 +234,15 @@ public class SelectionManager : Singleton<SelectionManager>
         {
             ulong entityId = kvp.Key;
             TargetKind kind = kvp.Value;
-            if (_previouslyTargetedIds.TryGetValue(entityId, out TargetKind prevKind) && prevKind == kind) continue;
-            if (_targetingObjects.TryGetValue(entityId, out TargetingPrefab prefab))
+            if (!_targetingObjects.TryGetValue(entityId, out TargetingPrefab prefab)) continue;
+
+            if (!_previouslyTargetedIds.TryGetValue(entityId, out TargetKind prevKind) || prevKind != kind)
                 prefab.SetTargeted(kind);
+
+            // Independent of TargetKind/color (a targeter being selected/deselected doesn't
+            // touch _currentlyTargetedIds at all), so this is reapplied every frame
+            // regardless — cheap, SetTargeterSelected itself no-ops when unchanged.
+            prefab.SetTargeterSelected(_targetedBySelectedTroop.Contains(entityId));
         }
 
         foreach (ulong entityId in _previouslyTargetedIds.Keys)
@@ -320,12 +338,16 @@ public class SelectionManager : Singleton<SelectionManager>
     // Pressing A targets the closest enemy/neutral troop to the cursor, within
     // TargetHotkeyRadius, for the currently selected friendly troops — same effect as
     // right-clicking directly on that troop (SendSetTargets), just without needing the
-    // cursor to be right on top of it. No-ops with nothing selected, the console open, or
-    // Left Alt held (camera pan), matching every other selection input's own guards.
+    // cursor to be right on top of it. No-ops with nothing selected, the console open, Left
+    // Alt held (camera pan), or Ctrl held (Ctrl+A is the separate "select all friendly
+    // troops" hotkey instead — see HandleSelectAllTroopsInput; without this guard, holding
+    // Ctrl while pressing A would fire BOTH, since GetKeyDown(KeyCode.A) doesn't care about
+    // modifier keys on its own).
     private void HandleTargetHotkeyInput()
     {
         if (DevConsole.IsOpen) return;
         if (Input.GetKey(KeyCode.LeftAlt)) return;
+        if (IsCtrlHeld()) return;
         if (!Input.GetKeyDown(KeyCode.A)) return;
         if (_selectedEntityIds.Count == 0) return;
 
@@ -336,6 +358,54 @@ public class SelectionManager : Singleton<SelectionManager>
 
         SendSetTargets(new List<ulong> { targetId });
     }
+
+    // Ctrl+A: selects every friendly PHYSICAL troop the local player owns (TroopComponent.
+    // IsPhysicalTroop — false for every building, including a CapturableBuildingComponent
+    // "spawn crystal" once captured, see BuildingSpawnHelper.AddBuildingComponents) anywhere
+    // on the map, replacing whatever was previously selected — explicit design ask ("CTRL+A
+    // selects all friendly troops (not buildings)"). Mirrors TryGetNextOwnedEntityPosition's
+    // own IsFriendly-filtered ForEach scan over the whole map, just also gated on troop-ness
+    // and actually selecting instead of cycling the camera.
+    private void HandleSelectAllTroopsInput()
+    {
+        if (DevConsole.IsOpen) return;
+        if (!IsCtrlHeld()) return;
+        if (!Input.GetKeyDown(KeyCode.A)) return;
+        if (_troopStore == null || _selectableStore == null) return;
+
+        DeselectAll();
+
+        _selectableStore.ForEach((ulong entityId) =>
+        {
+            if (IsFriendlyPhysicalTroop(entityId))
+                Select(entityId, _friendlySelectedColor);
+        });
+    }
+
+    // Ctrl+S: same as Ctrl+A, but scoped to whatever's currently visible in the camera's
+    // viewport instead of the whole map — explicit design ask ("CTRL+S make all troops that
+    // visible from the camera selected"). Reuses GetEntitiesInScreenRect's own screen-space
+    // projection (see PerformRectSelect), just spanning the full screen instead of a drag
+    // rectangle, filtered by the same friendly-physical-troop predicate Ctrl+A uses.
+    private void HandleSelectVisibleTroopsInput()
+    {
+        if (DevConsole.IsOpen) return;
+        if (!IsCtrlHeld()) return;
+        if (!Input.GetKeyDown(KeyCode.S)) return;
+        if (_troopStore == null || _selectableStore == null) return;
+
+        _queryBuffer.Clear();
+        GetEntitiesInScreenRect(Vector2.zero, new Vector2(Screen.width, Screen.height), IsFriendlyPhysicalTroop, _queryBuffer);
+
+        DeselectAll();
+        foreach (ulong entityId in _queryBuffer)
+            Select(entityId, _friendlySelectedColor);
+    }
+
+    // Shared by both Ctrl+A and Ctrl+S — a real, physical troop (not a building — see
+    // TroopComponent.IsPhysicalTroop's own doc comment) owned by the local player.
+    private bool IsFriendlyPhysicalTroop(ulong entityId)
+        => IsFriendly(entityId) && _troopStore.HasComponent(entityId) && _troopStore.GetComponent(entityId).IsPhysicalTroop;
 
     // Right click either sets targets (cursor is over a selectable enemy/neutral troop
     // with a HealthComponent) or issues a move command (anywhere else) for the
@@ -404,6 +474,9 @@ public class SelectionManager : Singleton<SelectionManager>
 
     private static bool IsAdditiveModifierHeld()
         => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+    private static bool IsCtrlHeld()
+        => Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
 
     private bool IsEntitySelectable(ulong entityId)
         => _ecs != null && _ecs.Requests.Process(new IsSelectableRequest(entityId, LocalPlayerId()), _ecs, executeIfNotCancelled: false).IsSelectable;

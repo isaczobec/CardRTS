@@ -27,8 +27,11 @@ public class StrategyConsultantCard : SpawnAtPointCard
     private const float AttackSpeedMilliseconds = 333f;
     private const int SpellResist = 0;
 
-    private const float DetectionRangeMultiplier = 12f;
-    private const float ChaseRangeMultiplier = 96f;
+    private const float DetectionRangeMultiplier = 72f; // 6x (explicit design ask) from 12
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value; see BasicMeleeTroopCard's own identical comment.
+    private const float EnemyDetectionRangeMultiplier = 12f;
+    private const float ChaseRangeMultiplier = 124.8f; // +30% (explicit design ask) from 96
     private const float AttackRangeMultiplier = 1.5f;
     private const float CooldownMultiplier = 3f;
 
@@ -58,13 +61,13 @@ public class StrategyConsultantCard : SpawnAtPointCard
 
     public override StatsComponent DefaultStats => BuildStats();
 
-    // More expensive than ConstructionWorkerCard's own (Wood 160 / Stone 60 / Metal 20).
+    // More expensive than ConstructionWorkerCard's own. Metal folded into Wood/Stone (270
+    // sum), plus Gems=5 also folded in as a further +10 Wood/+10 Stone (explicit design ask
+    // — troops/buildings no longer cost Gems at all).
     public override ResourceCost Cost => new ResourceCost
         {
-            Wood  = 160,
-            Stone = 60,
-            Metal = 50,
-            Gems  = 5,
+            Wood  = 200,
+            Stone = 90,
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -93,6 +96,7 @@ public class StrategyConsultantCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicMeleeAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 CooldownMultiplier       = CooldownMultiplier,

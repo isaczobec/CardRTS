@@ -47,7 +47,7 @@ public static class ResourceGeneratorSystem
             ulong playerEntityId = ResourceHelper.FindPlayerResourcesEntity(ecs, ownerPlayerId);
             if (playerEntityId == 0) return;
 
-            ResourcesAdded request = new ResourcesAdded(playerEntityId, gen.Type, gen.AmountPerProc);
+            ResourcesAdded request = new ResourcesAdded(playerEntityId, gen.Type, gen.AmountPerProc) { IsPassive = true };
             if (posStore != null && posStore.HasComponent(id))
             {
                 PositionComponent pos = posStore.GetComponent(id);

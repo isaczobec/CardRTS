@@ -25,15 +25,13 @@ public class EntitySpawnAction : IWorldGenAction
     private const float OreRespawnSeconds  = 300f;
     private const float OreSelectionScale  = 2f;
 
-    // Cut by 45% (explicit design ask) from the original flat 4.
+    // Cut by 45% (explicit design ask) from the original flat 4. Ore keeps this flat rate;
+    // Tree/Rock use BoostedResourceGoldDrop instead (see each drop's own comment).
     private const int DefaultResourceGoldDrop = 2;
 
-    // Passive-production boost granted on every kill (see ResourceProductionOnDeathComponent/
-    // ResourceProductionOnDeathSystem) — the resource each node "represents" gets the larger
-    // amount, the other two of Wood/Stone/Metal each get the smaller one.
-    // Both cut by 45% (explicit design ask) from the original 2.4/0.7.
-    private const float MainResourceProductionPerMinute = 1.32f;
-    private const float SecondaryResourceProductionPerMinute = 0.385f;
+    // Tree/Rock's own Gold drop — scaled +150% alongside their Wood/Stone drop (explicit
+    // design ask), unlike Ore's, which is untouched.
+    private const int BoostedResourceGoldDrop = 5;
 
     // Neutral soulstone resource nodes (see SoulstoneClusterFeature) — dead from the moment
     // they're spawned, each with its own long "grace period" respawn timer, ramping down to
@@ -64,7 +62,7 @@ public class EntitySpawnAction : IWorldGenAction
     private const float GoldCrateBlockRadius    = 1f;
     private const float GoldCrateRespawnSeconds = 6f * 60f; // explicit design ask
     private const float GoldCrateSelectionScale = 2f;
-    private const int   GoldCrateGoldAmount     = 35; // explicit design ask
+    private const int   GoldCrateGoldAmount     = 46; // +30% (explicit design ask) from 35
 
     public float X;
     public float Y;
@@ -92,15 +90,9 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = TreeBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Wood = 11, // +20% (explicit design ask) from 9
-            Gold = DefaultResourceGoldDrop,
+            Wood = 28, // +150% (explicit design ask) from 11
+            Gold = BoostedResourceGoldDrop,
         } } );
-        ecs.AddComponent(id, new ResourceProductionOnDeathComponent
-        {
-            WoodPerMinute  = MainResourceProductionPerMinute,
-            StonePerMinute = SecondaryResourceProductionPerMinute,
-            MetalPerMinute = SecondaryResourceProductionPerMinute,
-        });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(TreeRespawnSeconds),
@@ -128,15 +120,9 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = RockBlockRadius, CardPlayRangeMultiplier = 1f });
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Stone = 11, // +20% (explicit design ask) from 9
-            Gold = DefaultResourceGoldDrop,
+            Stone = 28, // +150% (explicit design ask) from 11
+            Gold = BoostedResourceGoldDrop,
         } } );
-        ecs.AddComponent(id, new ResourceProductionOnDeathComponent
-        {
-            StonePerMinute = MainResourceProductionPerMinute,
-            WoodPerMinute  = SecondaryResourceProductionPerMinute,
-            MetalPerMinute = SecondaryResourceProductionPerMinute,
-        });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(RockRespawnSeconds),
@@ -167,12 +153,6 @@ public class EntitySpawnAction : IWorldGenAction
             Metal = 11, // +20% (explicit design ask) from 9
             Gold = DefaultResourceGoldDrop,
         } } );
-        ecs.AddComponent(id, new ResourceProductionOnDeathComponent
-        {
-            MetalPerMinute = MainResourceProductionPerMinute,
-            WoodPerMinute  = SecondaryResourceProductionPerMinute,
-            StonePerMinute = SecondaryResourceProductionPerMinute,
-        });
         ecs.AddComponent(id, new RespawnableInPlaceComponent
         {
             CooldownTicks = (ulong)TickManager.SecondsToTicks(OreRespawnSeconds),
@@ -203,10 +183,14 @@ public class EntitySpawnAction : IWorldGenAction
         ecs.AddComponent(id, new StatsComponent { MaxHealth = maxHealth });
         ecs.AddComponent(id, new HealthComponent { CurrentHealth = 0 });
         ecs.AddComponent(id, new BuildingComponent { BlockRadius = SoulstoneBlockRadius, CardPlayRangeMultiplier = 1f });
+        // No longer drops Soulstones — explicit design ask (soulstones/metal are out of the
+        // active economy loop, though the entity itself still spawns/respawns as before).
         ecs.AddComponent(id, new OnDeathResourceDropComponent { Drop = new ResourceCost
         {
-            Soulstones = 1,
-            Gold = 80,
+            Gold  = 150,
+            Gems  = 40,
+            Wood  = 250,
+            Stone = 250,
         } });
 
         ulong initialCooldownTicks = (ulong)TickManager.SecondsToTicks(initialRespawnSeconds);

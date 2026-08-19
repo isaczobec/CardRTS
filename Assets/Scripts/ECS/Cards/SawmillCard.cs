@@ -8,7 +8,7 @@ public class SawmillCard : SpawnAtPointCard
     // Matches BuildingCard's own MaxHealth/ActivationDelaySeconds/GoldDropOnDeath.
     private const int MaxHealth = 350;
     private const float ActivationDelaySeconds = 2f;
-    private const int GoldDropOnDeath = 20;
+    private const int GoldDropOnDeath = 26; // +30% (explicit design ask) from 20
 
     private const float MaxDistanceFromBuilding = 45f;
 
@@ -37,10 +37,12 @@ public class SawmillCard : SpawnAtPointCard
     };
 
     // 40% more expensive (explicit design ask), from 80 of each of the other two resources.
+    // Metal folded into Wood/Stone, sum unchanged (224) — lean wood, a simple utility
+    // structure.
     public override ResourceCost Cost => new ResourceCost
         {
-            Stone = 112,
-            Metal = 112
+            Wood = 120,
+            Stone = 104
         };
 
     public override ulong OnPlayed(ECS ecs, ulong cardEntityId, ushort ownerPlayerId, float x, float y)

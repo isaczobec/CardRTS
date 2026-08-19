@@ -15,9 +15,15 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     // Troops resist Spell damage 0 by default — only buildings do (see BuildingSpawnHelper).
     private const int SpellResist = 0;
 
-    // 4x — explicit design ask.
-    private const float DetectionRangeMultiplier = 3f;
-    private const float ChaseRangeMultiplier = 20f;
+    private const float DetectionRangeMultiplier = 18f; // 6x (explicit design ask) from 3
+    // Same neutral:enemy ratio as SkillshotRangedTroopCard's own tuning (explicit design ask)
+    // — back down at the pre-6x-bump value, since under Guard mode ANY tracked enemy always
+    // wins over ANY tracked neutral regardless of relative distance (see
+    // BasicRangedAISystem.ResolveGuardTarget), so the same 6x bump that's good for finding
+    // resources from far away also meant this troop would beeline past a much closer tree/
+    // rock to go fight a distant enemy.
+    private const float EnemyDetectionRangeMultiplier = 3f;
+    private const float ChaseRangeMultiplier = 26f; // +30% (explicit design ask) from 20
     private const float AttackRangeMultiplier = 1.5f;
     private const float WindDownMultiplier = 3f;
 
@@ -33,10 +39,13 @@ public class BasicRangedTroopCard : SpawnAtPointCard
     public override string IndicatorPrefabName => "BasicRangedTroop";
 
     public override StatsComponent DefaultStats => BuildStats();
+    // Metal folded into Wood/Stone (explicit design ask — metal/soulstones no longer used
+    // for costs), sum unchanged (150). Moderate wood lean — a ranged troop, but not
+    // especially light for its class.
     public override ResourceCost Cost => new ResourceCost
         {
-            Stone = 120,
-            Metal = 30
+            Wood = 90,
+            Stone = 60
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
@@ -62,6 +71,7 @@ public class BasicRangedTroopCard : SpawnAtPointCard
             (e, id) => e.AddComponent(id, new BasicRangedAIComponent
             {
                 DetectionRangeMultiplier = DetectionRangeMultiplier,
+                EnemyDetectionRangeMultiplier = EnemyDetectionRangeMultiplier,
                 ChaseRangeMultiplier     = ChaseRangeMultiplier,
                 AttackRangeMultiplier    = AttackRangeMultiplier,
                 WindDownMultiplier       = WindDownMultiplier,

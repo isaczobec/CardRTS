@@ -140,7 +140,7 @@ public class CardGameObject : MonoBehaviour,
 
     // Left/middle click only — see OnPointerClick. Right-click never selects a card; it's
     // routed to RightClicked instead so CardHandRenderer can implement its own
-    // double-right-click-to-discard gesture.
+    // double-right-click-to-refund gesture.
     public event Action<CardGameObject> Clicked;
     public event Action<CardGameObject> RightClicked;
     public event Action<CardGameObject> DragStarted;

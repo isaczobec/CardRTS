@@ -27,8 +27,9 @@ public class CannonCard : SpawnAtPointCard
     // mirrors BasicRangedAIComponent.WindDownMultiplier.
     private const float WindDownMultiplier = 1.5f;
 
-    // Gold dropped to whoever destroys this building — mirrors BuildingCard's own.
-    private const int GoldDropOnDeath = 30;
+    // Gold dropped to whoever destroys this building — mirrors BuildingCard's own. +30%
+    // (explicit design ask) from 30.
+    private const int GoldDropOnDeath = 39;
 
     private const float MaxDistanceFromBuilding = 30f;
 
@@ -54,10 +55,12 @@ public class CannonCard : SpawnAtPointCard
         SpellResist = BuildingSpawnHelper.SpellResist,
     };
 
+    // Metal folded into Wood/Stone, sum unchanged (230) — tankiest defensive building, lean
+    // stone.
     public override ResourceCost Cost => new ResourceCost
         {
-            Stone = 150,
-            Metal = 80
+            Wood = 70,
+            Stone = 160
         };
     public override float MaxDistanceFromFriendlyBuilding => MaxDistanceFromBuilding;
 
